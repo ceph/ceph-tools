@@ -1,14 +1,15 @@
 #!/usr/bin/perl
 #
-# script: bugmunch
+# script: bugage.pl
 #	
 # purpose:
 #	to read through a raw bug list and generate
 #	aging statistics
 #
 # output:
-#	one row per age accumulation bucket, with a 
-#	count for each bug classification.
+#	one row per age accumulation bucket, 
+#		with a (time to fix) count for each bug classification 
+#		and  an (age) count for each bug classification
 #
 use warnings;
 use strict;

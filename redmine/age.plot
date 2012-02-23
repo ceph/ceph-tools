@@ -1,25 +1,20 @@
 #! /usr/bin/gnuplot
 #
-# generate plots of numbers of issues per time period.
+# generate plots of time to fix and bug ages
 # broken down by tracker-type or priority
 #
 # usage:
-#	gnuplot weekly.plot bugs.plot
-#	gnuplot monthly.plot bugs.plot
+#	gnuplot age.plot
 #
 # expected input format:
-# 	date	urgent high normal low feature support cleanup tasks doc
+# 	bucket	urgent high normal low feature support cleanup tasks doc ...
+#		first set of columns is for time to fix
+#		second set of columns is for age (of unfixed) issues
 #
-# This plot file does not care what the time unit is, it just uses 
-# column 1 as a label
+# The bucket (in column 1) is merely a label
 #
 # TODO
-#
-#  (1)	I'd like to come up with a function I can use for
-#	generating cumulative backlog (as the sum of new-fix).
-#	But I'm having trouble using that in a histogram.
-#
-#  (2)	Having this script know what the names and colors of
+#  	Having this script know what the names and colors of
 #	the issue classifications ties this to the database
 #	and the reduction script.  Much better would be if
 #	the reduction script could pass the titles and colors
@@ -30,7 +25,7 @@
 #	must have been initialized ... e.g.
 #		BASE = "weekly"
 #		INFILE = "bugs.".BASE
-#	output files will have names of the form $BASE-{new,fix,net}.png
+#	output files will have names of the form $BASE-{ttf,age}.png
 # 
 
 BASE="all"

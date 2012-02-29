@@ -42,30 +42,32 @@ set key left top
 set xtics out nomirror 
 set ytics out nomirror
 
-set style data lines
+set style data linespoints
 
 set output BASE."-ttf.png"
 set title "Issue Fix Times (days)";
 plot	INFILE	u 2:xticlabels(1) 			\
-			t "Urgent"	lc rgb 'red',\
-	''	u 3	t "High"	lc rgb 'pink',	\
-	''	u 4	t "Normal"	lc rgb 'orange',\
-	''	u 5	t "Low"		lc rgb 'yellow',\
-	''	u 6	t "Feature"	lc rgb 'green',	\
-	''	u 7	t "Support"	lc rgb 'blue',	\
-	''	u 8	t "Cleanup"	lc rgb 'cyan',	\
-	''	u 9	t "Tasks"	lc rgb 'white',	\
-	''	u 10	t "Doc"		lc rgb 'grey';
+			t "Immediate"	lc rgb 'violet',\
+	''	u 3	t "Urgent"	lc rgb 'red',	\
+	''	u 4	t "High"	lc rgb 'pink',	\
+	''	u 5	t "Normal"	lc rgb 'orange',\
+	''	u 6	t "Low"		lc rgb 'yellow',\
+	''	u 7	t "Feature"	lc rgb 'green',	\
+	''	u 9	t "Support"	lc rgb 'blue',	\
+	''	u 9	t "Cleanup"	lc rgb 'cyan',	\
+	''	u 10	t "Tasks"	lc rgb 'white',	\
+	''	u 11	t "Doc"		lc rgb 'grey';
 
 set output BASE."-age.png"
 set title "Issue Ages (days)";
-plot	INFILE	u 11:xticlabels(1) 			\
-			t "Urgent"  	lc rgb 'red',\
-	''	u 12	t "High"	lc rgb 'pink',	\
-	''	u 13	t "Normal"	lc rgb 'orange',\
-	''	u 14	t "Low"		lc rgb 'yellow',\
-	''	u 15	t "Feature"	lc rgb 'green',	\
-	''	u 16	t "Support"	lc rgb 'blue',	\
-	''	u 17	t "Cleanup"	lc rgb 'cyan',	\
-	''	u 18	t "Tasks"	lc rgb 'white',	\
-	''	u 19	t "Doc"		lc rgb 'grey';
+plot	INFILE	u 12:xticlabels(1) 			\
+			t "Immediate"	lc rgb 'violet',\
+	''	u 13	t "Urgent"	lc rgb 'red',	\
+	''	u 14	t "High"	lc rgb 'pink',	\
+	''	u 15	t "Normal"	lc rgb 'orange',\
+	''	u 16	t "Low"		lc rgb 'yellow',\
+	''	u 17	t "Feature"	lc rgb 'green',	\
+	''	u 18	t "Support"	lc rgb 'blue',	\
+	''	u 19	t "Cleanup"	lc rgb 'cyan',	\
+	''	u 20	t "Tasks"	lc rgb 'white',	\
+	''	u 21	t "Doc"		lc rgb 'grey';

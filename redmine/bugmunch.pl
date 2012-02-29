@@ -45,9 +45,10 @@ my $end_date;		# report end date
 #
 # FIX: this shouldn't be hard coded, but I should find a way to
 #	put them in/get them from the RedMine dump.  The trick is
-#	that these are a function of tracker-type and priority.
+#	that the values I have chosen are a function of tracker-type 
+#	and priority.
 #
-my @columns =	('Urgent', 'High', 'Normal', 'Low',
+my @columns =	('Immediate', 'Urgent', 'High', 'Normal', 'Low',
 		 'Feature', 'Support', 'Cleanup', 'Tasks', 'Documentation' );
 
 #

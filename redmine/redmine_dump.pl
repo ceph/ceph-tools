@@ -26,8 +26,8 @@ use Carp;
 use Ndn::Dreamhost::Mysql;
 
 # Output format
-my $output="# bugid\tcategory\tissue type\tsource  \tprty\tversion\tcreated \tclosed   \tstatus\n";
-my $dashes="# -----\t--------\t----------\t------  \t----\t-------\t------- \t------   \t------\n";
+my $output="# bugid\tcategory\tissue type\tsource  \tprty\tversion\tcreated \tclosed   \thistory\tstatus\n";
+my $dashes="# -----\t--------\t----------\t------  \t----\t-------\t------- \t------   \t-------\t------\n";
 
 #
 # translate a mysql time/date into a more traditional date
@@ -131,6 +131,10 @@ while ( my @ref = $sth->fetchrow_array() )
 {	$sources{$ref[0]} = $ref[1];
 }
 
+#
+# build up the version history
+#
+#
 
 # print out the headings
 print $output;
@@ -175,5 +179,9 @@ while ( my @ref = $sth->fetchrow_array() )
 		}
 	}
 
-	print "$bugid\t$category\t$tracker\t$source\t$priority\t$vers\t$created\t$closed\t'$status'\n";
+	# figuring out the version history is another whole lookup problem
+	my $history	= 'none';
+
+	# output the report we have
+	print "$bugid\t$category\t$tracker\t$source\t$priority\t$vers\t$created\t$closed\t$history\t$status\n";
 }

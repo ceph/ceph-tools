@@ -131,10 +131,27 @@ while ( my @ref = $sth->fetchrow_array() )
 {	$sources{$ref[0]} = $ref[1];
 }
 
+my %history = ('NULL'=>'none');
 #
 # build up the version history
 #
+#	note that I could do this with version IDs rather than names,
+#	because we already have a version ID to name map, but it is
+#	easier to let MySQL do the work for me here.
 #
+$fields	= 'journalized_id,versions.name';
+$tables	= 'versions,journal_details,journals';
+$join	= 'property="attr" and prop_key="fixed_version_id" and value=versions.id and journal_id=journals.id';
+$sth=$dbh->prepare("select $fields from $tables where $join;");
+$sth->execute();
+while ( my @ref = $sth->fetchrow_array() ) 
+{	
+	if (defined( $history{$ref[0]} )) {
+		$history{$ref[0]} = $history{$ref[0]} . ",$ref[1]";
+	} else {
+		$history{$ref[0]} = $ref[1];
+	}
+}
 
 # print out the headings
 print $output;
@@ -180,8 +197,11 @@ while ( my @ref = $sth->fetchrow_array() )
 	}
 
 	# figuring out the version history is another whole lookup problem
-	my $history	= 'none';
+	my $hist	= 'none';
+	if (defined( $history{$bugid} )) {
+		$hist = $history{$bugid};
+	}
 
 	# output the report we have
-	print "$bugid\t$category\t$tracker\t$source\t$priority\t$vers\t$created\t$closed\t$history\t$status\n";
+	print "$bugid\t$category\t$tracker\t$source\t$priority\t$vers\t$created\t$closed\t$hist\t$status\n";
 }

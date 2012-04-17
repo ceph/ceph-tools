@@ -185,9 +185,10 @@ my $col_priority= 4;	# prty
 my $col_version	= 5;	# version
 my $col_created	= 6;	# created
 my $col_closed	= 7;	# closed
-my $col_status	= 8;	# status
+my $col_history = 8;	# history
+my $col_status	= 9;	# status
 
-my $col_numcols = 9;	# expected number of column matches
+my $col_numcols = 10;	# expected number of column matches
 my $col_initialized = 0;
 
 sub initialize_columns
@@ -225,6 +226,9 @@ sub initialize_columns
 			$col_closed = $i;
 			$col_initialized++;
 		} elsif ($cols[$i] eq 'status') {
+			$col_status = $i;
+			$col_initialized++;
+		} elsif ($cols[$i] eq 'history') {
 			$col_status = $i;
 			$col_initialized++;
 		} else {

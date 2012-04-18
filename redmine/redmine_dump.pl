@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-my $usage = "usage: redmine_dump database\n";
+my $usage = "usage: redmine_dump cephtracker\n";
 
 #
 # Go to the MySQL database behind a Redmine bug system, and dump
@@ -25,7 +25,7 @@ use Carp;
 
 use Ndn::Dreamhost::Mysql;
 
-# Output format
+# Output format (note: reduction scripts use the first comment line to understand the columns)
 my $output="# bugid\tcategory\tissue type\tsource  \tprty\tversion\tcreated \tclosed   \thistory\tstatus\n";
 my $dashes="# -----\t--------\t----------\t------  \t----\t-------\t------- \t------   \t-------\t------\n";
 
@@ -135,21 +135,35 @@ my %history = ('NULL'=>'none');
 #
 # build up the version history
 #
-#	note that I could do this with version IDs rather than names,
-#	because we already have a version ID to name map, but it is
-#	easier to let MySQL do the work for me here.
+# TRICK:
+#	target version can be set by edits and at initial issue 
+#	creation, so on the first edit I need to see if the previous
+#	value is non-null, and if so, include that in the history 
+#	as well.
 #
-$fields	= 'journalized_id,versions.name';
-$tables	= 'versions,journal_details,journals';
-$join	= 'property="attr" and prop_key="fixed_version_id" and value=versions.id and journal_id=journals.id';
+$fields	= 'journalized_id,value,old_value';
+$tables	= 'journal_details,journals';
+$join	= 'property="attr" and prop_key="fixed_version_id" and value!="NULL" and journal_id=journals.id';
 $sth=$dbh->prepare("select $fields from $tables where $join;");
 $sth->execute();
 while ( my @ref = $sth->fetchrow_array() ) 
 {	
-	if (defined( $history{$ref[0]} )) {
-		$history{$ref[0]} = $history{$ref[0]} . ",$ref[1]";
-	} else {
-		$history{$ref[0]} = $ref[1];
+	my $bugid = $ref[0];
+
+	# the first version changed from may have been specified with the creation
+	if ( defined( $ref[2] ) and defined( $versions{$ref[2]} ) and !defined( $history{$bugid} )) {
+		$history{$bugid} = $versions{$ref[2]};
+	}
+
+	# add the new version (if known) to thie history
+	if (defined( $versions{$ref[1]} )) {
+		if (defined( $history{$bugid} )) {
+			$history{$bugid} = $history{$bugid} . ",$versions{$ref[1]}";
+		} else {
+			$history{$bugid} = $versions{$ref[1]};
+		}
+#	} else { # irritating, but it seems to happen
+#		print STDERR "WARNING: unknown version, id=$ref[1]\n"
 	}
 }
 
@@ -196,8 +210,8 @@ while ( my @ref = $sth->fetchrow_array() )
 		}
 	}
 
-	# figuring out the version history is another whole lookup problem
-	my $hist	= 'none';
+	# get the history of target versions
+	my $hist	= $vers;	# default history is current version
 	if (defined( $history{$bugid} )) {
 		$hist = $history{$bugid};
 	}

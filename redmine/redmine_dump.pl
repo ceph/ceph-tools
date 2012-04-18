@@ -23,6 +23,7 @@ use warnings;
 use strict;
 use Carp;
 
+use Time::Local;
 use Ndn::Dreamhost::Mysql;
 
 # Output format (note: reduction scripts use the first comment line to understand the columns)
@@ -30,13 +31,23 @@ my $output="# bugid\tcategory\tissue type\tsource  \tprty\tversion\tcreated \tcl
 my $dashes="# -----\t--------\t----------\t------  \t----\t-------\t------- \t------   \t-------\t------\n";
 
 #
-# translate a mysql time/date into a more traditional date
+# translate a mysql time/date into a mm/dd/yyyy
 #
 sub sqldate {
 	my @date = split(' ', $_[0]);
 	(my $year, my $month, my $day) = split('-',$date[0]);
 	return "$month/$day/$year";
 }
+
+#
+# translate a mysql time/date into a per time
+#
+sub sql_to_time {
+	my @date = split(' ', $_[0]);
+	(my $year, my $month, my $day) = split('-',$date[0]);
+	return timegm( 0, 0, 0, $day, $month-1, $year );
+}
+
 
 # figure out what dabase we are using and open a connection to it
 if (scalar @ARGV != 1) {
@@ -66,10 +77,12 @@ while ( my @ref = $sth->fetchrow_array() ) {
 
 # buid up the versions map
 my %versions = ('NULL'=>'none');
-$sth=$dbh->prepare("select id,name from versions;");
+my %sprints  = ('NULL'=>'none');
+$sth=$dbh->prepare("select id,name,sprint_start_date from versions;");
 $sth->execute();
 while ( my @ref = $sth->fetchrow_array() ) {
 	$versions{$ref[0]} = $ref[1];
+	$sprints{$ref[0]} = $ref[2];
 }
 
 # buid up the priorities map
@@ -131,17 +144,23 @@ while ( my @ref = $sth->fetchrow_array() )
 {	$sources{$ref[0]} = $ref[1];
 }
 
+my $date_fudge = 2;	# free-removal days, from start of sprint
 my %history = ('NULL'=>'none');
 #
 # build up the version history
 #
-# TRICK:
+# TRICKS:
 #	target version can be set by edits and at initial issue 
 #	creation, so on the first edit I need to see if the previous
 #	value is non-null, and if so, include that in the history 
 #	as well.
 #
-$fields	= 'journalized_id,value,old_value';
+#	If issue is moved out of a sprint prior to the start of the
+#	sprint (or within the first few days), that is not a failure
+#	to deliver but a change of plan, and so we don't count that
+#	sprint as having been in the issue's history.
+#
+$fields	= 'journalized_id,value,old_value,created_on';
 $tables	= 'journal_details,journals';
 $join	= 'property="attr" and prop_key="fixed_version_id" and value!="NULL" and journal_id=journals.id';
 $sth=$dbh->prepare("select $fields from $tables where $join;");
@@ -150,9 +169,30 @@ while ( my @ref = $sth->fetchrow_array() )
 {	
 	my $bugid = $ref[0];
 
-	# the first version changed from may have been specified with the creation
-	if ( defined( $ref[2] ) and defined( $versions{$ref[2]} ) and !defined( $history{$bugid} )) {
-		$history{$bugid} = $versions{$ref[2]};
+	# there are a few tricks involving previous versions
+	my $prev = ( defined( $ref[2] ) and defined( $versions{$ref[2]} )) ? $versions{$ref[2]} : "none";
+	if ( $prev ne "none" ) {
+		if (!defined( $history{$bugid} )) {
+			# first version changed from was specified at create
+			$history{$bugid} = $prev;
+		} elsif (defined( $sprints{$ref[2]} )) {
+			# we may have moved it out before the start of the sprint
+			my $sprint_start = sql_to_time($sprints{$ref[2]});
+			my $date_removed = sql_to_time($ref[3]);
+			if (($date_removed - $sprint_start) / (24 * 60 * 60) < $date_fudge) {
+				if ($history{$bugid} eq $prev) { # remove the entire history
+					undef( $history{$bugid} );
+				} else { # remove the last item from the history
+					my $x = index( $history{$bugid}, ",$prev" );
+					if ($x > 0) {
+						my $upd = substr( $history{$bugid}, 0, $x );
+						$history{$bugid} = $upd;
+					} else {
+						print STDERR "ERROR: unable to remove $prev from end of $history{$bugid} ($bugid)\n";
+					}
+				}
+			} 
+		}
 	}
 
 	# add the new version (if known) to thie history

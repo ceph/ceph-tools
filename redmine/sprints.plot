@@ -44,7 +44,7 @@ plot	INFILE	u 3:xticlabels(1) 			\
 	''	u 5	t "High"	lc rgb 'pink',	\
 	''	u 6	t "Normal"	lc rgb 'orange',\
 	''	u 7	t "Low"		lc rgb 'yellow',\
-	''	u 9	t "Feature"	lc rgb 'green',	\
+	''	u 8	t "Feature"	lc rgb 'green',	\
 	''	u 9	t "Support"	lc rgb 'blue',	\
 	''	u 10	t "Cleanup"	lc rgb 'cyan',	\
 	''	u 11	t "Tasks"	lc rgb 'white',	\

@@ -242,6 +242,7 @@ while ( my @ref = $sth->fetchrow_array() )
 	# and then we have to look a a separate map to figure out when
 	my $closed	= 'none    ';
 	if ($is_closed{$ref[5]}) {
+		# do we know when it was closed
 		if (defined( $closures{$bugid} )) {
 			$closed = $closures{$bugid};
 			delete $closures{$bugid};
@@ -254,6 +255,9 @@ while ( my @ref = $sth->fetchrow_array() )
 	my $hist	= $vers;	# default history is current version
 	if (defined( $history{$bugid} )) {
 		$hist = $history{$bugid};
+		if (index($hist,$vers) < 0) {	# this CAN happen :-(
+			$hist = $hist . ",$vers";
+		}
 	}
 
 	# output the report we have

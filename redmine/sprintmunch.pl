@@ -111,10 +111,13 @@ sub report
 	}
 	print "\n";
 
-	# print out the data for each version
+	# print out the data for each (valid) version
 	my @fix_counts;
 	my @asgn_counts;
 	foreach my $ver (keys %versions) {
+		if ($ver eq 'none') {
+			next;
+		}
 		my $fixcount = 0;
 		my $asgncount = 0;
 		for (my $i = 0; $i < scalar @columns; $i++ ) {
@@ -182,8 +185,8 @@ sub process_newbug
 		for ( my $i = 0; $i < scalar @rels; $i++ ) {
 			my $tag = "$rels[$i]-$bucketname";
 			$versions{$rels[$i]} = $rels[$i];
-			if (defined($fixes{$tag})) {
-				$assigns{$tag} = $fixes{$tag} + 1;
+			if (defined($assigns{$tag})) {
+				$assigns{$tag} = $assigns{$tag} + 1;
 			} else {
 				$assigns{$tag} = 1;
 			}

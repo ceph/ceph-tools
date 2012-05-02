@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-my $usage = "usage: redmine_dump cephtracker\n";
+my $usage = "usage: redmine_dump dbasename owner\n";
 
 #
 # Go to the MySQL database behind a Redmine bug system, and dump
@@ -25,6 +25,7 @@ use Carp;
 
 use Time::Local;
 use Ndn::Dreamhost::Mysql;
+use Ndn::People::Person;
 
 # Output format (note: reduction scripts use the first comment line to understand the columns)
 my $output="# bugid\tcategory\tissue type\tsource  \tprty\tversion\tcreated \tclosed   \thistory\tstatus\n";
@@ -49,13 +50,21 @@ sub sql_to_time {
 }
 
 
-# figure out what dabase we are using and open a connection to it
-if (scalar @ARGV != 1) {
+# figure out what dabase we are using and who owns it
+if (scalar @ARGV != 2) {
 	print STDERR $usage;
 	exit( 1 );
 }
 my $dbase = $ARGV[0];
-my $db = Ndn::Dreamhost::Mysql->LoadOrDie({db_name => $dbase, dh_id => 'dh'});
+my $webid = $ARGV[1];
+
+# go get the system ID for the owner of the tracker
+my $Person = Ndn::People::Person->LoadOrDie($webid);
+my ($Account) = $Person->Accounts();
+my ($DH) = $Account->Dreamhosts();
+
+# open a Mysql session to that database
+my $db = Ndn::Dreamhost::Mysql->LoadOrDie({db_name => $dbase, dh_id => $DH->sys_id});
 my $Service = $db->Service;
 my $dbh = $Service->_connect_admin;
 $dbh->do("use $dbase");

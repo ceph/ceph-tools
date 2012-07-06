@@ -4,8 +4,11 @@ cluster:
   servers: ubuntu@burnupi[11-18]
   mons: ubuntu@plana83
   rgws: ubuntu@burnupi[10]
+  osds_per_node: 6
   fs: btrfs
-  ceph.conf: /home/ubuntu/src/aging/ceph.conf
+  mkfs_opts: -l 64k -n 64k
+  mount_opts: -o noatime,autodefrag
+  ceph.conf: /home/ubuntu/src/ceph-tools/aging/ceph.conf
 radosbench:
   pool: rados-bench 
   op_sizes: [4096, 131072, 4194304]

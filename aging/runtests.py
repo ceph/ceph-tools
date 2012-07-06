@@ -12,16 +12,22 @@ mons = ''
 rgws = ''
 
 def pdsh(nodes, command):
+    nodes = ','.join(set(nodes.split(',')))
+
     args = ['pdsh', '-R', 'ssh', '-w', nodes, command]
     return subprocess.Popen(args)
 
 def pdcp(nodes, flags, localfile, remotefile):
+    nodes = ','.join(set(nodes.split(',')))
+
     args = ['pdcp', '-R', 'ssh', '-w', nodes, localfile, remotefile]
     if flags:
         args = ['pdcp', '-R', 'ssh', '-w', nodes, flags, localfile, remotefile]
     return subprocess.Popen(args)
 
 def rpdcp(nodes, flags, remotefile, localfile):
+    nodes = ','.join(set(nodes.split(',')))
+
     args = ['rpdcp', '-R', 'ssh', '-w', nodes, remotefile, localfile]
     if flags:
         args = ['rpdcp', '-R', 'ssh', '-w', nodes, flags, remotefile, localfile]
@@ -66,19 +72,8 @@ def setup_cluster(config, tmp_dir):
     stop_ceph()
     print "Distributing %s." % config_file
     setup_ceph_conf(config_file)
-    if fs == '':
-        shutdown("No OSD filesystem specified.  Exiting.")
-  
-    print "Building the underlying %s filesystem" % fs
-    if fs == 'btrfs':
-        setup_btrfs()
-    elif fs == 'ext4':
-        setup_ext4()
-    elif fs == 'xfs':
-        setup_xfs()
-    else:
-        shutdown('%s not recognized as a valid filesystem. Exiting.' % fs)
-
+    print "Building the underlying OSD filesystem"
+    setup_fs(config)
     print 'Running mkcephfs.'
     mkcephfs()
     print 'Purging logs.'
@@ -142,26 +137,34 @@ def setup_ceph_conf(conf_file):
 def mkcephfs():
     pdsh(head, 'sudo mkcephfs -a -c /etc/ceph/ceph.conf').communicate()
 
-def setup_btrfs():
-    for device in xrange (0,6):
-        pdsh(servers, 'sudo umount /srv/osd-device-%s;sudo rmdir /srv/osd-device-%s' % (device, device)).communicate()
-        pdsh(servers, 'sudo mkdir /srv/osd-device-%s' % device).communicate()
-        pdsh(servers, 'sudo mkfs.btrfs -l 64k -n 64k /dev/disk/by-partlabel/osd-device-%s-data' % device).communicate()
-        pdsh(servers, 'sudo mount -o noatime -t btrfs /dev/disk/by-partlabel/osd-device-%s-data /srv/osd-device-%s' % (device, device)).communicate()
+def setup_fs(config):
+    fs = config.get('fs', 'btrfs')
+    mkfs_opts = config.get('mkfs_opts', '')
+    mount_opts = config.get('mount_opts', '-o noatime')
+    osds_per_node = config.get('osds_per_node', 1)
 
-def setup_ext4():
-    for device in xrange (0,6):
-        pdsh(servers, 'sudo umount /srv/osd-device-%s;sudo rmdir /srv/osd-device-%s' % (device, device)).communicate()
-        pdsh(servers, 'sudo mkdir /srv/osd-device-%s' % device).communicate()
-        pdsh(servers, 'sudo mkfs.ext4 /dev/disk/by-partlabel/osd-device-%s-data' % device).communicate()
-        pdsh(servers, 'sudo mount -o user_xattr,noatime -t xfs /dev/disk/by-partlabel/osd-device-%s-data /srv/osd-device-%s' % (device, device)).communicate()
+    if fs == '':
+        shutdown("No OSD filesystem specified.  Exiting.")
 
-def setup_xfs():
-    for device in xrange (0,6):
-        pdsh(servers, 'sudo umount /srv/osd-device-%s;sudo rmdir /srv/osd-device-%s' % (device, device)).communicate()
+    for device in xrange (0,osds_per_node):
+        pdsh(servers, 'sudo umount /srv/osd-device-%s;sudo rm -rf /srv/osd-device-%s' % (device, device)).communicate()
         pdsh(servers, 'sudo mkdir /srv/osd-device-%s' % device).communicate()
-        pdsh(servers, 'sudo mkfs.xfs -f -d su=64k,sw=1 -i size=2048 /dev/disk/by-partlabel/osd-device-%s-data' % device).communicate()
-        pdsh(servers, 'sudo mount -o noatime -t xfs /dev/disk/by-partlabel/osd-device-%s-data /srv/osd-device-%s' % (device, device)).communicate()
+        pdsh(servers, 'sudo mkfs.%s %s /dev/disk/by-partlabel/osd-device-%s-data' % (fs, mkfs_opts, device)).communicate()
+        pdsh(servers, 'sudo mount %s -t %s /dev/disk/by-partlabel/osd-device-%s-data /srv/osd-device-%s' % (mount_opts, fs, device, device)).communicate()
+
+#def setup_ext4():
+#    for device in xrange (0,6):
+#        pdsh(servers, 'sudo umount /srv/osd-device-%s;sudo rmdir /srv/osd-device-%s' % (device, device)).communicate()
+#        pdsh(servers, 'sudo mkdir /srv/osd-device-%s' % device).communicate()
+#        pdsh(servers, 'sudo mkfs.ext4 /dev/disk/by-partlabel/osd-device-%s-data' % device).communicate()
+#        pdsh(servers, 'sudo mount -o user_xattr,noatime -t xfs /dev/disk/by-partlabel/osd-device-%s-data /srv/osd-device-%s' % (device, device)).communicate()
+
+#def setup_xfs():
+#    for device in xrange (0,6):
+#        pdsh(servers, 'sudo umount /srv/osd-device-%s;sudo rmdir /srv/osd-device-%s' % (device, device)).communicate()
+#        pdsh(servers, 'sudo mkdir /srv/osd-device-%s' % device).communicate()
+#        pdsh(servers, 'sudo mkfs.xfs -f -d su=64k,sw=1 -i size=2048 /dev/disk/by-partlabel/osd-device-%s-data' % device).communicate()
+#        pdsh(servers, 'sudo mount -o noatime -t xfs /dev/disk/by-partlabel/osd-device-%s-data /srv/osd-device-%s' % (device, device)).communicate()
 
 def setup_rgw():
     pdsh(rgws, 'sudo radosgw-admin user create --uid user --display_name user --access-key test --secret \'dGVzdA==\' --email test@test.test').communicate()

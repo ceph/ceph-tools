@@ -1,15 +1,12 @@
 #!/usr/bin/python
 
-# This program is used to parse system calls generated via stracing a program
-# like ceph-osd or test_filestore_workloadgen.
+# This program is used to parse ceph osd log files with threadpool debugging 
+# set at 15 or higher. These can be generated with ceph-osd or
+# test_filestore_workloadgen.
 #
-# strace invokation to use:
+# Usage:
 #
-# strace -q -a1 -s0 -f -tttT -oOUT_FILE -e trace=file,desc,process,socket APPLICATION ARGUMENTS
-#
-# then run this like:
-#
-# strace_parser.py OUT_FILE
+# log_threadpool_analyzer.py OUT_FILE
 
 import os
 import os.path

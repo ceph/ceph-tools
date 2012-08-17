@@ -16,6 +16,8 @@ use warnings;
 use strict;
 use Carp;
 
+use Bugparse;
+
 use Getopt::Std;
 use File::Basename;
 use Time::Local;
@@ -195,101 +197,38 @@ sub process_newbug
 }
 
 #
-# FIX ... this should be in a separate pm
-#
-# I have coded in a default input format, but ideally these
-# column numbers should be initialized from a header comment
-# on the first line of input.  Note that we know what info we
-# are looking for so the comment names must exactly match the 
-# expected strings.  It is OK if additional information is
-# present, but this much is required.
-#
-my $col_bugid	= 0;	# bugid
-my $col_category = 1;	# category
-my $col_type	= 2;	# issue type
-my $col_source	= 3;	# source
-my $col_priority= 4;	# prty
-my $col_version	= 5;	# version
-my $col_created	= 6;	# created
-my $col_closed	= 7;	# closed
-my $col_history	= 8;	# history
-my $col_status	= 9;	# status
-
-my $col_numcols = 10;	# expected number of column matches
-my $col_initialized = 0;
-
-sub initialize_columns
-{
-	my $str = substr( $_, 1 );
-	my @cols = split( '\t', $str );
-
-	# try to get every column
-	for( my $i = 0; $i < scalar @cols; $i++ ) {
-		$cols[$i] =~ s/^\s+//;
-		$cols[$i] =~ s/\s+$//;
-
-		if ($cols[$i] eq 'bugid') {
-			$col_bugid = $i;
-			$col_initialized++;
-		} elsif ($cols[$i] eq 'category') {
-			$col_category = $i;
-			$col_initialized++;
-		} elsif ($cols[$i] eq 'issue type') {
-			$col_type = $i;
-			$col_initialized++;
-		} elsif ($cols[$i] eq 'source') {
-			$col_source = $i;
-			$col_initialized++;
-		} elsif ($cols[$i] eq 'prty') {
-			$col_priority = $i;
-			$col_initialized++;
-		} elsif ($cols[$i] eq 'version') {
-			$col_version = $i;
-			$col_initialized++;
-		} elsif ($cols[$i] eq 'created') {
-			$col_created = $i;
-			$col_initialized++;
-		} elsif ($cols[$i] eq 'closed') {
-			$col_closed = $i;
-			$col_initialized++;
-		} elsif ($cols[$i] eq 'status') {
-			$col_status = $i;
-			$col_initialized++;
-		} elsif ($cols[$i] eq 'history') {
-			$col_history = $i;
-			$col_initialized++;
-		} else {
-			print STDERR "Unrecognized column header ($cols[$i])\n";
-			return;
-		}
-	}
-
-	# if we didn't find what we expected, we're hosed
-	if ($col_initialized != $col_numcols) {
-		die( "only found $col_initialized/$col_numcols in $str" );
-	}
-}
-
-#
 # routine:	process_file
 #
 # purpose:	
 # 	to read the lines of an input file and pass the non-comments
 # 	to the appropriate accumulation routines.
 #
-# expected input
-#	 bugid cat type prty vers closed created_on updated_on history status
+# expected input: lines containing at least ...
+# 	a type, priority, create date and close date
 #
 sub process_file
 {	(my $file) = ($_[0]);
 
+	# first line should be a headers comment
+	my $first = <$file>;
+	my %columns = Bugparse::parser($first);
+
+	# make sure we got all the columns we needed
+	foreach my $c ('created','priority','type','closed','version','history') {
+		if (!defined( $columns{$c})) {
+			die("Unable to find column: $c\n");
+		}
+	} 
+	my $crt = $columns{'created'};
+	my $prt = $columns{'priority'};
+	my $typ = $columns{'type'};
+	my $cls = $columns{'closed'};
+	my $ver = $columns{'version'};
+	my $hst = $columns{'history'};
+
+	# use those columns to find what we want in the following lines
 	while( <$file> ) {
-		if (/^#/) {	# ignore comments
-			if (!$col_initialized) {
-				initialize_columns($_);
-			}
-			next;
-		} else {
+		if (!/^#/) {	# ignore comments
 			# carve it into tab separated fields
 			my @fields = split( '\t', $_ );
 			
@@ -299,13 +238,12 @@ sub process_file
 				$fields[$i] =~ s/\s+$//;
 			}
 
-			process_newbug( $fields[$col_created], $fields[$col_type], 
-					$fields[$col_priority], $fields[$col_closed],
-					$fields[$col_version], $fields[$col_history] );
+			# and process the fields we care about
+			process_newbug( $fields[$crt], $fields[$typ], $fields[$prt], 
+					$fields[$cls], $fields[$ver], $fields[$hst]);
 		}
 	}
 }
-
 
 #
 # routine:	main

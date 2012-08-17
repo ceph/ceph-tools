@@ -28,8 +28,8 @@ use Ndn::Dreamhost::Mysql;
 use Ndn::People::Person;
 
 # Output format (note: reduction scripts use the first comment line to understand the columns)
-my $output="# bugid\tcategory\tissue type\tsource  \tprty\tversion\tcreated \tclosed   \thistory\tstatus\n";
-my $dashes="# -----\t--------\t----------\t------  \t----\t-------\t------- \t------   \t-------\t------\n";
+my $output="# bugid\tcategory\tissue type\tsource  \tprty\tpoints\tversion\tcreated \tclosed   \thistory\tproject \ttags    \tstatus\n";
+my $dashes="# -----\t--------\t----------\t------  \t----\t------\t-------\t------- \t------   \t-------\t------- \t----    \t------\n";
 
 #
 # translate a mysql time/date into a mm/dd/yyyy
@@ -153,6 +153,30 @@ while ( my @ref = $sth->fetchrow_array() )
 {	$sources{$ref[0]} = $ref[1];
 }
 
+my %tags = ('NULL'=>'none');
+#
+# build up the list of tags map
+#
+#	This is not only not in the issues table, but is a
+#	custom field (not likely to be present in most databases).  
+# 	both of these reasons it is much easier to deal with them 
+#	in a separate lookup than to include them in the main query.
+#
+#	If the field is not in the database or bugs do not have
+#	values for the custom field, this query will simply come
+#	back empty, and there will be no source map entry for those bugs.
+#
+$fields = 'customized_id,value';
+$tables = 'custom_values,custom_fields';
+$join   = 'custom_field_id=custom_fields.id and name="Tags"';
+$sth=$dbh->prepare("select $fields from $tables where $join;");
+$sth->execute();
+while ( my @ref = $sth->fetchrow_array() ) 
+{	$tags{$ref[0]} = $ref[1];
+}
+
+
+
 my $date_fudge = 2;	# free-removal days, from start of sprint
 my %history = ('NULL'=>'none');
 #
@@ -221,9 +245,9 @@ print $output;
 print $dashes;
 
 # dump out the interesting information from each issue
-$fields = 'issues.id,created_on,priority_id,fixed_version_id,category_id,status_id,trackers.name';
-$tables = 'issues,trackers';
-$join   = 'tracker_id=trackers.id';
+$fields = 'issues.id,issues.created_on,priority_id,fixed_version_id,category_id,status_id,trackers.name,story_points,projects.name';
+$tables = 'issues,trackers,projects';
+$join   = 'tracker_id=trackers.id and project_id=projects.id';
 $order  = 'issues.id';
 $sth=$dbh->prepare("select $fields from $tables where $join order by $order;");
 $sth->execute();
@@ -239,12 +263,19 @@ while ( my @ref = $sth->fetchrow_array() )
 	   $category	= sprintf("%-14s", $category);	# these get long
 	my $status	= defined($ref[5]) ? $statuses{$ref[5]} : 'none';
 	my $tracker	= sprintf("%-14s", $ref[6]);	# these get long
+	my $points	= defined($ref[7]) ? sprintf("%6d", $ref[7]) : '     0';
+	my $project	= sprintf("%-8s", $ref[8]);
 
-	# bug source is a custom field that we look up in a map
+	# custom fields have to be looked up in maps
 	my $source	= 'none    ';
 	if (defined( $sources{$bugid} )) {
 		$source = $sources{$bugid};
 		delete $sources{$bugid};
+	}
+	my $tag		= 'none    ';
+	if (defined( $tags{$bugid} )) {
+		$tag = $tags{$bugid};
+		delete $tags{$bugid};
 	}
 
 	# we have to consult the status map to see if a bug is closed,
@@ -270,5 +301,5 @@ while ( my @ref = $sth->fetchrow_array() )
 	}
 
 	# output the report we have
-	print "$bugid\t$category\t$tracker\t$source\t$priority\t$vers\t$created\t$closed\t$hist\t$status\n";
+	print "$bugid\t$category\t$tracker\t$source\t$priority\t$points\t$vers\t$created\t$closed\t$hist\t$project\t$tag\t$status\n";
 }

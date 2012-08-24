@@ -1,28 +1,17 @@
 cluster:
-  head: ubuntu@plana83
-  clients: ubuntu@plana83
-  servers: ubuntu@burnupi[11]
-  mons: ubuntu@plana83
-  rgws: ubuntu@burnupi[10]
+  head: nhm@localhost
+  clients: nhm@localhost
+  servers: nhm@localhost
+  mons: nhm@localhost
   osds_per_node: 6
   fs: btrfs
-  mkfs_opts: -l 64k -n 64k
+  mkfs_opts: -l 16k -n 16k
   mount_opts: -o noatime
-  ceph.conf: /home/ubuntu/src/ceph-tools/aging/ceph.conf
+  ceph.conf: /home/nhm/src/ceph-tools/aging/ceph.conf
   iterations: 1
+  rebuild_every_test: True
 radosbench:
   pool: rados-bench 
-  op_sizes: [4096, 131072, 4194304]
-  time: 300
-  concurrent_ops: 1024 
-restbench:
-  bucket: rest-bench 
-  op_sizes: [4096, 131072, 4194304]
-  time: 300
-  concurrent_ops: 1024
-  access_key: test
-  secret: dGVzdA==
-  api_host: burnupi10
-s3func:
-  config_files:
-    - /tmp/cephtest/s3-tests/conf/s3func.conf 
+  op_sizes: [4096,131072,4194304]
+  time: 300 
+  concurrent_ops: [16,256] 

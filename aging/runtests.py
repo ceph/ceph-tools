@@ -13,6 +13,7 @@ mons = ''
 rgws = ''
 iterations = sys.maxint
 rebuild_every_test = False
+osds_per_node = 0 
 user = 'nhm'
 
 def get_nodes(nodes):
@@ -59,12 +60,18 @@ def read_config(config_file):
 
 def check_health():
     print 'Waiting until Ceph is healthy...'
+    i = 0
+    j = 20
     while True:
-        stdout, stderr = pdsh(head, 'ceph health').communicate()
-        if "HEALTH_OK" in stdout:
+        if i > j:
             break
-        else:
-            print stdout
+        i += 1
+        print "Waiting %d/%d" % (i, j)
+#        stdout, stderr = pdsh(head, 'ceph health').communicate()
+#        if "HEALTH_OK" in stdout:
+#            break
+#        else:
+#            print stdout
         time.sleep(1)
 
 def make_remote_dir(remote_dir):
@@ -77,7 +84,7 @@ def sync_files(tmp_dir, out_dir):
     rpdcp(get_nodes([clients,servers,mons,rgws]), '-r', tmp_dir, out_dir).communicate()
 
 def setup_cluster(config, tmp_dir):
-    global head, clients, servers, mons, rgws, fs, iterations, rebuild_every_test
+    global head, clients, servers, mons, rgws, fs, iterations, rebuild_every_test, osds_per_node
     print "Setting up cluster..."
     head = config.get('head', '')
     clients = config.get('clients', '')
@@ -88,6 +95,7 @@ def setup_cluster(config, tmp_dir):
     iterations = config.get('iterations', sys.maxint)
     config_file = config.get('ceph.conf', '/etc/ceph/ceph.conf')
     rebuild_every_test = config.get('rebuild_every_test', False)
+    osds_per_node = config.get('osds_per_node', 0)
     print "Stoping monitoring."
     stop_monitoring()
     print "Stopping ceph."
@@ -113,6 +121,8 @@ def setup_ceph(config):
     mkcephfs()
     print 'Starting Ceph.'
     start_ceph()
+    print 'Checking Health.'
+    check_health()
     print 'Setting up pools'
     setup_pools()
     if rgws:
@@ -120,7 +130,6 @@ def setup_ceph(config):
         setup_rgw()
         print 'Downloading s3-tests.'
         setup_s3tests(tmp_dir)
-    check_health()
 
 def shutdown(message):
     print "Stopping monitoring."
@@ -135,18 +144,9 @@ def purge_logs():
 def make_movies(tmp_dir):
     seekwatcher = '/home/%s/bin/seekwatcher' % user
     blktrace_dir = '%s/blktrace' % tmp_dir
-    pdsh(servers, 'cd %s;%s -t device0 -o device0.mpg --movie' % (blktrace_dir,seekwatcher)).communicate()
-    pdsh(servers, 'cd %s;%s -t journal0 -o journal0.mpg --movie' % (blktrace_dir,seekwatcher)).communicate()
-    pdsh(servers, 'cd %s;%s -t device1 -o device1.mpg --movie' % (blktrace_dir,seekwatcher)).communicate()
-    pdsh(servers, 'cd %s;%s -t journal1 -o journal1.mpg --movie' % (blktrace_dir,seekwatcher)).communicate()
-    pdsh(servers, 'cd %s;%s -t device2 -o device2.mpg --movie' % (blktrace_dir,seekwatcher)).communicate()
-    pdsh(servers, 'cd %s;%s -t journal2 -o journal2.mpg --movie' % (blktrace_dir,seekwatcher)).communicate()
-    pdsh(servers, 'cd %s;%s -t device3 -o device3.mpg --movie' % (blktrace_dir,seekwatcher)).communicate()
-    pdsh(servers, 'cd %s;%s -t journal3 -o journal3.mpg --movie' % (blktrace_dir,seekwatcher)).communicate()
-    pdsh(servers, 'cd %s;%s -t device4 -o device4.mpg --movie' % (blktrace_dir,seekwatcher)).communicate()
-    pdsh(servers, 'cd %s;%s -t journal4 -o journal4.mpg --movie' % (blktrace_dir,seekwatcher)).communicate()
-    pdsh(servers, 'cd %s;%s -t device5 -o device5.mpg --movie' % (blktrace_dir,seekwatcher)).communicate()
-    pdsh(servers, 'cd %s;%s -t journal5 -o journal5.mpg --movie' % (blktrace_dir,seekwatcher)).communicate()
+
+    for device in xrange (0,osds_per_node):    
+        pdsh(servers, 'cd %s;%s -t device%s -o device%s.mpg --movie' % (blktrace_dir,seekwatcher,device,device)).communicate()
 
 def perf_post(tmp_dir):
     perf_dir = '%s/perf' % tmp_dir
@@ -167,18 +167,9 @@ def start_monitoring(tmp_dir):
 
     # blktrace
     pdsh(servers, 'mkdir -p -m0755 -- %s' % blktrace_dir).communicate()
-    pdsh(servers, 'cd %s;sudo blktrace -o device0 -d /dev/disk/by-partlabel/osd-device-0-data' % blktrace_dir)
-    pdsh(servers, 'cd %s;sudo blktrace -o journal0 -d /dev/disk/by-partlabel/osd-device-0-journal' % blktrace_dir)
-    pdsh(servers, 'cd %s;sudo blktrace -o device1 -d /dev/disk/by-partlabel/osd-device-1-data' % blktrace_dir)
-    pdsh(servers, 'cd %s;sudo blktrace -o journal1 -d /dev/disk/by-partlabel/osd-device-1-journal' % blktrace_dir)
-    pdsh(servers, 'cd %s;sudo blktrace -o device2 -d /dev/disk/by-partlabel/osd-device-2-data' % blktrace_dir)
-    pdsh(servers, 'cd %s;sudo blktrace -o journal2 -d /dev/disk/by-partlabel/osd-device-2-journal' % blktrace_dir)
-    pdsh(servers, 'cd %s;sudo blktrace -o device3 -d /dev/disk/by-partlabel/osd-device-3-data' % blktrace_dir)
-    pdsh(servers, 'cd %s;sudo blktrace -o journal3 -d /dev/disk/by-partlabel/osd-device-3-journal' % blktrace_dir)
-    pdsh(servers, 'cd %s;sudo blktrace -o device4 -d /dev/disk/by-partlabel/osd-device-4-data' % blktrace_dir)
-    pdsh(servers, 'cd %s;sudo blktrace -o journal4 -d /dev/disk/by-partlabel/osd-device-4-journal' % blktrace_dir)
-    pdsh(servers, 'cd %s;sudo blktrace -o device5 -d /dev/disk/by-partlabel/osd-device-5-data' % blktrace_dir)
-    pdsh(servers, 'cd %s;sudo blktrace -o journal5 -d /dev/disk/by-partlabel/osd-device-5-journal' % blktrace_dir)
+    for device in xrange (0,osds_per_node):
+        pdsh(servers, 'cd %s;sudo blktrace -o device%s -d /dev/disk/by-partlabel/osd-device-%s-data' % (blktrace_dir, device, device))
+
 
 def stop_monitoring():
     pdsh(get_nodes([clients,servers,mons,rgws]), 'pkill -SIGINT -f collectl').communicate()
@@ -206,7 +197,6 @@ def setup_fs(config):
     fs = config.get('fs', 'btrfs')
     mkfs_opts = config.get('mkfs_opts', '')
     mount_opts = config.get('mount_opts', '-o noatime')
-    osds_per_node = config.get('osds_per_node', 1)
 
     if fs == '':
         shutdown("No OSD filesystem specified.  Exiting.")
@@ -222,9 +212,9 @@ def setup_rgw():
     pdsh(rgws, 'sudo radosgw-admin user create --uid user2 --display_name user2 --access-key test2 --secret \'dGVzdDI=\' --email test@test.test').communicate()
 
 def setup_pools():
-    pdsh(head, 'sudo ceph osd pool create rest-bench 1024 1024').communicate()
+    pdsh(head, 'sudo ceph osd pool create rest-bench 2048 2048').communicate()
     pdsh(head, 'sudo ceph osd pool set rest-bench size 1').communicate()
-    pdsh(head, 'sudo ceph osd pool create rados-bench 1024 1024').communicate()
+    pdsh(head, 'sudo ceph osd pool create rados-bench 2048 2048').communicate()
     pdsh(head, 'sudo ceph osd pool set rados-bench size 1').communicate()
     if rgws:
         pdsh(rgws, 'sudo radosgw-admin -p rest-bench pool add').communicate()
@@ -252,6 +242,9 @@ def run_radosbench(config, tmp_dir, archive_dir):
     pool = str(config.get('pool', ''))
     if pool: pool = '-p %s' % pool
 
+    # Get the number of concurrent rados bench processes to run
+    concurrent_procs = config.get('concurrent_procs', 1)
+
     # Get the concurrent ops 
     concurrent_ops_array = config.get('concurrent_ops', [16])
 
@@ -274,9 +267,16 @@ def run_radosbench(config, tmp_dir, archive_dir):
             objecter_log = '%s/objecter.log' % run_dir
             op_size_str = '-b %s' % op_size
             start_monitoring(run_dir)
-            stdout, stderr = pdsh(clients, '/usr/bin/rados %s %s bench %s write %s 2> %s > %s' % (pool, op_size_str, time, concurrent_ops_str, objecter_log, out_file)).communicate()
-            print stdout
-            print stderr
+
+            # Run rados bench
+            ps = []
+            for i in xrange(concurrent_procs):
+                out_file = '%s/output.%s' % (run_dir, i)
+                objecter_log = '%s/objecter.%s.log' % (run_dir, i)
+                p = pdsh(clients, '/usr/bin/rados %s %s bench %s write %s 2> %s > %s' % (pool, op_size_str, time, concurrent_ops_str, objecter_log, out_file))
+                ps.append(p)
+            for p in ps:
+                p.wait()
             stop_monitoring()
             perf_post(run_dir)
             make_movies(run_dir)

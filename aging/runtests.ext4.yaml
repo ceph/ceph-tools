@@ -1,0 +1,17 @@
+cluster:
+  head: nhm@localhost
+  clients: nhm@localhost
+  servers: nhm@localhost
+  mons: nhm@localhost
+  osds_per_node: 8 
+  fs: ext4 
+  mount_opts: -o noatime,user_xattr
+  ceph.conf: /home/nhm/src/ceph-tools/aging/ceph.conf
+  iterations: 1
+  rebuild_every_test: True
+radosbench:
+  op_sizes: [4096,131072,4194304]
+  modes: ['write', 'seq']
+  time: 300 
+  concurrent_ops: [2,32]
+  concurrent_procs: 8

@@ -60,18 +60,21 @@ def read_config(config_file):
 
 def check_health():
     print 'Waiting until Ceph is healthy...'
-    i = 0
-    j = 20
-    while True:
-        if i > j:
-            break
-        i += 1
-        print "Waiting %d/%d" % (i, j)
-#        stdout, stderr = pdsh(head, 'ceph health').communicate()
-#        if "HEALTH_OK" in stdout:
+#    i = 0
+#    j = 30
+#    while True:
+#        if i > j:
 #            break
-#        else:
-#            print stdout
+#        i += 1
+#        print "Waiting %d/%d" % (i, j)
+#        time.sleep(1)
+
+    while True:
+        stdout, stderr = pdsh(head, 'ceph health').communicate()
+        if "HEALTH_OK" in stdout:
+            break
+        else:
+            print stdout
         time.sleep(1)
 
 def make_remote_dir(remote_dir):
@@ -151,7 +154,7 @@ def make_movies(tmp_dir):
 def perf_post(tmp_dir):
     perf_dir = '%s/perf' % tmp_dir
     pdsh(get_nodes([clients, servers, mons, rgws]), 'cd %s;sudo chown %s.%s perf.data' % (perf_dir, user, user)).communicate()
-#    pdsh('%s,%s,%s,%s' % (clients, servers, mons, rgws), 'cd %s;perf_3.4 report --sort symbol --call-graph fractal,5 > callgraph.txt' % perf_dir).communicate()
+#    pdsh('%s,%s,%s,%s' % (clients, servers, mons, rgws), 'cd %s;perf_3.6 report --sort symbol --call-graph fractal,5 > callgraph.txt' % perf_dir).communicate()
 
 def start_monitoring(tmp_dir):
     collectl_dir = '%s/collectl' % tmp_dir
@@ -159,21 +162,21 @@ def start_monitoring(tmp_dir):
     blktrace_dir = '%s/blktrace' % tmp_dir
 
     # collectl
-    pdsh(get_nodes([clients, servers, mons, rgws]), 'mkdir -p -m0755 -- %s;collectl -s+YZ -i 1:10 -F0 -f %s' % (collectl_dir,collectl_dir))
+    pdsh(get_nodes([clients, servers, mons, rgws]), 'mkdir -p -m0755 -- %s;collectl -s+mYZ -i 1:10 -F0 -f %s' % (collectl_dir,collectl_dir))
 
     # perf
     pdsh(get_nodes([clients, servers, mons, rgws]), 'mkdir -p -m0755 -- %s' % perf_dir).communicate()
-    pdsh(get_nodes([clients, servers, mons, rgws]), 'cd %s;sudo perf_3.4 record -g -f -a -F 100 -o perf.data' % perf_dir)
+    pdsh(get_nodes([clients, servers, mons, rgws]), 'cd %s;sudo perf_3.6 record -g -f -a -F 100 -o perf.data' % perf_dir)
 
     # blktrace
     pdsh(servers, 'mkdir -p -m0755 -- %s' % blktrace_dir).communicate()
-    for device in xrange (0,osds_per_node):
-        pdsh(servers, 'cd %s;sudo blktrace -o device%s -d /dev/disk/by-partlabel/osd-device-%s-data' % (blktrace_dir, device, device))
+#    for device in xrange (0,osds_per_node):
+#        pdsh(servers, 'cd %s;sudo blktrace -o device%s -d /dev/disk/by-partlabel/osd-device-%s-data' % (blktrace_dir, device, device))
 
 
 def stop_monitoring():
     pdsh(get_nodes([clients,servers,mons,rgws]), 'pkill -SIGINT -f collectl').communicate()
-    pdsh(get_nodes([clients,servers,mons,rgws]), 'sudo pkill -SIGINT -f perf_3.4').communicate()
+    pdsh(get_nodes([clients,servers,mons,rgws]), 'sudo pkill -SIGINT -f perf_3.6').communicate()
     pdsh(servers, 'sudo pkill -SIGINT -f blktrace').communicate()
 
 def start_ceph():
@@ -214,8 +217,8 @@ def setup_rgw():
 def setup_pools():
     pdsh(head, 'sudo ceph osd pool create rest-bench 2048 2048').communicate()
     pdsh(head, 'sudo ceph osd pool set rest-bench size 1').communicate()
-    pdsh(head, 'sudo ceph osd pool create rados-bench 2048 2048').communicate()
-    pdsh(head, 'sudo ceph osd pool set rados-bench size 1').communicate()
+#    pdsh(head, 'sudo ceph osd pool create rados-bench 2048 2048').communicate()
+#    pdsh(head, 'sudo ceph osd pool set rados-bench size 1').communicate()
     if rgws:
         pdsh(rgws, 'sudo radosgw-admin -p rest-bench pool add').communicate()
         pdsh(rgws, 'sudo radosgw-admin -p .rgw.buckets pool rm').communicate()
@@ -235,28 +238,36 @@ def cleanup_tests():
         pdsh(rgws, 'sudo pkill -f radosgw-admin').communicate()
     pdsh(get_nodes([clients, servers, mons, rgws]), 'sudo pkill -f pdcp').communicate()
 
+def setup_radosbench(config):
+    concurrent_procs = config.get('concurrent_procs', 1)
+    for i in xrange(concurrent_procs):
+        pdsh(head, 'sudo ceph osd pool create rados-bench-%s 2048 2048' % i).communicate()
+        pdsh(head, 'sudo ceph osd pool set rados-bench-%s size 1' % i).communicate()
+
 def run_radosbench(config, tmp_dir, archive_dir):
     print 'Running radosbench tests...'
 
     time = str(config.get('time', '360'))
-    pool = str(config.get('pool', ''))
-    if pool: pool = '-p %s' % pool
 
     # Get the number of concurrent rados bench processes to run
     concurrent_procs = config.get('concurrent_procs', 1)
 
     # Get the concurrent ops 
     concurrent_ops_array = config.get('concurrent_ops', [16])
-
+    
+    modes = config.get('modes', ['write'])
     op_sizes = config.get('op_sizes', [4194304])
     for op_size in op_sizes:
-        for concurrent_ops in concurrent_ops_array:
-            # Rebuild the cluster if set
-            if rebuild_every_test:
-                setup_ceph(cluster_config)
+      for concurrent_ops in concurrent_ops_array:
+          # Rebuild the cluster if set
+          if rebuild_every_test:
+              setup_ceph(cluster_config)
+              setup_radosbench(config)
 
-            run_dir = '%s/radosbench/op_size-%08d/concurrent_ops-%08d' % (tmp_dir, int(op_size), int(concurrent_ops))
-            out_dir = '%s/radosbench/op_size-%08d/concurrent_ops-%08d' % (archive_dir, int(op_size), int(concurrent_ops))
+          # Do whatever tests are called for...
+          for mode in modes:
+            run_dir = '%s/radosbench/op_size-%08d/concurrent_ops-%08d/%s' % (tmp_dir, int(op_size), int(concurrent_ops), mode)
+            out_dir = '%s/radosbench/op_size-%08d/concurrent_ops-%08d/%s' % (archive_dir, int(op_size), int(concurrent_ops), mode)
 
             # set the concurrent_ops if specified in yaml
             if concurrent_ops:
@@ -268,12 +279,15 @@ def run_radosbench(config, tmp_dir, archive_dir):
             op_size_str = '-b %s' % op_size
             start_monitoring(run_dir)
 
+            # Drop Caches so reads don't come from pagecache
+            pdsh(get_nodes([clients, servers]), 'echo 3 | sudo tee /proc/sys/vm/drop_caches').communicate()
+
             # Run rados bench
             ps = []
             for i in xrange(concurrent_procs):
                 out_file = '%s/output.%s' % (run_dir, i)
                 objecter_log = '%s/objecter.%s.log' % (run_dir, i)
-                p = pdsh(clients, '/usr/bin/rados %s %s bench %s write %s 2> %s > %s' % (pool, op_size_str, time, concurrent_ops_str, objecter_log, out_file))
+                p = pdsh(clients, '/usr/bin/rados -p rados-bench-%s %s bench %s %s %s --no-cleanup 2> %s > %s' % (i, op_size_str, time, mode, concurrent_ops_str, objecter_log, out_file))
                 ps.append(p)
             for p in ps:
                 p.wait()
@@ -372,7 +386,6 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-
 if __name__ == '__main__':
     ctx = parse_args()
     config = read_config(ctx.config_file)
@@ -380,6 +393,7 @@ if __name__ == '__main__':
 
     iteration = 0
 
+    # Get the Configs
     cluster_config = config.get('cluster', {})
     rb_config = config.get('radosbench', {})
     restbench_config = config.get('restbench', {})
@@ -391,9 +405,15 @@ if __name__ == '__main__':
     if not (rb_config or restbench_config or s3func_config or s3rw_config):
         shutdown('No task sections found in config file, bailing.')
 
+    # Setup the Cluster
+    if not (cluster_config):
+        shutdown('No cluster section found in config file, bailing.')
     setup_cluster(cluster_config, tmp_dir_base)
+
     if not rebuild_every_test:
         setup_ceph(cluster_config)
+        setup_radosbench(rb_config)
+
     while iteration < iterations:
         archive_dir = os.path.join(ctx.archive, '%08d' % iteration)
         if os.path.exists(archive_dir):

@@ -17,17 +17,18 @@ GIGABYTE = 1000 * 1000 * 1000
 TERABYTE = 1000 * 1000 * 1000 * 1000
 
 
-class SimDisk:
+class Disk:
     """ Performance Modeling Disk Simulation. """
 
     # fundamental drive characterizing parameters
+    #   default values represent enterprise state-of-the-art
     settle_read = 800               # us: optimistic read settle-down
     write_delta = 600               # us: penalty for full settle-down
     max_seek = 14000                # us: full stroke seek time
     avg_seek = 7000                 # us: full stroke/3
     max_depth = 32                  # max concurrent queued operations
     do_writeback = True             # drive does write-back (vs writethrough)
-    do_readahead = True    	        # drive does read-ahead caching
+    do_readahead = True    	    # drive does read-ahead caching
     sched_rotate = True             # latency optimization scheduling
 
     # pseudo-magic numbers to approximate complex behavior
@@ -48,6 +49,11 @@ class SimDisk:
         self.trk_size = bw / (rpm / 60)
         self.cyl_size = self.trk_size * heads
         self.cylinders = size / self.cyl_size
+
+
+    def cylinders_in(self, bytes):
+            """ determine how many cylinders a byte range spans """
+            return 1 + (bytes / self.cyl_size)
 
 
     # Real seek time is quite complex, involving acceleration,
@@ -189,10 +195,32 @@ class SimDisk:
         if seq:
             return tXfer + tLatency
         else:
-            cyls = 1 + (file_size / self.cyl_size)
+            cyls = self.cylinders_in(file_size)
             avgcyls = cyls / (depth + 2)
             tSeek = self.seekTime(avgcyls, read)
             return tXfer + tLatency + tSeek
+
+#
+# To save people the trouble of figuring out which parameters
+# to cripple to create a dumb disk, I supply one
+#
+class DumbDisk(Disk):
+
+    def __init__(self, rpm=7200, size=2 * TERABYTE, \
+                bw=150 * MEGABYTE, heads=10):
+        """ Instantiate a dumb disk simulation. """
+
+        Disk.__init__(self)
+
+        self.do_writeback = False
+        self.do_readahead = False
+        self.sched_rotate = False
+        self.max_depth = 1
+        self.settle_read = 1000
+        self.write_delta = 1000
+        self.max_seek = 20000
+        self.avg_seek = 8000
+
 
 #
 # SSD's are much simpler than disks
@@ -202,19 +230,20 @@ class SimDisk:
 #         d=1 5000 * 4K/s
 #         d=8 32000 * 4K/s
 #         d=32 48000 * 4K/s (hit the b/w limit)
-class SimSSD(SimDisk):
+class SSD(Disk):
     """ Performance Modeling SSD simulation. """
 
-    def __init__(self, size, bw=200 * MEGABYTE, iops=20000):
+    def __init__(self, size, bw=200 * MEGABYTE, iops=20000, streams=1):
         self.size = size
         self.media_speed = bw
+        self.max_iops = iops		# single stream
+        self.max_depth = streams
 
-        # all the caching stuff doesn't matter
-        self.max_depth = 1
-        self.do_readahead = False
-        self.do_writeback = False
+        # magic numbers to model more complex behavior
+        self.write_penalty = 1.05	# allocation overhead
 
-        # seeks never happen
+        # tell a consistent story about the device
+        self.rpm = 0
         self.settle_read = 0
         self.write_delta = 0    # is there a write cost?
         self.max_seek = 0
@@ -224,9 +253,15 @@ class SimSSD(SimDisk):
         self.cyl_size = self.size / self.cylinders
         self.trk_size = self.cyl_size / self.heads
 
-        # synthesize a rotational speed to yield specified IOPS
-        us_per_iop = SECOND / iops
-        us_per_4k = SECOND * 4096 / bw
-        us_per_op = us_per_iop - us_per_4k if us_per_iop > us_per_4k else 1
-        self.rpm = 30 * SECOND / us_per_op
+    def avgTime(self, bsize, file_size, read=True, seq=True, depth=1):
+        """ average operation time (us) for a specified test. """
 
+        tXfer = self.xferTime(bsize, read)
+        if not read:
+            tXfer *= self.write_penalty
+
+        # IOPS limitations ... which depend on the number of streams
+        setup = SECOND / self.max_iops
+        setup /= depth if depth < self.max_depth else self.max_depth
+
+        return setup + tXfer

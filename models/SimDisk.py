@@ -36,7 +36,6 @@ class Disk:
     cache_max_depth = 10            # max depth multiplier
     cache_max_tracks = 4            # max amount to cache
 
-
     def __init__(self, rpm=7200, size=2 * TERABYTE, \
                 bw=150 * MEGABYTE, heads=10):
         """ Instantiate a disk simulation. """
@@ -50,11 +49,9 @@ class Disk:
         self.cyl_size = self.trk_size * heads
         self.cylinders = size / self.cyl_size
 
-
     def cylinders_in(self, bytes):
             """ determine how many cylinders a byte range spans """
             return 1 + (bytes / self.cyl_size)
-
 
     # Real seek time is quite complex, involving acceleration,
     # deceleration, and settle-down.  I approximate this by
@@ -86,7 +83,7 @@ class Disk:
             us_per_cyl = float(delta_us) / delta_cyl    # marginal seek speed
             long_seek = self.max_seek - ((self.cylinders - cyls) * us_per_cyl)
 
-            # crudely estimate the short seek rate from the read settle_down time
+            # crudely estimate short seek rate from the read settle_down time
             short_seek = self.settle_read + ((cyls - 1) * self.settle_read / 2)
 
             # choose the lesser of these two numbers
@@ -161,9 +158,9 @@ class Disk:
         # sequential is about caching AND seek/latency optimization
         if seq:
             if n > 1:
-                return l/n          # 1 op in N is spills out of the cache
+                return l / n        # 1 op in N is spills out of the cache
             if depth > 1:
-                return l / depth    # we can still latency optimize queued requests
+                return l / depth    # latency optimize queued requests
 
         # random is mostly seek/latency optimization
         elif self.sched_rotate:
@@ -199,6 +196,7 @@ class Disk:
             avgcyls = cyls / (depth + 2)
             tSeek = self.seekTime(avgcyls, read)
             return tXfer + tLatency + tSeek
+
 
 #
 # To save people the trouble of figuring out which parameters
@@ -240,7 +238,7 @@ class SSD(Disk):
         self.max_depth = streams
 
         # magic numbers to model more complex behavior
-        self.write_penalty = 1.05	# allocation overhead
+        self.write_penalty = 1.05   # allocation overhead
 
         # tell a consistent story about the device
         self.rpm = 0

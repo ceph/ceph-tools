@@ -45,14 +45,15 @@ def tptest(disk, filesize, depth):
         trr = disk.avgTime(bs, filesize, read=True, seq=False, depth=depth)
         trw = disk.avgTime(bs, filesize, read=False, seq=False, depth=depth)
 
-        if bw(bs,tsr) >= 10:
-            format = "\t%5dK\t %6d MB/s\t %6d MB/s\t %6.1f MB/s\t %6.1f MB/s"
+        if bw(bs, tsr) >= 10:
+            format = "\t%5dK\t%7d MB/s\t%7 MB/s\t%7.1f MB/s\t%7.1f MB/s"
         else:
-            format = "\t%5dK\t %6.1f MB/s\t %6.1f MB/s\t %6.1f MB/s\t %6.1f MB/s"
+            format = "\t%5dK\t%7.1f MB/s\t%7.1f MB/s\t%7.1f MB/s\t%7.1f MB/s"
         print(format % (kb(bs), bw(bs, float(tsr)), bw(bs, float(tsw)), \
                      bw(bs, float(trr)), bw(bs, float(trw))))
         print("\t    \t %6d IOPS\t %6d IOPS\t %6d IOPS\t %6d IOPS" % \
             (iops(tsr), iops(tsw), iops(trr), iops(trw)))
+
 
 def disktest(disk, filesize=16 * MILLION):
     """ compute & display basic performance data for a simulated disk """

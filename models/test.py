@@ -32,7 +32,8 @@ disktest.tptest(myDumb, filesize=16 * GIG, depth=1)
 
 for d in (1, 32):
     print("\n")
-    print("%d IOP, %dMB/s SSD, depth=%d" % (mySsd.max_iops, mySsd.media_speed / MEG, d))
+    print("%d IOP, %dMB/s SSD, depth=%d" % \
+        (mySsd.max_iops, mySsd.media_speed / MEG, d))
     disktest.tptest(mySsd, filesize=16 * GIG, depth=d)
 
 myFS = SimFS.SimFS(myDisk)
@@ -41,7 +42,7 @@ for d in (1, 32):
     print("FIO (direct) to local file system, depth=%d" % (d))
     fstest.fstest(myFS, filesize=16 * GIG, depth=d)
 
-d=1
+d = 1
 print("\n")
 print("FIO (sync) to local file system, depth=%d" % (d))
 fstest.fstest(myFS, filesize=16 * GIG, depth=d, sync=True)

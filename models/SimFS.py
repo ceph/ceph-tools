@@ -21,7 +21,7 @@ class SimFS:
         self.extent = extent_size
 
     # this is the primary method for simulating an I/O scenario
-    def avgTime(self, bsize, file_size, read=True, seq=True, \
+    def avgTime(self, bsize, file_size, read=True, seq=True,
         depth=1, sync=False):
         """ average operation time (us) for a specified test. """
 

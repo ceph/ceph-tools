@@ -32,7 +32,7 @@ disktest.tptest(myDumb, filesize=16 * GIG, depth=1)
 
 for d in (1, 32):
     print("\n")
-    print("%d IOP, %dMB/s SSD, depth=%d" % \
+    print("%d IOP, %dMB/s SSD, depth=%d" %
         (mySsd.max_iops, mySsd.media_speed / MEG, d))
     disktest.tptest(mySsd, filesize=16 * GIG, depth=d)
 

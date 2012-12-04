@@ -31,17 +31,17 @@ def fstest(fs, filesize=16 * MILLION, depth=1, sync=False):
     print("\t    bs\t    seq read\t   seq write\t   rnd read\t   rnd write")
     print("\t -----\t    --------\t   ---------\t   --------\t   ---------")
     for bs in (4096, 128 * 1024, 4096 * 1024):
-        tsr = fs.avgTime(bs, filesize, read=True, seq=True, \
+        tsr = fs.avgTime(bs, filesize, read=True, seq=True,
                 depth=depth, sync=sync)
-        tsw = fs.avgTime(bs, filesize, read=False, seq=True, \
+        tsw = fs.avgTime(bs, filesize, read=False, seq=True,
                 depth=depth, sync=sync)
-        trr = fs.avgTime(bs, filesize, read=True, seq=False, \
+        trr = fs.avgTime(bs, filesize, read=True, seq=False,
                 depth=depth, sync=sync)
-        trw = fs.avgTime(bs, filesize, read=False, seq=False, \
+        trw = fs.avgTime(bs, filesize, read=False, seq=False,
                 depth=depth, sync=sync)
 
-        print("\t%5dK\t %6d MB/s\t %6d MB/s\t %6.1f MB/s\t %6.1f MB/s" % \
-                (kb(bs), bw(bs, tsr), bw(bs, tsw), \
-                         bw(bs, float(trr)), bw(bs, float(trw))))
-        print("\t    \t %6d IOPS\t %6d IOPS\t %6d IOPS\t %6d IOPS" % \
+        print("\t%5dK\t %6d MB/s\t %6d MB/s\t %6.1f MB/s\t %6.1f MB/s" %
+                (kb(bs), bw(bs, tsr), bw(bs, tsw),
+                 bw(bs, float(trr)), bw(bs, float(trw))))
+        print("\t    \t %6d IOPS\t %6d IOPS\t %6d IOPS\t %6d IOPS" %
                 (iops(tsr), iops(tsw), iops(trr), iops(trw)))

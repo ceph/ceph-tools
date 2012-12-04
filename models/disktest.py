@@ -46,12 +46,12 @@ def tptest(disk, filesize, depth):
         trw = disk.avgTime(bs, filesize, read=False, seq=False, depth=depth)
 
         if bw(bs, tsr) >= 10:
-            format = "\t%5dK\t%7d MB/s\t%7 MB/s\t%7.1f MB/s\t%7.1f MB/s"
+            format = "\t%5dK\t%7d MB/s\t%7d MB/s\t%7.1f MB/s\t%7.1f MB/s"
         else:
             format = "\t%5dK\t%7.1f MB/s\t%7.1f MB/s\t%7.1f MB/s\t%7.1f MB/s"
-        print(format % (kb(bs), bw(bs, float(tsr)), bw(bs, float(tsw)), \
-                     bw(bs, float(trr)), bw(bs, float(trw))))
-        print("\t    \t %6d IOPS\t %6d IOPS\t %6d IOPS\t %6d IOPS" % \
+        print(format % (kb(bs), bw(bs, float(tsr)), bw(bs, float(tsw)),
+            bw(bs, float(trr)), bw(bs, float(trw))))
+        print("\t    \t%7d IOPS\t%7d IOPS\t%7d IOPS\t%7d IOPS" %
             (iops(tsr), iops(tsw), iops(trr), iops(trw)))
 
 
@@ -62,7 +62,7 @@ def disktest(disk, filesize=16 * MILLION):
     print("\tdrive size\t%d GB" % gig(disk.size))
     print("\trpm       \t%d" % disk.rpm)
     print("\txfer rate \t%d MB/s" % meg(disk.media_speed))
-    print("\tseek time \t%d-%dus, avg %dus" % \
+    print("\tseek time \t%d-%dus, avg %dus" %
         (disk.settle_read, disk.max_seek, disk.avg_seek))
     print("\twrite back\t%s" % ("True" if disk.do_writeback else "False"))
     print("\tread ahead\t%s" % ("True" if disk.do_readahead else "False"))
@@ -85,6 +85,6 @@ def disktest(disk, filesize=16 * MILLION):
     print("\t  cyls      read      write")
     cyls = 1
     while cyls < disk.cylinders * 10:
-        print("\t%7d  %7dus  %7dus" % \
+        print("\t%7d  %7dus  %7dus" %
             (cyls, disk.seekTime(cyls), disk.seekTime(cyls, read=False)))
         cyls *= 10

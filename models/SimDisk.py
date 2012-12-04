@@ -36,7 +36,7 @@ class Disk:
     cache_max_depth = 10            # max depth multiplier
     cache_max_tracks = 4            # max amount to cache
 
-    def __init__(self, rpm=7200, size=2 * TERABYTE, \
+    def __init__(self, rpm=7200, size=2 * TERABYTE,
                 bw=150 * MEGABYTE, heads=10):
         """ Instantiate a disk simulation. """
         self.rpm = rpm
@@ -204,7 +204,7 @@ class Disk:
 #
 class DumbDisk(Disk):
 
-    def __init__(self, rpm=7200, size=2 * TERABYTE, \
+    def __init__(self, rpm=7200, size=2 * TERABYTE,
                 bw=150 * MEGABYTE, heads=10):
         """ Instantiate a dumb disk simulation. """
 

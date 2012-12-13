@@ -208,7 +208,7 @@ class DumbDisk(Disk):
                 bw=150 * MEGABYTE, heads=10):
         """ Instantiate a dumb disk simulation. """
 
-        Disk.__init__(self)
+        Disk.__init__(self, rpm, size, bw, heads)
 
         self.do_writeback = False
         self.do_readahead = False

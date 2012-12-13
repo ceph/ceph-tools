@@ -40,7 +40,11 @@ def fstest(fs, filesize=16 * MILLION, depth=1, sync=False):
         trw = fs.avgTime(bs, filesize, read=False, seq=False,
                 depth=depth, sync=sync)
 
-        print("\t%5dK\t %6d MB/s\t %6d MB/s\t %6.1f MB/s\t %6.1f MB/s" %
+        if bw(bs, tsw) >= 10:
+            format = "\t%5dK\t%7d MB/s\t%7d MB/s\t%7.1f MB/s\t%7.1f MB/s"
+        else:
+            format = "\t%5dK\t%7.1f MB/s\t%7.1f MB/s\t%7.1f MB/s\t%7.1f MB/s"
+        print(format %
                 (kb(bs), bw(bs, tsr), bw(bs, tsw),
                  bw(bs, float(trr)), bw(bs, float(trw))))
         print("\t    \t %6d IOPS\t %6d IOPS\t %6d IOPS\t %6d IOPS" %

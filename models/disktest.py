@@ -45,7 +45,7 @@ def tptest(disk, filesize, depth):
         trr = disk.avgTime(bs, filesize, read=True, seq=False, depth=depth)
         trw = disk.avgTime(bs, filesize, read=False, seq=False, depth=depth)
 
-        if bw(bs, tsr) >= 10:
+        if bw(bs, tsw) >= 10:
             format = "\t%5dK\t%7d MB/s\t%7d MB/s\t%7.1f MB/s\t%7.1f MB/s"
         else:
             format = "\t%5dK\t%7.1f MB/s\t%7.1f MB/s\t%7.1f MB/s\t%7.1f MB/s"

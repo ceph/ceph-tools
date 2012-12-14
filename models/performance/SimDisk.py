@@ -24,8 +24,8 @@ class Disk:
     #   default values represent enterprise state-of-the-art
     settle_read = 800               # us: optimistic read settle-down
     write_delta = 600               # us: penalty for full settle-down
-    max_seek = 14000                # us: full stroke seek time
-    avg_seek = 7000                 # us: full stroke/3
+    max_seek = 13000                # us: full stroke seek time
+    avg_seek = 5500                 # us: full stroke/3
     max_depth = 32                  # max concurrent queued operations
     do_writeback = True             # drive does write-back (vs writethrough)
     do_readahead = True    	    # drive does read-ahead caching

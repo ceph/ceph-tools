@@ -31,14 +31,10 @@ def fstest(fs, filesize=16 * MILLION, depth=1, sync=False):
     print("\t    bs\t    seq read\t   seq write\t   rnd read\t   rnd write")
     print("\t -----\t    --------\t   ---------\t   --------\t   ---------")
     for bs in (4096, 128 * 1024, 4096 * 1024):
-        tsr = fs.avgTime(bs, filesize, read=True, seq=True,
-                depth=depth, sync=sync)
-        tsw = fs.avgTime(bs, filesize, read=False, seq=True,
-                depth=depth, sync=sync)
-        trr = fs.avgTime(bs, filesize, read=True, seq=False,
-                depth=depth, sync=sync)
-        trw = fs.avgTime(bs, filesize, read=False, seq=False,
-                depth=depth, sync=sync)
+        tsr = fs.read(bs, filesize, seq=True, depth=depth)
+        tsw = fs.write(bs, filesize, seq=True, depth=depth, sync=sync)
+        trr = fs.read(bs, filesize, seq=False, depth=depth)
+        trw = fs.write(bs, filesize, seq=False, depth=depth, sync=sync)
 
         if bw(bs, tsw) >= 10:
             format = "\t%5dK\t%7d MB/s\t%7d MB/s\t%7.1f MB/s\t%7.1f MB/s"

@@ -36,7 +36,7 @@ for d in (1, 32):
         (mySsd.max_iops, mySsd.media_speed / MEG, d))
     disktest.tptest(mySsd, filesize=16 * GIG, depth=d)
 
-myFS = SimFS.SimFS(myDisk)
+myFS = SimFS.btrfs(myDisk)
 for d in (1, 32):
     print("\n")
     print("FIO (direct) to local file system, depth=%d" % (d))

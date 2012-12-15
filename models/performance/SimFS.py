@@ -119,8 +119,43 @@ class FS:
 
         return time
 
-   # FIX: implement create
-   # FIX: implement delete
+    def create(self, sync=False):
+        """ new file creation """
+
+        index_seek = \
+            self.disk.seekTime(self.disk.cylinders * self.md_seek)
+        index_latency = \
+            self.disk.latency(self.md_size, read=False, seq=False)
+        index_xfer = self.disk.xferTime(self.md_size, read=False)
+        tot = index_seek + index_latency + index_xfer
+
+        if sync:
+            time = self.md_create * tot
+        else:
+            # consolidate updates to a single directory
+            time = (self.md_create - 1) * tot
+            time += tot / self.sync_time
+
+        return time
+
+    def delete(self, sync=False):
+        """ file deletion """
+
+        index_seek = \
+            self.disk.seekTime(self.disk.cylinders * self.md_seek)
+        index_latency = \
+            self.disk.latency(self.md_size, read=False, seq=False)
+        index_xfer = self.disk.xferTime(self.md_size, read=False)
+        tot = index_seek + index_latency + index_xfer
+
+        if sync:
+            time = self.md_delete * tot
+        else:
+            # consolidate updates to a single directory
+            time = (self.md_delete - 1) * tot
+            time += tot / self.sync_time
+
+        return time
 
 
 class btrfs(FS):

@@ -28,6 +28,11 @@ def bw(bs, us):
 def fstest(fs, filesize=16 * MILLION, depth=1, sync=False):
     """ compute & display standard fio to filesystem on a disk """
 
+    tc = fs.create(sync=sync)
+    td = fs.delete(sync=sync)
+    print("\t\t     create\t      delete")
+    print("\t\t%6d IOPS\t %6d IOPS" % (iops(tc), iops(td)))
+    print
     print("\t    bs\t    seq read\t   seq write\t   rnd read\t   rnd write")
     print("\t -----\t    --------\t   ---------\t   --------\t   ---------")
     for bs in (4096, 128 * 1024, 4096 * 1024):

@@ -12,6 +12,8 @@ import SimDisk
 import SimFS
 import disktest
 import fstest
+import FileStore
+import filestoretest
 
 myDisk = SimDisk.Disk(rpm=7200)
 myDumb = SimDisk.DumbDisk(rpm=7200)
@@ -42,7 +44,25 @@ for d in (1, 32):
     print("FIO (direct) to local file system, depth=%d" % (d))
     fstest.fstest(myFS, filesize=16 * GIG, depth=d)
 
-d = 1
+#d = 1
+#print("\n")
+#print("FIO (sync) to local file system, depth=%d" % (d))
+#fstest.fstest(myFS, filesize=16 * GIG, depth=d, sync=True)
+
 print("\n")
-print("FIO (sync) to local file system, depth=%d" % (d))
-fstest.fstest(myFS, filesize=16 * GIG, depth=d, sync=True)
+myFstore_l = FileStore.FileStore(myFS, None)
+myJrn = SimFS.btrfs(mySsd)
+myFstore_s = FileStore.FileStore(myFS, myJrn)
+
+print("Journal on the data file system")
+for d in (1, 32):
+    print("\n")
+    print("smalliobench-fs, depth=%d" % (d))
+    filestoretest.fstoretest(myFstore_l, obj_size=16 * GIG, depth=d)
+
+print()
+print("Journal on SSD")
+for d in (1, 32):
+    print("\n")
+    print("smalliobench-fs, depth=%d" % (d))
+    filestoretest.fstoretest(myFstore_s, obj_size=16 * GIG, depth=d)

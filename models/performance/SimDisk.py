@@ -149,7 +149,7 @@ class Disk:
         """ Time (us) a request is likely to incur awaiting rotation """
 
         # start out with the average rotational latency
-        l = (SECOND / (self.rpm / 60)) / 2
+        l = (SECOND / (self.rpm / 60)) / 2 if self.rpm > 0 else 0
 
         # figure out how many of these operations I can cache
         c = self.cache_size(size, read, depth)

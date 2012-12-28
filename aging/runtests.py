@@ -5,6 +5,7 @@ import subprocess
 import sys
 import yaml
 import time
+import shutil
 
 head = ''
 clients = ''
@@ -59,7 +60,7 @@ def read_config(config_file):
     return config
 
 def check_health():
-    print 'Waiting until Ceph is healthy...'
+#    print 'Waiting until Ceph is healthy...'
 #    i = 0
 #    j = 30
 #    while True:
@@ -165,11 +166,11 @@ def start_monitoring(tmp_dir):
     pdsh(get_nodes([clients, servers, mons, rgws]), 'mkdir -p -m0755 -- %s;collectl -s+mYZ -i 1:10 -F0 -f %s' % (collectl_dir,collectl_dir))
 
     # perf
-    pdsh(get_nodes([clients, servers, mons, rgws]), 'mkdir -p -m0755 -- %s' % perf_dir).communicate()
-    pdsh(get_nodes([clients, servers, mons, rgws]), 'cd %s;sudo perf_3.6 record -g -f -a -F 100 -o perf.data' % perf_dir)
+#    pdsh(get_nodes([clients, servers, mons, rgws]), 'mkdir -p -m0755 -- %s' % perf_dir).communicate()
+#    pdsh(get_nodes([clients, servers, mons, rgws]), 'cd %s;sudo perf_3.6 record -g -f -a -F 100 -o perf.data' % perf_dir)
 
     # blktrace
-    pdsh(servers, 'mkdir -p -m0755 -- %s' % blktrace_dir).communicate()
+#    pdsh(servers, 'mkdir -p -m0755 -- %s' % blktrace_dir).communicate()
 #    for device in xrange (0,osds_per_node):
 #        pdsh(servers, 'cd %s;sudo blktrace -o device%s -d /dev/disk/by-partlabel/osd-device-%s-data' % (blktrace_dir, device, device))
 
@@ -379,6 +380,12 @@ def parse_args():
         required = True, 
         help = 'Directory where the results should be archived.',
         )
+
+    parser.add_argument(
+        '--conf',
+        required = False,
+        help = 'The ceph.conf file to use.',
+        )
     parser.add_argument(
         'config_file',
         help = 'YAML config file.',
@@ -395,6 +402,20 @@ if __name__ == '__main__':
 
     # Get the Configs
     cluster_config = config.get('cluster', {})
+
+    # overlod the yaml if a ceph.conf file is specified on the command line
+    if ctx.conf:
+        cluster_config['ceph.conf'] = ctx.conf
+
+    # make the archive dir
+    if not os.path.exists(ctx.archive):
+        os.makedirs(ctx.archive)
+
+    # FIXME copy the ceph.conf file.  Eventually we should check this against
+    # an existing one to make sure it's the same or something.
+    ceph_conf = cluster_config.get('ceph.conf')
+    shutil.copyfile(ceph_conf, ctx.archive + "/ceph.conf")
+
     rb_config = config.get('radosbench', {})
     restbench_config = config.get('restbench', {})
     s3func_config = config.get('s3func', {})
@@ -418,8 +439,10 @@ if __name__ == '__main__':
         archive_dir = os.path.join(ctx.archive, '%08d' % iteration)
         if os.path.exists(archive_dir):
             print 'Skipping existing iteration %d.' % iteration
-            next
+            iteration += 1
+            continue
         os.makedirs(archive_dir)
+
         print "Cleaning up tests..."
         cleanup_tests()
 

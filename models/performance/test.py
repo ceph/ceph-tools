@@ -24,6 +24,7 @@ myFstore_s = FileStore.FileStore(myFS, myJrn)
 import Rados        # RADOS simulations
 nodes = 4
 osd_per = 2
+
 myRados_l = Rados.Rados(myFstore_l, nodes=nodes, osd_per_node=osd_per)
 myRados_s = Rados.Rados(myFstore_s, nodes=nodes, osd_per_node=osd_per)
 

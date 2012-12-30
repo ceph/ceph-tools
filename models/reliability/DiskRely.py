@@ -11,6 +11,7 @@ GB = MB * 1000
 TB = GB * 1000
 PB = TB * 1000
 
+
 class Disk:
 
     def __init__(self, size, fits, nre):
@@ -55,4 +56,3 @@ class RealDisk(Disk):
     def __init__(self, size=2 * TB):
         Disk.__init__(self, size=size, fits=7800, nre=1.0e-14)
         self.description = "real-world drive"
-

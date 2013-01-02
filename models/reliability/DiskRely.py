@@ -20,6 +20,7 @@ class Disk:
         self.fits = fits
         self.nre = nre
         self.drives_per_pb = float(PB) / size
+        self.description = "Disk"
 
     def p_failure(self, period=RelyFuncts.YEAR):
         """ probability of drive failure during a period """

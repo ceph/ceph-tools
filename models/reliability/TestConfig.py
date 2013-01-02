@@ -14,13 +14,15 @@ class TestConfig:
         """ default test parameters """
 
         self.period = 365.25 * 24
+        self.nre_meaning = 0    # ignore
 
         self.disk_size = 2 * TB
+        self.disk_nre = 1E-15
+        self.disk_fit = 826
 
         self.raid_vols = 2
         self.raid_replace = 6
         self.raid_recover = 50 * MB
-        self.raid_scrub = False
 
         self.rados_copies = 2
         self.rados_markout = 10.0 / 60

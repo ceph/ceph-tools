@@ -42,7 +42,8 @@ def runTests(tests, raid=None, rados=None, period=RelyFuncts.YEAR):
     print("    recovery speed:   %d MB/s" % (raid.speed / MB))
     print("    replacement time: %d hours" % (raid.delay))
     print("    rebuild time: %5.2f hours" % (raid.rebuild_time()))
-    print("    scrubbing:        %s" % ("True" if raid.scrub else "False"))
+    print("    NRE:        %s" % \
+            (("ignore", "error", "fail")[cfg.nre_meaning]))
 
     print("RADOS parameters")
     print("    recovery speed: %d MB/s" % (rados.speed / MB))
@@ -80,29 +81,24 @@ def simulate():
     gui.CfgInfo(cfg)    # gather all of the configuration info
 
     # instantiate the chosen disk
-    if cfg.disk_type == "Enterprise":
-        disk = DiskRely.EnterpriseDisk(size=cfg.disk_size)
-    elif cfg.disk_type == "Consumer":
-        disk = DiskRely.ConsumerDisk(size=cfg.disk_size)
-    elif cfg.disk_type == "Real":
-        disk = DiskRely.RealDisk(size=cfg.disk_size)
-    else:
-        disk = None
+    disk = DiskRely.Disk(size=cfg.disk_size, fits=cfg.disk_fit, \
+                        nre=cfg.disk_nre)
+    disk.description = "Disk: %s" % (cfg.disk_type)
 
     # create the RAID simulation
     if cfg.raid_type == "RAID-1":
         raid = RaidRely.RAID1(disk, volumes=cfg.raid_vols, \
-                              scrub=cfg.raid_scrub, \
+                              nre=cfg.nre_meaning, \
                               recovery=cfg.raid_recover, \
                               delay=cfg.raid_replace)
     elif cfg.raid_type == "RAID-5":
         raid = RaidRely.RAID5(disk, volumes=cfg.raid_vols, \
-                              scrub=cfg.raid_scrub, \
+                              nre=cfg.nre_meaning, \
                               recovery=cfg.raid_recover, \
                               delay=cfg.raid_replace)
     elif cfg.raid_type == "RAID-6":
         raid = RaidRely.RAID6(disk, volumes=cfg.raid_vols, \
-                              scrub=cfg.raid_scrub, \
+                              nre=cfg.nre_meaning, \
                               recovery=cfg.raid_recover, \
                               delay=cfg.raid_replace)
     else:
@@ -112,6 +108,7 @@ def simulate():
     rados = RadosRely.RADOS(disk, pg=cfg.rados_decluster, \
                             copies=cfg.rados_copies, \
                             speed=cfg.rados_recover, \
+                            nre=cfg.nre_meaning, \
                             delay=cfg.rados_markout)
 
     runTests((disk, raid, rados), raid=raid, rados=rados, period=cfg.period)
@@ -138,8 +135,10 @@ else:
                            delay=cfg.raid_replace)
     rados2 = RadosRely.RADOS(disk, copies=cfg.rados_copies, \
                              speed=cfg.rados_recover, \
+                             nre=cfg.nre_meaning, \
                              delay=cfg.rados_markout)
     rados3 = RadosRely.RADOS(disk, copies=3, speed=cfg.rados_recover, \
+                             nre=cfg.nre_meaning, \
                              delay=cfg.rados_markout)
 
     # now run those tests

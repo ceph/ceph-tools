@@ -2,7 +2,7 @@
 #
 # GUI for setting reliability model parameters
 
-from tkinter import *
+from Tkinter import *
 
 # CONVENIENT UNITS
 MB = 1000000
@@ -64,7 +64,7 @@ class RelyGUI:
 
         t = Tk()
         t.title('Data Reliability Model')
-        t.iconbitmap(default='inktank.ico')
+        # t.iconbitmap(default='inktank.ico')   # ? windows only ?
 
         # left stack (DISK)
         Label(t, text="Disk Type").grid(column=1, row=1)

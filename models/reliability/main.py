@@ -29,7 +29,7 @@ def runTests(tests, raid=None, rados=None, period=RelyFuncts.YEAR):
         rados --- rados simulation (for parameter reporting)
     """
 
-    print()
+    print("")
     print("Disk Modeling Parameters")
     print("    size:      %dGB" % (rados.disk.size / GB))
     print("    FIT rate:  %d (%f/year)" % \
@@ -52,7 +52,7 @@ def runTests(tests, raid=None, rados=None, period=RelyFuncts.YEAR):
 
     hfmt = "    %-20s %12s %12s %12s"
     dfmt = "    %-20s %11.6f%% %12.2E %12.2E"
-    print()
+    print("")
 
     print("Expected failures, data loss (per drive, per PB) in %4.1f years" \
                     % (period / RelyFuncts.YEAR))
@@ -128,7 +128,7 @@ if len(sys.argv) == 1 or sys.argv[1] == "gui":
     gui.mainloop()
 else:
     # standard set of tests
-    cfg.FixTimes()
+    # cfg.FixTimes()
     disk = DiskRely.EnterpriseDisk(size=cfg.disk_size)
     raid1 = RaidRely.RAID1(disk, recovery=cfg.raid_recover, \
                            delay=cfg.raid_replace)
@@ -139,7 +139,7 @@ else:
     rados2 = RadosRely.RADOS(disk, copies=cfg.rados_copies, \
                              speed=cfg.rados_recover, \
                              delay=cfg.rados_markout)
-    rados3 = RadosRely.RADOS(disk, copies=3, speed=p_rados_recover, \
+    rados3 = RadosRely.RADOS(disk, copies=3, speed=cfg.rados_recover, \
                              delay=cfg.rados_markout)
 
     # now run those tests

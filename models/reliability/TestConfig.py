@@ -14,7 +14,8 @@ class TestConfig:
         """ default test parameters """
 
         self.period = 365.25 * 24
-        self.nre_meaning = 0    # ignore
+        self.nre_meaning = "ignore"
+        self.obj_size = 1 * GB
 
         self.disk_size = 2 * TB
         self.disk_nre = 1E-15

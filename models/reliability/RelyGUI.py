@@ -7,6 +7,7 @@ from Tkinter import *
 # CONVENIENT UNITS
 MB = 1000000
 GB = MB * 1000
+TB = GB * 1000
 
 
 # Let me apologize in advance for this brute-force GUI.
@@ -35,7 +36,7 @@ class RelyGUI:
     ]
 
     nreTypes = [      # ways of modeling NREs
-        "NRE = ignore",  "NRE = error", "NRE = fail  "
+        "ignore",  "error", "fail", "ignore+fail/2"
     ]
 
     replace_times = [   # list of likely drive replacement times (hours)
@@ -49,6 +50,10 @@ class RelyGUI:
     rebuild_speeds = [  # list of likely rebuild speeds (MB/s)
         1,  2, 5, 10, 20, 25, 40, 50, 60, 80, 100, 120, 140, 160
     ]
+
+    object_sizes = []       # generate this one dynamically
+    min_obj_size = 1 * MB
+    max_obj_size = 1 * TB
 
     # GUI widget field widths
     short_wid = 2
@@ -73,6 +78,7 @@ class RelyGUI:
     rados_speed = None
     period = None
     nre_meaning = None
+    obj_size = None
 
     def __init__(self, cfg, doit):
         """ create a GUI panel
@@ -106,23 +112,28 @@ class RelyGUI:
         Label(t, text="NRE rate").grid(column=1, row=10)
         self.disk_nre = Spinbox(t, width=self.long_wid, values=self.nre_rates)
         self.disk_nre.grid(column=1, row=11)
+        Label(t).grid(column=1, row=12)
+        Label(t).grid(column=1, row=13)
+        Label(t, text="Period (years)").grid(column=1, row=14)
+        self.period = Spinbox(t, from_=1, to=10, width=self.short_wid)
+        self.period.grid(column=1, row=15)
 
         # center stack (RAID)
         Label(t, text="RAID Type").grid(column=2, row=1)
         self.raid_type = StringVar(t)
         self.raid_type.set(self.raidTypes[0])
-        OptionMenu(t, self.raid_type, *self.raidTypes, \
+        OptionMenu(t, self.raid_type, *self.raidTypes,
                    command=self.raidchoice).grid(column=2, row=2)
         Label(t).grid(column=2, row=3)
         Label(t, text="Replacement (hours)").grid(column=2, row=4)
-        self.raid_rplc = Spinbox(t, width=self.short_wid, \
+        self.raid_rplc = Spinbox(t, width=self.short_wid,
                     values=self.replace_times)
         self.raid_rplc.grid(column=2, row=5)
         self.raid_rplc.delete(0, END)
         self.raid_rplc.insert(0, "%d" % cfg.raid_replace)
         Label(t).grid(column=2, row=6)
         Label(t, text="Rebuild (MB/s)").grid(column=2, row=7)
-        self.raid_speed = Spinbox(t, width=self.med_wid, \
+        self.raid_speed = Spinbox(t, width=self.med_wid,
                     values=self.rebuild_speeds)
         self.raid_speed.grid(column=2, row=8)
         self.raid_speed.delete(0, END)
@@ -131,6 +142,12 @@ class RelyGUI:
         Label(t, text="Volumes").grid(column=2, row=10)
         self.raid_vols = Spinbox(t, from_=2, to=10, width=self.short_wid)
         self.raid_vols.grid(column=2, row=11)
+        Label(t).grid(column=2, row=12)
+        Label(t).grid(column=2, row=13)
+        Label(t, text="NRE model").grid(column=2, row=14)
+        self.nre_meaning = StringVar(t)
+        self.nre_meaning.set(self.nreTypes[0])
+        OptionMenu(t, self.nre_meaning, *self.nreTypes).grid(column=2, row=15)
 
         # right stack (RADOS)
         Label(t, text="RADOS copies").grid(column=3, row=1)
@@ -140,14 +157,14 @@ class RelyGUI:
         self.rados_cpys.insert(0, "%d" % cfg.rados_copies)
         Label(t).grid(column=3, row=3)
         Label(t, text="Mark-out (minutes)").grid(column=3, row=4)
-        self.rados_down = Spinbox(t, values=self.markout_times, \
+        self.rados_down = Spinbox(t, values=self.markout_times,
                     width=self.short_wid)
         self.rados_down.grid(column=3, row=5)
         self.rados_down.delete(0, END)
         self.rados_down.insert(0, "%d" % (cfg.rados_markout * 60))
         Label(t).grid(column=3, row=6)
         Label(t, text="Recovery (MB/s)").grid(column=3, row=7)
-        self.rados_speed = Spinbox(t, width=self.med_wid, \
+        self.rados_speed = Spinbox(t, width=self.med_wid,
                     values=self.rebuild_speeds)
         self.rados_speed.grid(column=3, row=8)
         self.rados_speed.delete(0, END)
@@ -158,17 +175,30 @@ class RelyGUI:
         self.rados_pgs.delete(0, END)
         self.rados_pgs.insert(0, self.med_fmt % cfg.rados_decluster)
         self.rados_pgs.grid(column=3, row=11)
+        Label(t).grid(column=3, row=12)
+        Label(t).grid(column=3, row=13)
+        Label(t, text="Object size").grid(column=3, row=14)
 
-        # and finally the bottom "doit" controls
-        Label(t, text="Period (years)").grid(column=1, row=12)
-        self.period = Spinbox(t, from_=1, to=10, width=self.short_wid)
-        self.period.grid(column=1, row=13)
-        self.nre_meaning = StringVar(t)
-        self.nre_meaning.set(self.nreTypes[0])
-        OptionMenu(t, self.nre_meaning, *self.nreTypes).grid(column=2, row=13)
-        Button(t, text="COMPUTE", command=doit).grid(column=3, row=13)
-        Label(t).grid(column=1, row=14)
+        # generate this list dynamically
+        os = self.min_obj_size
+        while os <= self.max_obj_size:
+            if os < MB:
+                s = "%dKB" % (os / KB)
+            elif os < GB:
+                s = "%dMB" % (os / MB)
+            elif os < TB:
+                s = "%dGB" % (os / GB)
+            else:
+                s = "%dTB" % (os / TB)
+            self.object_sizes.append(s)
+            os *= 10
+        self.obj_size = StringVar(t)
+        self.obj_size.set(self.object_sizes[0])
+        OptionMenu(t, self.obj_size, *self.object_sizes).grid(column=3, row=15)
 
+        # and finally the bottom "doit" button
+        Label(t).grid(column=2, row=16)
+        Button(t, text="COMPUTE", command=doit).grid(column=2, row=17)
         self.root = t
 
     def diskchoice(self, value):
@@ -208,11 +238,14 @@ class RelyGUI:
         cfg.rados_markout = float(self.rados_down.get()) / 60
         cfg.rados_recover = int(self.rados_speed.get()) * MB
         cfg.rados_decluster = int(self.rados_pgs.get())
+        cfg.nre_meaning = self.nre_meaning.get()
+
+        cfg.obj_size = self.min_obj_size
         i = 0
-        while i < len(self.nreTypes):
-            if self.nre_meaning.get() == self.nreTypes[i]:
-                cfg.nre_meaning = i
-                return
+        while i < len(self.object_sizes) and cfg.obj_size < self.max_obj_size:
+            if self.obj_size.get() == self.object_sizes[i]:
+                break
+            cfg.obj_size *= 10
             i += 1
 
     def mainloop(self):

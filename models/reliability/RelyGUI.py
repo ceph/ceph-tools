@@ -151,7 +151,7 @@ class RelyGUI:
 
         # right stack (RADOS)
         Label(t, text="RADOS copies").grid(column=3, row=1)
-        self.rados_cpys = Spinbox(t, values=(1, 2, 3), width=self.short_wid)
+        self.rados_cpys = Spinbox(t, values=(1, 2, 3, 4, 5, 6), width=self.short_wid)
         self.rados_cpys.grid(column=3, row=2)
         self.rados_cpys.delete(0, END)
         self.rados_cpys.insert(0, "%d" % cfg.rados_copies)

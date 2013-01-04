@@ -24,9 +24,9 @@ class Disk:
         self.nre = nre
         self.description = desc
 
-    def p_failure(self, period=RelyFuncts.YEAR):
+    def p_failure(self, period=RelyFuncts.YEAR, drives=1):
         """ probability of drive failure during a period """
-        return float(1) - RelyFuncts.Pn(self.fits, period, n=0)
+        return float(1) - RelyFuncts.Pn(self.fits * drives, period, n=0)
 
     def loss(self):
         """ amouint of data lost after a drive failure """

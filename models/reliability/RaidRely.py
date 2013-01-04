@@ -40,13 +40,13 @@ class RAID:
 
         # probability of another failure during re-silvering
         recover = float(self.delay) + self.rebuild_time()
-        p_fail2 = self.disk.p_failure(period=recover)
+        from_set = 1 if self.parity == 0 else self.volumes - self.parity
+        p_fail2 = self.disk.p_failure(period=recover, drives=from_set)
 
         # probability of losing the remaining redundancy
         survivors = self.parity if self.parity > 0 else self.volumes - 1
-        from_set = 1 if self.parity == 0 else self.volumes - self.parity
         while survivors > 0 and from_set > 0:
-            p_fail *= (p_fail2 * from_set)
+            p_fail *= p_fail2
             survivors -= 1
             if self.parity > 0:
                 from_set -= 1

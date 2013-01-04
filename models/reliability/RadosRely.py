@@ -45,13 +45,13 @@ class RADOS:
 
         # probability of another volume failure during recovery
         recover = float(self.delay) + self.rebuild_time()
-        p_fail2 = self.disk.p_failure(period=recover)
+        p_fail2 = self.disk.p_failure(period=recover, drives=self.pgs)
 
         # note that declustering increases the number of volumes
         # upon which we depend
         copies = self.copies - 1
         while copies > 0:
-            p_fail *= (p_fail2 * self.pgs)
+            p_fail *= p_fail2
             copies -= 1
 
         return p_fail

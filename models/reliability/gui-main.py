@@ -53,6 +53,11 @@ def simulate():
                             nre=cfg.nre_meaning,
                             delay=cfg.rados_markout)
 
+
+    # print out the configuration for multi-site testing
+    TestRun.multisite(cfg.remote_sites, cfg.majeure, cfg.remote_replace, cfg.remote_recover)
+
+    # and actually run the tests
     TestRun.TestRun((disk, raid, rados),
         period=cfg.period, objsize=cfg.obj_size)
 

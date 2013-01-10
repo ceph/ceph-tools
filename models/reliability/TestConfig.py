@@ -29,3 +29,8 @@ class TestConfig:
         self.rados_markout = 10.0 / 60
         self.rados_recover = 50 * MB
         self.rados_decluster = 200
+
+        self.remote_sites = 1
+        self.remote_recover = 10 * MB
+        self.remote_replace = 10000
+        self.majeure = 0

@@ -51,6 +51,22 @@ class RelyGUI:
         1,  2, 5, 10, 20, 25, 40, 50, 60, 80, 100, 120, 140, 160
     ]
 
+    site_count = [  # list of likely remote site numbers
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+    ]
+
+    remote_speeds = [ # list of likely remote recovery speeds (MB/s)
+        1,  2, 5, 10, 20, 25, 40, 50, 60, 80, 100, 150, 200, 300, 400, 500, 600, 800, 1000
+    ]
+
+    site_destroy = [    # force majeure event frequency
+        "never", 10, 100, 1000, 10000
+    ]
+
+    site_recover = [    # number of hours to replace a destroyed facility
+        0, 1, 10, 100, 1000, 10000
+    ]
+
     object_sizes = []       # generate this one dynamically
     min_obj_size = 1 * MB
     max_obj_size = 1 * TB
@@ -76,6 +92,10 @@ class RelyGUI:
     rados_cpys = None
     rados_down = None
     rados_speed = None
+    site_num = None
+    remote_speed = None
+    remote_rplc = None
+    remote_fail = None
     period = None
     nre_meaning = None
     obj_size = None
@@ -125,7 +145,7 @@ class RelyGUI:
         OptionMenu(t, self.raid_type, *self.raidTypes,
                    command=self.raidchoice).grid(column=2, row=2)
         Label(t).grid(column=2, row=3)
-        Label(t, text="Replacement (hours)").grid(column=2, row=4)
+        Label(t, text="Replace (hours)").grid(column=2, row=4)
         self.raid_rplc = Spinbox(t, width=self.short_wid,
                     values=self.replace_times)
         self.raid_rplc.grid(column=2, row=5)
@@ -156,7 +176,7 @@ class RelyGUI:
         self.rados_cpys.delete(0, END)
         self.rados_cpys.insert(0, "%d" % cfg.rados_copies)
         Label(t).grid(column=3, row=3)
-        Label(t, text="Mark-out (minutes)").grid(column=3, row=4)
+        Label(t, text="Mark-out (min)").grid(column=3, row=4)
         self.rados_down = Spinbox(t, values=self.markout_times,
                     width=self.short_wid)
         self.rados_down.grid(column=3, row=5)
@@ -196,6 +216,33 @@ class RelyGUI:
         self.obj_size.set(self.object_sizes[0])
         OptionMenu(t, self.obj_size, *self.object_sizes).grid(column=3, row=15)
 
+        # fourth stack (remote site)
+        Label(t, text="Sites").grid(column=4, row=1)
+        self.site_num = Spinbox(t, values=self.site_count, width=self.short_wid)
+        self.site_num.grid(column=4, row=2)
+        self.site_num.delete(0, END)
+        self.site_num.insert(0, "%d" % cfg.remote_sites)
+        Label(t).grid(column=4, row=3)
+        Label(t, text="Replace (hours)").grid(column=4, row=4)
+        self.remote_rplc = Spinbox(t, values=self.site_recover, width=self.long_wid)
+        self.remote_rplc.grid(column=4, row=5)
+        self.remote_rplc.delete(0, END)
+        self.remote_rplc.insert(0, "%d" % cfg.remote_replace)
+        Label(t).grid(column=4, row=6)
+        Label(t, text="Recovery (MB/s)").grid(column=4, row=7)
+        self.remote_speed = Spinbox(t, values=self.remote_speeds, width=self.med_wid)
+        self.remote_speed.grid(column=4, row=8)
+        self.remote_speed.delete(0, END)
+        self.remote_speed.insert(0, "%d" % (cfg.remote_recover / MB))
+        Label(t).grid(column=4, row=9)
+        Label(t).grid(column=4, row=10)
+        Label(t).grid(column=4, row=11)
+        Label(t).grid(column=4, row=12)
+        Label(t, text="Disaster (years)").grid(column=4, row=14)
+        self.remote_fail = StringVar(t)
+        self.remote_fail.set(self.site_destroy[0])
+        OptionMenu(t, self.remote_fail, *self.site_destroy).grid(column=4, row=15)
+
         # and finally the bottom "doit" button
         Label(t).grid(column=2, row=16)
         Button(t, text="COMPUTE", command=doit).grid(column=2, row=17)
@@ -234,11 +281,21 @@ class RelyGUI:
         cfg.raid_type = self.raid_type.get()
         cfg.raid_replace = int(self.raid_rplc.get())
         cfg.raid_recover = int(self.raid_speed.get()) * MB
+        cfg.nre_meaning = self.nre_meaning.get()
         cfg.rados_copies = int(self.rados_cpys.get())
         cfg.rados_markout = float(self.rados_down.get()) / 60
         cfg.rados_recover = int(self.rados_speed.get()) * MB
         cfg.rados_decluster = int(self.rados_pgs.get())
-        cfg.nre_meaning = self.nre_meaning.get()
+        cfg.remote_sites = int(self.site_num.get())
+        cfg.remote_replace = int(self.remote_rplc.get())
+        cfg.remote_recover = int(self.remote_speed.get()) * MB
+
+        cfg.majeure = self.remote_fail.get()
+        if self.remote_fail.get() == "never":
+            cfg.majeure = 0
+        else:
+            cfg.majeure = int(self.remote_fail.get()) * 365.25 * 24
+
 
         cfg.obj_size = self.min_obj_size
         i = 0

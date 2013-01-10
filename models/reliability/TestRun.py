@@ -129,3 +129,13 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
             d = "%d-nines" % (nines)
 
         print(dfmt % (t.description, p_fail * 100, loss_d, loss_p, d))
+
+
+def multisite(sites, majeure, replace_time, recover_rate):
+    if sites > 1:
+        print("")
+        print("Number of Sites: %d" % (sites))
+        print("    disasters:  %10s" % ("never" if majeure == 0 else printTime(majeure)))
+        print("    replacement:  %10s" % printTime(replace_time))
+        seconds = (2 * TB / recover_rate) * RelyFuncts.SECOND
+        print("    recovery: %10s/s (%s)" % (printSize(recover_rate), printTime(seconds)))

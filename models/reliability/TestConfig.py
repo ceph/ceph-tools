@@ -32,5 +32,5 @@ class TestConfig:
 
         self.remote_sites = 1
         self.remote_recover = 10 * MB
-        self.remote_replace = 10000
+        self.remote_replace = 6 * 30 * 24
         self.majeure = 0

@@ -61,12 +61,15 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
     # introspect the tests to find the disk/raid/rados parameters
     raid = None
     rados = None
+    site = None
     for t in tests:
         c = t.__class__.__name__
         if raid == None and c.startswith("RAID"):
             raid = t
         if rados == None and c.startswith("RADOS"):
             rados = t
+        if site == None and c.startswith("Site"):
+            site = t
     disk = rados.disk
 
     print("")
@@ -92,17 +95,35 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
 
     hfmt = "    %-20s %12s %12s %12s %12s"
     dfmt = "    %-20s %11.6f%% %12.2E %12.2E %12s"
+
+    if site != None:
+        print("Number of Sites: %d" % (site.sites))
+        if site.fits == 0:
+            print("    disasters:  IGNORED")
+        else:
+            tf = RelyFuncts.BILLION / site.fits
+            tr = RelyFuncts.BILLION / site.repair
+            print("    disasters:    %12s" % (printTime(tf)))
+            print("    replacement:  %12s" % printTime(tr))
+            print("    lambda/mu:    %d/%d" % (site.fits, site.repair))
+        seconds = (disk.size / site.speed) * RelyFuncts.SECOND
+        print("    recovery: %10s/s (%s)" %
+            (printSize(site.speed), printTime(seconds)))
+
     print("")
 
-    print("Expected failures, data loss (per drive, per PB) in %s" %
+    print("Expected failures, data loss (per drive/site, per PB) in %s" %
                     (printTime(period)))
-    print(hfmt % ("storage", "fail/drive", "bytes/drive",
+    print(hfmt % ("storage", "fail/unit", "bytes/unit",
             "bytes/PB", "durability"))
     print(hfmt % ("-------", "----------", "-----------",
             "--------", "----------"))
 
     # expected data loss after drive failures
     for t in tests:
+        if t == None:
+            continue
+
         # probability of a data loss due to drive failure
         p_fail = t.p_failure(period=period)
 
@@ -114,10 +135,14 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
 
         # total expected loss (per drive, and per PB)
         loss_d = l_fail + l_nre
-        loss_p = loss_d * vol_per_pb
+        if t.__class__.__name__ == "Site":
+            loss_p = loss_d * PB / t.size
+            durability = float(1 - p_fail)
+        else:
+            loss_p = loss_d * vol_per_pb
+            durability = float(1 - p_fail) ** vol_per_pb
 
-        # compute the implied durability
-        durability = float(1 - p_fail) ** vol_per_pb
+        # figure out how to render the durability
         if durability < .999999:
             d = "%6.3f%%" % (durability * 100)
         else:
@@ -129,13 +154,3 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
             d = "%d-nines" % (nines)
 
         print(dfmt % (t.description, p_fail * 100, loss_d, loss_p, d))
-
-
-def multisite(sites, majeure, replace_time, recover_rate):
-    if sites > 1:
-        print("")
-        print("Number of Sites: %d" % (sites))
-        print("    disasters:  %10s" % ("never" if majeure == 0 else printTime(majeure)))
-        print("    replacement:  %10s" % printTime(replace_time))
-        seconds = (2 * TB / recover_rate) * RelyFuncts.SECOND
-        print("    recovery: %10s/s (%s)" % (printSize(recover_rate), printTime(seconds)))

@@ -4,6 +4,7 @@
 #
 
 import RelyFuncts
+import SiteRely
 import DiskRely
 import RaidRely
 import RadosRely
@@ -21,6 +22,17 @@ def simulate():
     """
 
     gui.CfgInfo(cfg)    # gather all of the configuration info
+
+    # create the site simulation
+    if cfg.remote_sites > 1 or cfg.majeure > 0:
+        f = 0 if cfg.majeure == 0 \
+            else float(RelyFuncts.BILLION) / cfg.majeure
+        r = 0 if cfg.remote_replace == 0 \
+            else float(RelyFuncts.BILLION) / cfg.remote_replace
+        site = SiteRely.Site(fits=f, repair=r, sites=cfg.remote_sites,
+                            speed=cfg.remote_recover)
+    else:
+        site = None
 
     # instantiate the chosen disk
     disk = DiskRely.Disk(size=cfg.disk_size, fits=cfg.disk_fit,
@@ -53,14 +65,9 @@ def simulate():
                             nre=cfg.nre_meaning,
                             delay=cfg.rados_markout)
 
-
-    # print out the configuration for multi-site testing
-    TestRun.multisite(cfg.remote_sites, cfg.majeure, cfg.remote_replace, cfg.remote_recover)
-
     # and actually run the tests
-    TestRun.TestRun((disk, raid, rados),
+    TestRun.TestRun((disk, raid, rados, site),
         period=cfg.period, objsize=cfg.obj_size)
-
 
 #
 # If I were a better python programmer I probably would have been

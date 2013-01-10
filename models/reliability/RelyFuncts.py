@@ -5,6 +5,7 @@
 import math
 
 # units of time (FIT rates)
+BILLION = 1000000000
 HOUR = 1
 MINUTE = float(HOUR) / 60
 SECOND = float(HOUR) / 3600
@@ -14,7 +15,7 @@ YEAR = (HOUR * 24 * 365.25)
 
 def failures(fitRate, hours):
     """ expected number of failures in an interval """
-    return float(fitRate) * hours / 1000000000
+    return float(fitRate) * hours / BILLION
 
 
 def Pn(fitRate, hours, n=1):

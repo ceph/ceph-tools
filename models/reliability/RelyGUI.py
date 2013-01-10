@@ -55,8 +55,9 @@ class RelyGUI:
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10
     ]
 
-    remote_speeds = [ # list of likely remote recovery speeds (MB/s)
-        1,  2, 5, 10, 20, 25, 40, 50, 60, 80, 100, 150, 200, 300, 400, 500, 600, 800, 1000
+    remote_speeds = [   # list of likely remote recovery speeds (MB/s)
+        1,  2, 5, 10, 20, 25, 40, 50, 60, 80, 100, 150,
+        200, 300, 400, 500, 600, 800, 1000
     ]
 
     site_destroy = [    # force majeure event frequency
@@ -64,7 +65,7 @@ class RelyGUI:
     ]
 
     site_recover = [    # number of hours to replace a destroyed facility
-        0, 1, 10, 100, 1000, 10000
+        1, 6, 12, 24, 30 * 24, 6 * 30 * 24, int(365.25 * 24)
     ]
 
     object_sizes = []       # generate this one dynamically
@@ -171,7 +172,8 @@ class RelyGUI:
 
         # right stack (RADOS)
         Label(t, text="RADOS copies").grid(column=3, row=1)
-        self.rados_cpys = Spinbox(t, values=(1, 2, 3, 4, 5, 6), width=self.short_wid)
+        self.rados_cpys = Spinbox(t, values=(1, 2, 3, 4, 5, 6),
+            width=self.short_wid)
         self.rados_cpys.grid(column=3, row=2)
         self.rados_cpys.delete(0, END)
         self.rados_cpys.insert(0, "%d" % cfg.rados_copies)
@@ -218,19 +220,22 @@ class RelyGUI:
 
         # fourth stack (remote site)
         Label(t, text="Sites").grid(column=4, row=1)
-        self.site_num = Spinbox(t, values=self.site_count, width=self.short_wid)
+        self.site_num = Spinbox(t, values=self.site_count,
+            width=self.short_wid)
         self.site_num.grid(column=4, row=2)
         self.site_num.delete(0, END)
         self.site_num.insert(0, "%d" % cfg.remote_sites)
         Label(t).grid(column=4, row=3)
         Label(t, text="Replace (hours)").grid(column=4, row=4)
-        self.remote_rplc = Spinbox(t, values=self.site_recover, width=self.long_wid)
+        self.remote_rplc = Spinbox(t, values=self.site_recover,
+            width=self.long_wid)
         self.remote_rplc.grid(column=4, row=5)
         self.remote_rplc.delete(0, END)
         self.remote_rplc.insert(0, "%d" % cfg.remote_replace)
         Label(t).grid(column=4, row=6)
         Label(t, text="Recovery (MB/s)").grid(column=4, row=7)
-        self.remote_speed = Spinbox(t, values=self.remote_speeds, width=self.med_wid)
+        self.remote_speed = Spinbox(t, values=self.remote_speeds,
+            width=self.med_wid)
         self.remote_speed.grid(column=4, row=8)
         self.remote_speed.delete(0, END)
         self.remote_speed.insert(0, "%d" % (cfg.remote_recover / MB))
@@ -241,7 +246,8 @@ class RelyGUI:
         Label(t, text="Disaster (years)").grid(column=4, row=14)
         self.remote_fail = StringVar(t)
         self.remote_fail.set(self.site_destroy[0])
-        OptionMenu(t, self.remote_fail, *self.site_destroy).grid(column=4, row=15)
+        OptionMenu(t, self.remote_fail, *self.site_destroy).grid(column=4,
+                                                                row=15)
 
         # and finally the bottom "doit" button
         Label(t).grid(column=2, row=16)
@@ -295,7 +301,6 @@ class RelyGUI:
             cfg.majeure = 0
         else:
             cfg.majeure = int(self.remote_fail.get()) * 365.25 * 24
-
 
         cfg.obj_size = self.min_obj_size
         i = 0

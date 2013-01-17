@@ -197,6 +197,15 @@ class Disk:
             tSeek = self.seekTime(avgcyls, read)
             return tXfer + tLatency + tSeek
 
+    # convenience functions to plug in operation (and optionally seq)
+    def avgRead(self, bsize, file_size, seq=False, depth=1):
+        """ average time (us) for a specified read test. """
+        return self.avgTime(bsize, file_size, read=True, seq=seq, depth=depth)
+
+    def avgWrite(self, bsize, file_size, seq=False, depth=1):
+        """ average time (us) for a specified write test. """
+        return self.avgTime(bsize, file_size, read=False, seq=seq, depth=depth)
+
 
 #
 # To save people the trouble of figuring out which parameters

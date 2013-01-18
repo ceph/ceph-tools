@@ -25,7 +25,8 @@ def bw(bs, us):
     return bs / us
 
 
-def fstest(fs, filesize=16 * MILLION, depth=1, direct=False, sync=False):
+def fstest(fs, filesize=16 * MILLION, depth=1, direct=False,
+            sync=False, crtdlt=False):
     """ compute & display standard fio to filesystem on a disk
         fs -- file system to be tested
         filesize -- size of file in which I/O is being done
@@ -34,11 +35,13 @@ def fstest(fs, filesize=16 * MILLION, depth=1, direct=False, sync=False):
         sync -- updates are immediately flushed
     """
 
-    tc = fs.create(sync=sync)
-    td = fs.delete(sync=sync)
-    print("\t\t     create\t      delete")
-    print("\t\t%6d IOPS\t %6d IOPS" % (iops(tc), iops(td)))
-    print
+    if crtdlt:
+        tc = fs.create(sync=sync)
+        td = fs.delete(sync=sync)
+        print("\t\t     create\t      delete")
+        print("\t\t%6d IOPS\t %6d IOPS" % (iops(tc), iops(td)))
+        print("")
+
     print("\t    bs\t    seq read\t   seq write\t   rnd read\t   rnd write")
     print("\t -----\t    --------\t   ---------\t   --------\t   ---------")
     for bs in (4096, 128 * 1024, 4096 * 1024):

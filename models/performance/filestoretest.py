@@ -23,14 +23,16 @@ def bw(bs, us):
     return bs / us
 
 
-def fstoretest(fs, obj_size=4 * MILLION, depth=1):
+def fstoretest(fs, obj_size=4 * MILLION, depth=1, crtdlt=False):
     """ compute & display standard filestore test results """
 
-    tc = fs.create()
-    td = fs.delete()
-    print("\t\t     create\t      delete")
-    print("\t\t%6d IOPS\t %6d IOPS" % (iops(tc), iops(td)))
-    print("")
+    if crtdlt:
+        tc = fs.create()
+        td = fs.delete()
+        print("\t\t     create\t      delete")
+        print("\t\t%6d IOPS\t %6d IOPS" % (iops(tc), iops(td)))
+        print("")
+
     print("\t    bs\t    rnd read\t   rnd write")
     print("\t -----\t    --------\t   ---------")
     for bs in (4096, 128 * 1024, 4096 * 1024):

@@ -36,7 +36,6 @@ def bw(bs, us):
 
 
 def tptest(disk, filesize, depth):
-    print
     print("\t    bs\t    seq read\t   seq write\t   rnd read\t   rnd write")
     print("\t -----\t    --------\t   ---------\t   --------\t   ---------")
     for bs in (4096, 128 * 1024, 4096 * 1024):
@@ -69,7 +68,8 @@ def disktest(disk, filesize=16 * MILLION):
     print("\tmax depth \t%d" % disk.max_depth)
 
     print("\n    computed performance parameters:")
-    print("\trotation   \t%dus" % (MILLION / (disk.rpm / 60)))
+    rot = 0 if disk.rpm == 0 else (MILLION / (disk.rpm / 60))
+    print("\trotation   \t%dus" % (rot))
     print("\ttrack size \t%d bytes" % disk.trk_size)
     print("\theads      \t%d" % disk.heads)
     print("\tcylinders  \t%d" % disk.cylinders)

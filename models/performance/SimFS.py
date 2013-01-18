@@ -11,8 +11,12 @@
 #   O_DIRECT fio tests (seq/random) with variable size and depth
 #   filestore data and journal reads and writes
 #
-
-#import math
+# NOTE:
+#   we are modeling the time to perform a single operation,
+#   but these are fundamentally throughput models, so it should
+#   be assumed that another operation will come immediately
+#   after the one we are simulating.
+#
 
 
 def log2(v):

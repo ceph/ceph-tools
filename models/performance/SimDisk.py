@@ -26,15 +26,15 @@ class Disk:
     write_delta = 600               # us: penalty for full settle-down
     max_seek = 13000                # us: full stroke seek time
     avg_seek = 5500                 # us: full stroke/3
-    max_depth = 32                  # max concurrent queued operations
+    max_depth = 128                 # max concurrent queued operations
     do_writeback = True             # drive does write-back (vs writethrough)
     do_readahead = True    	    # drive does read-ahead caching
     sched_rotate = True             # latency optimization scheduling
 
     # pseudo-magic numbers to approximate complex behavior
-    cache_multiplier = 48           # ideal read-ahead
-    cache_max_depth = 10            # max depth multiplier
-    cache_max_tracks = 4            # max amount to cache
+    cache_multiplier = 96            # ideal read-ahead
+    cache_max_tracks = 4             # max amount to cache
+    cache_max_depth = 5              # max depth multiplier
 
     def __init__(self, rpm=7200, size=2 * TERABYTE,
                 bw=150 * MEGABYTE, heads=10):
@@ -196,6 +196,15 @@ class Disk:
             avgcyls = cyls / (depth + 2)
             tSeek = self.seekTime(avgcyls, read)
             return tXfer + tLatency + tSeek
+
+    # convenience functions to plug in operation (and optionally seq)
+    def avgRead(self, bsize, file_size, seq=False, depth=1):
+        """ average time (us) for a specified read test. """
+        return self.avgTime(bsize, file_size, read=True, seq=seq, depth=depth)
+
+    def avgWrite(self, bsize, file_size, seq=False, depth=1):
+        """ average time (us) for a specified write test. """
+        return self.avgTime(bsize, file_size, read=False, seq=seq, depth=depth)
 
 
 #

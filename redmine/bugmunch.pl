@@ -33,6 +33,7 @@ sub usage()
 	print STDERR "Usage: bugmunch.pl [switches] [file ...]\n";
 	print STDERR "        -m ......... monthly accumulation\n";
 	print STDERR "        -w ......... weekly accumulation\n";
+	print STDERR "        -r ......... report (vs data)\n";
 	print STDERR "        -s date .... report start date\n";
 	print STDERR "        -e date .... report end date\n";
 	print STDERR "        -p prefix .. prefix for output file names\n";
@@ -40,6 +41,7 @@ sub usage()
 
 # parameters
 my $report_period = 'm';# weekly or monthly
+my $report_fmt = 'd';	# data vs report
 my $prefix;		# output file prefix
 my $start_date;		# report starting date
 my $end_date;		# report end date
@@ -102,15 +104,17 @@ sub process_flush
 			$cumulative_counts{$columns[$i]} = 0;
 		}
 
-		# print out the headers
-		printf( "# date " );
-		for ( my $i = 0; $i < scalar @columns; $i++ ) {
-			printf( "new-%s ", $columns[$i] );
+		if ($report_fmt ne 'r') {
+			# print out the headers
+			printf( "# date " );
+			for ( my $i = 0; $i < scalar @columns; $i++ ) {
+				printf( "new-%s ", $columns[$i] );
+			}
+			for ( my $i = 0; $i < scalar @columns; $i++ ) {
+				printf( "fix-%s ", $columns[$i] );
+			}
+			printf("\n");
 		}
-		for ( my $i = 0; $i < scalar @columns; $i++ ) {
-			printf( "fix-%s ", $columns[$i] );
-		}
-		printf("\n");
 		return;
 	}
 
@@ -124,30 +128,47 @@ sub process_flush
 		if ($period_start >= $start_date &&
 		    $period_start <= $end_date &&
 		    ($period_total > 0 || defined( $fixes{$period_start}))) {
-			# report the bugs opened during this period
-			printf( "%s ", $date );
-			for ( my $i = 0; $i < scalar @columns; $i++ ) {
-				printf( "%d ", $period_counts{ $columns[$i] });
-				$cumulative_counts{$columns[$i]} += $period_counts{ $columns[$i] };
-			}
-
-			# report the bugs fixed during this period
-			for ( my $i = 0; $i < scalar @columns; $i++ ) {
-				if (defined( $fixes{$period_start})) {
-					printf( "%d ", $fixes{ "$period_start-$columns[$i]" });
-					$cumulative_counts{$columns[$i]} -= $fixes{ "$period_start-$columns[$i]" };
-				} else {
-					printf( "0 " );
+			if ($report_fmt eq 'r') {
+				printf( "%-16s      %7s  %7s %7s\n", $date, "new", "fixed", "remain" );
+				for( my $i = 0; $i < scalar @columns; $i++ ) {
+					printf( "    %-16s ", $columns[$i] );
+					printf( " %7d ", $period_counts{ $columns[$i] });
+					$cumulative_counts{$columns[$i]} += $period_counts{ $columns[$i] };
+					if (defined( $fixes{$period_start})) {
+						printf( " %7d", $fixes{ "$period_start-$columns[$i]" });
+						$cumulative_counts{$columns[$i]} -= $fixes{ "$period_start-$columns[$i]" };
+					} else {
+						printf( " %7d", 0 );
+					}
+					printf( " %7d", $cumulative_counts{ $columns[$i] });
+					printf( "\n" );
 				}
+				printf( "\n" );
+			} else {
+				# report the bugs opened during this period
+				printf( "%s ", $date );
+				for ( my $i = 0; $i < scalar @columns; $i++ ) {
+					printf( "%d ", $period_counts{ $columns[$i] });
+					$cumulative_counts{$columns[$i]} += $period_counts{ $columns[$i] };
+				}
+
+				# report the bugs fixed during this period
+				for ( my $i = 0; $i < scalar @columns; $i++ ) {
+					if (defined( $fixes{$period_start})) {
+						printf( "%d ", $fixes{ "$period_start-$columns[$i]" });
+						$cumulative_counts{$columns[$i]} -= $fixes{ "$period_start-$columns[$i]" };
+					} else {
+						printf( "0 " );
+					}
+				}
+
+				# report the cumulative totals as of this period
+				for ( my $i = 0; $i < scalar @columns; $i++ ) {
+					printf( "%d ", $cumulative_counts{ $columns[$i] });
+				}
+
+				printf( "\n" );
 			}
-
-			# report the cumulative totals as of this period
-			for ( my $i = 0; $i < scalar @columns; $i++ ) {
-				printf( "%d ", $cumulative_counts{ $columns[$i] });
-			}
-
-			printf( "\n" );
-
 		} else { # otherwise, just update the cumulative counts
 			for ( my $i = 0; $i < scalar @columns; $i++ ) {
 				$cumulative_counts{$columns[$i]} += $period_counts{ $columns[$i] };
@@ -327,7 +348,7 @@ sub main
 {	
 	# parse the input parameters
 	my %options = ();
-	if (!getopts('wmafs:e:', \%options)) {
+	if (!getopts('wmrs:e:p:', \%options)) {
 		usage();
 		exit(1);
 	}
@@ -337,6 +358,9 @@ sub main
 		$report_period = 'm';
 	} elsif (defined( $options{'w'} )) {
 		$report_period = 'w';
+	} 
+	if (defined( $options{'r'} )) {
+		$report_fmt = 'r';
 	}
 
 	# see what our reporting period is

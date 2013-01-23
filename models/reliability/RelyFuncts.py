@@ -5,18 +5,23 @@
 import math
 
 # units of time (FIT rates)
+BILLION = 1000000000
 HOUR = 1
-TIME = 1000000000
-YEAR = 24 * 365.25
+MINUTE = float(HOUR) / 60
+SECOND = float(HOUR) / 3600
+DAY = float(HOUR * 24)
+YEAR = (HOUR * 24 * 365.25)
+
 
 def failures(fitRate, hours):
     """ expected number of failures in an interval """
-    return float(fitRate) * hours / TIME
+    return float(fitRate) * hours / BILLION
+
 
 def Pn(fitRate, hours, n=1):
     """ probability of exactly n failures during an interval """
     fails = failures(fitRate, hours)
-    p = math.exp( -fails )
+    p = math.exp(-fails)
     if n > 0:
         p *= (fails ** n)
         p /= math.factorial(n)

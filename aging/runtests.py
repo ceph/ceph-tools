@@ -60,9 +60,9 @@ def read_config(config_file):
     return config
 
 def check_health():
-#    print 'Waiting until Ceph is healthy...'
-#    i = 0
-#    j = 30
+    print 'Waiting until Ceph is healthy...'
+    i = 0
+    j = 30
 #    while True:
 #        if i > j:
 #            break
@@ -125,15 +125,16 @@ def setup_ceph(config):
     mkcephfs()
     print 'Starting Ceph.'
     start_ceph()
-    print 'Checking Health.'
-    check_health()
     print 'Setting up pools'
     setup_pools()
+    print 'Checking Health.'
+    check_health()
     if rgws:
         print 'Creating rgw users.'
         setup_rgw()
         print 'Downloading s3-tests.'
         setup_s3tests(tmp_dir)
+     
 
 def shutdown(message):
     print "Stopping monitoring."
@@ -216,6 +217,11 @@ def setup_rgw():
     pdsh(rgws, 'sudo radosgw-admin user create --uid user2 --display_name user2 --access-key test2 --secret \'dGVzdDI=\' --email test@test.test').communicate()
 
 def setup_pools():
+    # set the replication on the default pools to 1
+    pdsh(head, 'sudo ceph osd pool set data size 1').communicate()
+    pdsh(head, 'sudo ceph osd pool set metadata size 1').communicate()
+    pdsh(head, 'sudo ceph osd pool set rbd size 1').communicate()
+
     pdsh(head, 'sudo ceph osd pool create rest-bench 2048 2048').communicate()
     pdsh(head, 'sudo ceph osd pool set rest-bench size 1').communicate()
 #    pdsh(head, 'sudo ceph osd pool create rados-bench 2048 2048').communicate()
@@ -281,6 +287,7 @@ def run_radosbench(config, tmp_dir, archive_dir):
             start_monitoring(run_dir)
 
             # Drop Caches so reads don't come from pagecache
+            pdsh(get_nodes([clients, servers]), 'sync').communicate()
             pdsh(get_nodes([clients, servers]), 'echo 3 | sudo tee /proc/sys/vm/drop_caches').communicate()
 
             # Run rados bench

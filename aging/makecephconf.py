@@ -39,7 +39,7 @@ def populate(l, name, value):
 def mkosds(lists, yaml):
     i = 0
     for server in yaml.get('osd_servers', []):
-        for j in xrange(0, 8):
+        for j in xrange(0, yaml.get('osds_per_server', 0)):
             name = "osd.%d" % i
             lists[name] = []
             lists[name].append("        host = %s" % server)

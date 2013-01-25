@@ -54,7 +54,7 @@ def tptest(disk, filesize, depth):
             (iops(tsr), iops(tsw), iops(trr), iops(trw)))
 
 
-def disktest(disk, filesize=16 * MILLION):
+def disktest(disk):
     """ compute & display basic performance data for a simulated disk """
 
     print("    basic disk parameters:")

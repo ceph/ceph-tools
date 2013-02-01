@@ -53,7 +53,8 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
         tests -- actual list of simulations to run
         disk -- disk simulation (for parameter reporting)
         raid -- raid simulation (for parameter reporting)
-        rados --- rados simulation (for parameter reporting)
+        rados -- rados simulation (for parameter reporting)
+        multi -- multi-site simulation (for parameter reporting)
         period -- simulation period
         objsize -- size of a single object
     """
@@ -62,6 +63,7 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
     raid = None
     rados = None
     site = None
+    multi = None
     for t in tests:
         c = t.__class__.__name__
         if raid == None and c.startswith("RAID"):
@@ -70,6 +72,9 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
             rados = t
         if site == None and c.startswith("Site"):
             site = t
+        if multi == None and c.startswith("MultiSite"):
+            multi = t
+
     disk = rados.disk
 
     print("")
@@ -97,18 +102,21 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
     dfmt = "    %-20s %11.6f%% %12.2E %12.2E %12s"
 
     if site != None:
-        print("Number of Sites: %d" % (site.sites))
+        if multi != None:
+            print("Sites: %d" % (multi.sites))
+        else:
+            print("Sites:")
         if site.fits == 0:
             print("    disasters:  IGNORED")
         else:
             tf = RelyFuncts.BILLION / site.fits
             tr = RelyFuncts.BILLION / site.repair
-            print("    disasters:    %12s" % (printTime(tf)))
+            print("    disasters:    %12s (%d FITS)" %
+                (printTime(tf), site.fits))
             print("    replacement:  %12s" % printTime(tr))
-            print("    lambda/mu:    %d/%d" % (site.fits, site.repair))
-        seconds = (disk.size / site.speed) * RelyFuncts.SECOND
-        print("    recovery: %10s/s (%s)" %
-            (printSize(site.speed), printTime(seconds)))
+        if multi != None:
+            print("    recovery: %10s/s (%s)" %
+                (printSize(multi.speed), printTime(multi.recovery)))
 
     print("")
 

@@ -12,18 +12,13 @@ PB = TB * 1000
 
 class Site:
 
-    def __init__(self, fits, speed=1 * MB,
-                repair=RelyFuncts.YEAR, size=1 * PB, sites=1):
+    def __init__(self, fits, repair=RelyFuncts.YEAR, size=1 * PB):
         """ create a site reliability simulation
             fits -- catastrophic site failures per billion hours
-            speed -- remote data recovery speed
             repair -- site replacements per billion hours
             size -- amount of data at this site
-            sites -- number of sites
         """
-        self.sites = sites
         self.fits = fits
-        self.speed = speed
         self.repair = repair
         self.size = size
         if size >= PB:

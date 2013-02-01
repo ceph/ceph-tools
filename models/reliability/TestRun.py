@@ -99,7 +99,7 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
     print("    object size:%9s" % printSize(objsize))
 
     hfmt = "    %-20s %12s %12s %12s %12s"
-    dfmt = "    %-20s %11.6f%% %12.2E %12.2E %12s"
+    dfmt = "    %-20s %12s %12.2E %12.2E %12s"
 
     if site != None:
         if multi != None:
@@ -134,6 +134,10 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
 
         # probability of a data loss due to drive failure
         p_fail = t.p_failure(period=period)
+        if p_fail > .0000001:
+            p = "%11.6f%%" % (p_fail * 100)
+        else:
+            p = "%12.3e" % (p_fail)
 
         # expected data loss due to such failures
         l_fail = p_fail * t.loss()
@@ -161,4 +165,4 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
                 durability *= 10
             d = "%d-nines" % (nines)
 
-        print(dfmt % (t.description, p_fail * 100, loss_d, loss_p, d))
+        print(dfmt % (t.description, p, loss_d, loss_p, d))

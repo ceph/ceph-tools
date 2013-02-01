@@ -20,6 +20,7 @@ class TestConfig:
         self.disk_size = 2 * TB
         self.disk_nre = 1E-15
         self.disk_fit = 826
+        self.node_fit = 1000
 
         self.raid_vols = 2
         self.raid_replace = 6
@@ -29,8 +30,11 @@ class TestConfig:
         self.rados_markout = 10.0 / 60
         self.rados_recover = 50 * MB
         self.rados_decluster = 200
+        self.rados_fullness = 0.75
+        self.rados_latency = 0
 
         self.remote_sites = 1
         self.remote_recover = 10 * MB
         self.remote_replace = 6 * 30 * 24
+        self.remote_avail = 1.0
         self.majeure = 0

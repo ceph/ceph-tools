@@ -51,6 +51,14 @@ class RelyGUI:
         1,  2, 5, 10, 20, 25, 40, 50, 60, 80, 100, 120, 140, 160
     ]
 
+    async_latencies = [  # list of likely asynchronous replication latencies
+        0, 1, 5, 10, 20, 50, 100, 200, 500, 1000, 5000, 10000, 50000, 100000
+    ]
+
+    fullness = [    # list of likely volume fullness percentages
+        50, 75, 80, 85, 90, 95
+    ]
+
     site_count = [  # list of likely remote site numbers
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10
     ]
@@ -61,11 +69,15 @@ class RelyGUI:
     ]
 
     site_destroy = [    # force majeure event frequency
-        "never", 10, 100, 1000, 10000
+        "never", 10, 100, 1000, 10000, 100000
     ]
 
     site_recover = [    # number of hours to replace a destroyed facility
         1, 6, 12, 24, 30 * 24, 6 * 30 * 24, int(365.25 * 24)
+    ]
+
+    site_avails = [     # plausible site availabilities
+        "0.8", "0.9", "0.99", "0.999", "0.9999", "0.9999", "1.0"
     ]
 
     object_sizes = []       # generate this one dynamically
@@ -111,95 +123,116 @@ class RelyGUI:
         t.title('Data Reliability Model')
         # t.iconbitmap(default='inktank.ico')   # ? windows only ?
 
+        # a few layout constants to make things a little clearer
+        c_disk = 1
+        c_raid = 2
+        c_rados = 3
+        c_site = 4
+        bottom = 20
+
         # left stack (DISK)
-        Label(t, text="Disk Type").grid(column=1, row=1)
+        Label(t, text="Disk Type").grid(column=c_disk, row=1)
         self.disk_type = StringVar(t)
         self.disk_type.set(self.diskTypes[0])
         OptionMenu(t, self.disk_type, *self.diskTypes, \
-                    command=self.diskchoice).grid(column=1, row=2)
-        Label(t).grid(column=1, row=3)
-        Label(t, text="Size (GB)").grid(column=1, row=4)
+                    command=self.diskchoice).grid(column=c_disk, row=2)
+        Label(t).grid(column=c_disk, row=3)
+        Label(t, text="Size (GB)").grid(column=c_disk, row=4)
         self.disk_size = Entry(t, width=self.long_wid)
         self.disk_size.delete(0, END)
         self.disk_size.insert(0, self.long_fmt % (cfg.disk_size / GB))
-        self.disk_size.grid(column=1, row=5)
-        Label(t).grid(column=1, row=6)
-        Label(t, text="FITs").grid(column=1, row=7)
+        self.disk_size.grid(column=c_disk, row=5)
+        Label(t).grid(column=c_disk, row=6)
+        Label(t, text="FITs").grid(column=c_disk, row=7)
         self.disk_fit = Entry(t, width=self.long_wid)
         self.disk_fit.delete(0, END)
         self.disk_fit.insert(0, self.fit_rates[0])
-        self.disk_fit.grid(column=1, row=8)
-        Label(t).grid(column=1, row=9)
-        Label(t, text="NRE rate").grid(column=1, row=10)
+        self.disk_fit.grid(column=c_disk, row=8)
+        Label(t).grid(column=c_disk, row=9)
+        Label(t, text="NRE rate").grid(column=c_disk, row=10)
         self.disk_nre = Spinbox(t, width=self.long_wid, values=self.nre_rates)
-        self.disk_nre.grid(column=1, row=11)
-        Label(t).grid(column=1, row=12)
-        Label(t).grid(column=1, row=13)
-        Label(t, text="Period (years)").grid(column=1, row=14)
+        self.disk_nre.grid(column=c_disk, row=11)
+        Label(t).grid(column=c_disk, row=12)
+        Label(t, text="node FITS").grid(column=c_disk, row=13)
+        self.node_fit = Entry(t, width=self.long_wid)
+        self.node_fit.delete(0, END)
+        self.node_fit.insert(0, cfg.node_fit)
+        self.node_fit.grid(column=c_disk, row=14)
+        Label(t).grid(column=c_disk, row=15)
+        Label(t).grid(column=c_disk, row=16)
+        Label(t, text="Period (years)").grid(column=c_disk, row=bottom - 3)
         self.period = Spinbox(t, from_=1, to=10, width=self.short_wid)
-        self.period.grid(column=1, row=15)
+        self.period.grid(column=c_disk, row=bottom - 2)
 
         # center stack (RAID)
-        Label(t, text="RAID Type").grid(column=2, row=1)
+        Label(t, text="RAID Type").grid(column=c_raid, row=1)
         self.raid_type = StringVar(t)
         self.raid_type.set(self.raidTypes[0])
         OptionMenu(t, self.raid_type, *self.raidTypes,
-                   command=self.raidchoice).grid(column=2, row=2)
-        Label(t).grid(column=2, row=3)
-        Label(t, text="Replace (hours)").grid(column=2, row=4)
+                   command=self.raidchoice).grid(column=c_raid, row=2)
+        Label(t).grid(column=c_raid, row=3)
+        Label(t, text="Replace (hours)").grid(column=c_raid, row=4)
         self.raid_rplc = Spinbox(t, width=self.short_wid,
                     values=self.replace_times)
-        self.raid_rplc.grid(column=2, row=5)
+        self.raid_rplc.grid(column=c_raid, row=5)
         self.raid_rplc.delete(0, END)
         self.raid_rplc.insert(0, "%d" % cfg.raid_replace)
-        Label(t).grid(column=2, row=6)
-        Label(t, text="Rebuild (MB/s)").grid(column=2, row=7)
+        Label(t).grid(column=c_raid, row=6)
+        Label(t, text="Rebuild (MB/s)").grid(column=c_raid, row=7)
         self.raid_speed = Spinbox(t, width=self.med_wid,
                     values=self.rebuild_speeds)
-        self.raid_speed.grid(column=2, row=8)
+        self.raid_speed.grid(column=c_raid, row=8)
         self.raid_speed.delete(0, END)
         self.raid_speed.insert(0, "%d" % (cfg.raid_recover / MB))
-        Label(t).grid(column=2, row=9)
-        Label(t, text="Volumes").grid(column=2, row=10)
+        Label(t).grid(column=c_raid, row=9)
+        Label(t, text="Volumes").grid(column=c_raid, row=10)
         self.raid_vols = Spinbox(t, from_=2, to=10, width=self.short_wid)
-        self.raid_vols.grid(column=2, row=11)
-        Label(t).grid(column=2, row=12)
-        Label(t).grid(column=2, row=13)
-        Label(t, text="NRE model").grid(column=2, row=14)
+        self.raid_vols.grid(column=c_raid, row=11)
+        Label(t).grid(column=c_raid, row=12)
+        Label(t).grid(column=c_raid, row=bottom - 4)
+        Label(t, text="NRE model").grid(column=c_raid, row=bottom - 3)
         self.nre_meaning = StringVar(t)
         self.nre_meaning.set(self.nreTypes[0])
-        OptionMenu(t, self.nre_meaning, *self.nreTypes).grid(column=2, row=15)
+        OptionMenu(t, self.nre_meaning, *self.nreTypes).grid(column=c_raid,
+                                                row=bottom - 2)
 
         # right stack (RADOS)
-        Label(t, text="RADOS copies").grid(column=3, row=1)
+        Label(t, text="RADOS copies").grid(column=c_rados, row=1)
         self.rados_cpys = Spinbox(t, values=(1, 2, 3, 4, 5, 6),
             width=self.short_wid)
-        self.rados_cpys.grid(column=3, row=2)
+        self.rados_cpys.grid(column=c_rados, row=2)
         self.rados_cpys.delete(0, END)
         self.rados_cpys.insert(0, "%d" % cfg.rados_copies)
-        Label(t).grid(column=3, row=3)
-        Label(t, text="Mark-out (min)").grid(column=3, row=4)
+        Label(t).grid(column=c_rados, row=3)
+        Label(t, text="Mark-out (min)").grid(column=c_rados, row=4)
         self.rados_down = Spinbox(t, values=self.markout_times,
                     width=self.short_wid)
-        self.rados_down.grid(column=3, row=5)
+        self.rados_down.grid(column=c_rados, row=5)
         self.rados_down.delete(0, END)
         self.rados_down.insert(0, "%d" % (cfg.rados_markout * 60))
-        Label(t).grid(column=3, row=6)
-        Label(t, text="Recovery (MB/s)").grid(column=3, row=7)
+        Label(t).grid(column=c_rados, row=6)
+        Label(t, text="Recovery (MB/s)").grid(column=c_rados, row=7)
         self.rados_speed = Spinbox(t, width=self.med_wid,
                     values=self.rebuild_speeds)
-        self.rados_speed.grid(column=3, row=8)
+        self.rados_speed.grid(column=c_rados, row=8)
         self.rados_speed.delete(0, END)
         self.rados_speed.insert(0, "%d" % (cfg.rados_recover / MB))
-        Label(t).grid(column=3, row=9)
-        Label(t, text="Declustering").grid(column=3, row=10)
+        Label(t).grid(column=c_rados, row=9)
+        Label(t, text="Usage (%)").grid(column=c_rados, row=10)
+        self.rados_fullness = Spinbox(t, values=self.fullness,
+                    width=self.med_wid)
+        self.rados_fullness.grid(column=c_rados, row=11)
+        self.rados_fullness.delete(0, END)
+        self.rados_fullness.insert(0, "%d" % (cfg.rados_fullness * 100))
+        Label(t).grid(column=c_rados, row=12)
+        Label(t, text="Declustering").grid(column=c_rados, row=13)
         self.rados_pgs = Entry(t, width=self.med_wid)
         self.rados_pgs.delete(0, END)
         self.rados_pgs.insert(0, self.med_fmt % cfg.rados_decluster)
-        self.rados_pgs.grid(column=3, row=11)
-        Label(t).grid(column=3, row=12)
-        Label(t).grid(column=3, row=13)
-        Label(t, text="Object size").grid(column=3, row=14)
+        self.rados_pgs.grid(column=c_rados, row=14)
+        Label(t).grid(column=c_rados, row=15)
+        Label(t).grid(column=c_rados, row=bottom - 4)
+        Label(t, text="Object size").grid(column=c_rados, row=bottom - 3)
 
         # generate this list dynamically
         os = self.min_obj_size
@@ -216,42 +249,47 @@ class RelyGUI:
             os *= 10
         self.obj_size = StringVar(t)
         self.obj_size.set(self.object_sizes[0])
-        OptionMenu(t, self.obj_size, *self.object_sizes).grid(column=3, row=15)
+        OptionMenu(t, self.obj_size, *self.object_sizes).grid(column=c_rados,
+                                                row=bottom - 2)
 
         # fourth stack (remote site)
-        Label(t, text="Sites").grid(column=4, row=1)
+        Label(t, text="Sites").grid(column=c_site, row=1)
         self.site_num = Spinbox(t, values=self.site_count,
             width=self.short_wid)
-        self.site_num.grid(column=4, row=2)
+        self.site_num.grid(column=c_site, row=2)
         self.site_num.delete(0, END)
         self.site_num.insert(0, "%d" % cfg.remote_sites)
-        Label(t).grid(column=4, row=3)
-        Label(t, text="Replace (hours)").grid(column=4, row=4)
-        self.remote_rplc = Spinbox(t, values=self.site_recover,
+        Label(t).grid(column=c_site, row=3)
+        Label(t, text="Availability").grid(column=c_site, row=4)
+        self.remote_avail = Spinbox(t, values=self.site_avails,
             width=self.long_wid)
-        self.remote_rplc.grid(column=4, row=5)
-        self.remote_rplc.delete(0, END)
-        self.remote_rplc.insert(0, "%d" % cfg.remote_replace)
-        Label(t).grid(column=4, row=6)
-        Label(t, text="Recovery (MB/s)").grid(column=4, row=7)
+        self.remote_avail.grid(column=c_site, row=5)
+        self.remote_avail.delete(0, END)
+        self.remote_avail.insert(0, "%6.4f" % cfg.remote_avail)
+        Label(t).grid(column=c_site, row=6)
+        Label(t, text="Recovery (MB/s)").grid(column=c_site, row=7)
         self.remote_speed = Spinbox(t, values=self.remote_speeds,
             width=self.med_wid)
-        self.remote_speed.grid(column=4, row=8)
+        self.remote_speed.grid(column=c_site, row=8)
         self.remote_speed.delete(0, END)
         self.remote_speed.insert(0, "%d" % (cfg.remote_recover / MB))
-        Label(t).grid(column=4, row=9)
-        Label(t).grid(column=4, row=10)
-        Label(t).grid(column=4, row=11)
-        Label(t).grid(column=4, row=12)
-        Label(t, text="Disaster (years)").grid(column=4, row=14)
+        Label(t).grid(column=c_site, row=9)
+        Label(t, text="Rep Latency (ms)").grid(column=c_site, row=10)
+        self.rados_latency = Spinbox(t, values=self.async_latencies,
+                    width=self.med_wid)
+        self.rados_latency.grid(column=c_site, row=11)
+        self.rados_latency.delete(0, END)
+        self.rados_latency.insert(0, "%d" % (cfg.rados_latency))
+        Label(t).grid(column=c_site, row=12)
+        Label(t, text="Disaster (years)").grid(column=c_site, row=bottom - 3)
         self.remote_fail = StringVar(t)
         self.remote_fail.set(self.site_destroy[0])
-        OptionMenu(t, self.remote_fail, *self.site_destroy).grid(column=4,
-                                                                row=15)
+        OptionMenu(t, self.remote_fail, *self.site_destroy).grid(column=c_site,
+                                                                row=bottom - 2)
 
         # and finally the bottom "doit" button
-        Label(t).grid(column=2, row=16)
-        Button(t, text="COMPUTE", command=doit).grid(column=2, row=17)
+        Label(t).grid(column=c_raid, row=bottom - 1)
+        Button(t, text="COMPUTE", command=doit).grid(column=2, row=bottom)
         self.root = t
 
     def diskchoice(self, value):
@@ -283,6 +321,7 @@ class RelyGUI:
         cfg.disk_size = int(self.disk_size.get()) * GB
         cfg.disk_nre = float(self.disk_nre.get())
         cfg.disk_fit = int(self.disk_fit.get())
+        cfg.node_fit = int(self.node_fit.get())
         cfg.raid_vols = int(self.raid_vols.get())
         cfg.raid_type = self.raid_type.get()
         cfg.raid_replace = int(self.raid_rplc.get())
@@ -292,8 +331,10 @@ class RelyGUI:
         cfg.rados_markout = float(self.rados_down.get()) / 60
         cfg.rados_recover = int(self.rados_speed.get()) * MB
         cfg.rados_decluster = int(self.rados_pgs.get())
+        cfg.rados_fullness = float(self.rados_fullness.get()) / 100
+        cfg.rados_latency = int(self.rados_latency.get())
         cfg.remote_sites = int(self.site_num.get())
-        cfg.remote_replace = int(self.remote_rplc.get())
+        cfg.remote_avail = float(self.remote_avail.get())
         cfg.remote_recover = int(self.remote_speed.get()) * MB
 
         cfg.majeure = self.remote_fail.get()

@@ -12,14 +12,14 @@ PB = TB * 1000
 
 class Site:
 
-    def __init__(self, fits, repair=RelyFuncts.YEAR, size=1 * PB):
+    def __init__(self, fits, avail=1.0, size=1 * PB):
         """ create a site reliability simulation
             fits -- catastrophic site failures per billion hours
             repair -- site replacements per billion hours
             size -- amount of data at this site
         """
         self.fits = fits
-        self.repair = repair
+        self.avail = avail
         self.size = size
         if size >= PB:
             self.description = "Site (%d PB)" % (size / PB)
@@ -32,7 +32,7 @@ class Site:
 
     def availability(self):
         """ fraction of the time during which a remote copy is available """
-        return float(1) - float(self.fits) / self.repair
+        return self.avail
 
     def loss(self):
         """ amouint of data lost after a drive failure """

@@ -2,10 +2,12 @@
 # RADOS reliability models
 #
 
+
 import RelyFuncts
 
 MARKOUT = 10 * RelyFuncts.MINUTE
 RECOVER = 50 * 1000000
+FULL = 0.75
 
 
 class RADOS:
@@ -16,6 +18,7 @@ class RADOS:
                 copies=2,           # recommended minimum
                 speed=RECOVER,      # typical large object speed
                 delay=MARKOUT,      # default mark-out
+                fullness=FULL,      # how full are the volumes
                 nre="ignore"):      # largely eliminate these
         """ create a RADOS reliability simulation
             pg -- number of placement groups per OSD
@@ -29,12 +32,13 @@ class RADOS:
         self.pgs = pg
         self.copies = copies
         self.delay = delay
+        self.full = fullness
         self.nre = nre
         self.description = "RADOS: %d cp, %d pg" % (copies, pg)
 
     def rebuild_time(self):
         """ expected time to recover from a drive failure """
-        seconds = self.disk.size / (self.speed * self.pgs)
+        seconds = (self.disk.size * self.full) / (self.speed * self.pgs)
         return seconds * RelyFuncts.SECOND
 
     def p_failure(self, period=RelyFuncts.YEAR):
@@ -62,7 +66,7 @@ class RADOS:
             return 0
 
         # FIX ... this only works for disk size * nre << 1
-        return self.disk.size * self.disk.nre
+        return self.disk.size * self.fulll * self.disk.nre
 
     def loss(self):
         """ amount of data lost after a drive failure during recovery """
@@ -82,7 +86,7 @@ class RADOS:
             return 0
 
         badBytes = self.disk.corrupted_bytes(self.disk.size)
-        pgSize = self.disk.size / self.pgs
+        pgSize = self.disk.size * self.full / self.pgs
         loss = objsize if objsize > 0 and objsize < pgSize else pgSize
 
         if self.nre == "fail":

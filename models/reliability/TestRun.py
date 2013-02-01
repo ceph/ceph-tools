@@ -93,6 +93,7 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
     print("    NRE model:%10s" % (raid.nre))
 
     print("RADOS parameters")
+    print("    fullness:  %9d%%" % (rados.full * 100))
     print("    mark-out:  %16s" % printTime(rados.delay))
     print("    recovery:  %10s/s (%s)" %
                 (printSize(rados.speed), printTime(rados.rebuild_time())))

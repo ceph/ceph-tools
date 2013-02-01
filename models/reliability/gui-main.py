@@ -60,6 +60,7 @@ def simulate():
     rados = RadosRely.RADOS(disk, pg=cfg.rados_decluster,
                             copies=cfg.rados_copies,
                             speed=cfg.rados_recover,
+                            fullness=cfg.rados_fullness,
                             nre=cfg.nre_meaning,
                             delay=cfg.rados_markout)
 

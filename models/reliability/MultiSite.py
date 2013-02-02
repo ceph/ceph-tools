@@ -37,8 +37,13 @@ class MultiSite:
         # probability of losing all copies at primary site
         p = self.rados.p_failure(period)
 
+        # figure out what fraction of secondary site drives are needed
+        drives = self.site.size / self.rados.disk.size
+        needed = 1.0 if drives >= self.rados.pgs else \
+                    float(self.rados.pgs) / drives
+
         # probability of losing all copies at secondary site during recovery
-        psc = self.rados.p_failure(self.recovery)
+        psc = needed * self.rados.p_failure(self.recovery)
 
         # probability of site failing during recovery
         psf = self.site.p_failure(self.recovery)
@@ -56,7 +61,7 @@ class MultiSite:
 
     def loss(self):
         """ amouint of data lost after a drive failure """
-        return self.rados.disk.size
+        return self.rados.loss()
 
     def p_nre(self):
         """ probability of NRE during recovery """

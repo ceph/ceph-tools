@@ -111,10 +111,9 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
             print("    disasters:  IGNORED")
         else:
             tf = RelyFuncts.BILLION / site.fits
-            tr = RelyFuncts.BILLION / site.repair
             print("    disasters:    %12s (%d FITS)" %
                 (printTime(tf), site.fits))
-            print("    replacement:  %12s" % printTime(tr))
+            print("    availability: %12.8f" % site.avail)
         if multi != None:
             print("    recovery: %10s/s (%s)" %
                 (printSize(multi.speed), printTime(multi.recovery)))

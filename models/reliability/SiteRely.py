@@ -9,13 +9,15 @@ GB = MB * 1000
 TB = GB * 1000
 PB = TB * 1000
 
+DISASTER = RelyFuncts.BILLION / (1000 * RelyFuncts.YEAR)
+
 
 class Site:
 
-    def __init__(self, fits, avail=1.0, size=1 * PB):
+    def __init__(self, fits=DISASTER, avail=0.99, size=1 * PB):
         """ create a site reliability simulation
             fits -- catastrophic site failures per billion hours
-            repair -- site replacements per billion hours
+            avail -- long term site availability (including replacement)
             size -- amount of data at this site
         """
         self.fits = fits

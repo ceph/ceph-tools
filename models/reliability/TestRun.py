@@ -113,7 +113,10 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
             tf = RelyFuncts.BILLION / site.fits
             print("    disasters:    %12s (%d FITS)" %
                 (printTime(tf), site.fits))
-            print("    availability: %12.8f" % site.avail)
+            if site.replace == 0:
+                print("    site recover:        NEVER")
+            else:
+                print("    site recover: %12s" % (printTime(site.replace)))
         if multi != None:
             print("    recovery: %10s/s (%s)" %
                 (printSize(multi.speed), printTime(multi.recovery)))
@@ -150,12 +153,15 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
         if t.__class__.__name__ == "Site":
             loss_p = loss_d * PB / t.size
             durability = float(1 - p_fail)
+        elif t.__class__.__name__ == "MultiSite":
+            loss_p = loss_d * PB / t.site.size
+            durability = float(1 - p_fail)
         else:
             loss_p = loss_d * vol_per_pb
             durability = float(1 - p_fail) ** vol_per_pb
 
         # figure out how to render the durability
-        if durability < .999999:
+        if durability < .99999:
             d = "%6.3f%%" % (durability * 100)
         else:
             nines = 0

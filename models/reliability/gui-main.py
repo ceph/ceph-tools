@@ -28,7 +28,7 @@ def simulate():
     if cfg.remote_sites > 1 or cfg.majeure > 0:
         f = 0 if cfg.majeure == 0 \
             else float(RelyFuncts.BILLION) / cfg.majeure
-        site = SiteRely.Site(fits=f, avail=cfg.remote_avail)
+        site = SiteRely.Site(fits=f, rplc=cfg.site_recover)
     else:
         site = None
 

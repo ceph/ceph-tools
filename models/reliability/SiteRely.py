@@ -14,14 +14,14 @@ DISASTER = RelyFuncts.BILLION / (1000 * RelyFuncts.YEAR)
 
 class Site:
 
-    def __init__(self, fits=DISASTER, avail=0.99, size=1 * PB):
+    def __init__(self, fits=DISASTER, rplc=0, size=1 * PB):
         """ create a site reliability simulation
             fits -- catastrophic site failures per billion hours
-            avail -- long term site availability (including replacement)
+            rplc -- how long it will take to replace a failed facility
             size -- amount of data at this site
         """
         self.fits = fits
-        self.avail = avail
+        self.replace = rplc
         self.size = size
         if size >= PB:
             self.description = "Site (%d PB)" % (size / PB)
@@ -34,7 +34,17 @@ class Site:
 
     def availability(self):
         """ fraction of the time during which a remote copy is available """
-        return self.avail
+        # if we are ignoring failures, availability is 100%
+        if self.fits == 0:
+            return 1.0
+
+        # if there is no repair, annual probability of non-failure
+        if self.replace == 0:
+            return RelyFuncts.Pn(self.fits, RelyFuncts.YEAR, n=0)
+
+        # one minus the time between failures and repair
+        mttf = RelyFuncts.BILLION / self.fits
+        return float(mttf) / (mttf + self.replace)
 
     def loss(self):
         """ amouint of data lost after a drive failure """

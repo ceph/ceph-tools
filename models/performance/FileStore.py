@@ -57,7 +57,7 @@ class FileStore:
         """ expected data lookup cache miss rate """
         r = float(self.rd_cache_sz) / (nobj * obj_size * self.journal_share)
         if r > self.CACHE_WARN and not "to data cache" in self.warnings:
-            msg = "\n\t%d x %d-byte objects too small relative to data cache"
+            msg = "\n\t%d x %d byte objects too small relative to data cache"
             self.warnings += msg % (nobj, obj_size)
         return 1 - r if r < 1 else 0
 
@@ -127,7 +127,7 @@ class FileStore:
             # in principle, journal and data writes are parallel
             if jt > dt + mt:
                 if not "journal caps" in self.warnings:
-                    msg = "\n\tjournal caps throughput at %d %d-byte writes"
+                    msg = "\n\tjournal caps throughput for %d parallel %d byte writes"
                     self.warnings += msg % (self.journal_share, bsize)
                 return lt + jt
             else:

@@ -141,7 +141,7 @@ class Rados:
         if net_worst > ftime:
             worst = net_worst
             if "byte writes" not in self.warnings:
-                msg = "\n\t%s NIC caps throughput for %d-copy %d-byte writes"
+                msg = "\n\t%s NIC caps throughput for %d-copy %d byte writes"
                 self.warnings += msg % (slowpoke, copies, bsize)
         else:
             worst = ftime

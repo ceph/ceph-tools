@@ -66,7 +66,7 @@ class RADOS:
             return 0
 
         # FIX ... this only works for disk size * nre << 1
-        return self.disk.size * self.fulll * self.disk.nre
+        return self.disk.size * self.full * self.disk.nre
 
     def loss(self):
         """ amount of data lost after a drive failure during recovery """
@@ -74,7 +74,7 @@ class RADOS:
         # than placement groups/osd) we should expect to lose
         # about 1/2 of a placement group as a result of a second
         # drive failure.
-        l = self.disk.size
+        l = self.disk.size * self.full
         if self.copies > 1:
             l /= (2 * self.pgs)
 

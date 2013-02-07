@@ -30,26 +30,34 @@ class MultiSite:
         self.speed = speed
         self.recovery = (rados.disk.size / speed) * RelyFuncts.SECOND
         self.description = "%d-site, %d-cp RADOS" % (sites, rados.copies)
+        self.pSite = .5     # fix this in p_failure
+        self.pDrive = .5    # fix this in p_failure
 
     def p_failure(self, period=RelyFuncts.YEAR):
         """ probability of losing all copies during a perild """
 
         # probability of losing all copies at primary site
         p = self.rados.p_failure(period)
+        if self.sites == 1:
+            return p + (1.0 - self.site.availability())
 
         # figure out what fraction of secondary site drives are needed
         drives = self.site.size / self.rados.disk.size
         needed = 1.0 if drives >= self.rados.pgs else \
                     float(self.rados.pgs) / drives
 
-        # probability of losing all copies at secondary site during recovery
+        # probability (non-trivial) of remote site being down when we need it
+        psd = 1.0 - self.site.availability()
+
+        # probability (low) of losing all secondary copies during recovery
         psc = needed * self.rados.p_failure(self.recovery)
 
-        # probability of site failing during recovery
+        # probability (negligible) of site failing during recovery
         psf = self.site.p_failure(self.recovery)
 
-        # probability of site having failed prior to recovery
-        psd = 1.0 - self.site.availability()
+        # EVIL side effects ... save these probabilities for loss()
+        self.pSite = (psf + psd) / (psc + psf + psd)
+        self.pDrive = 1 - self.pSite
 
         # probability of losing all copies before recovery completes
         failed = 1
@@ -61,7 +69,20 @@ class MultiSite:
 
     def loss(self):
         """ amouint of data lost after a drive failure """
-        return self.rados.loss()
+
+        # if the whole site goes down, we lose everything
+        lSite = self.rados.loss()
+
+        # if only a single drive goes down, it is more complicated
+        #     if there is only one copy per site, the rados simulation
+        #     did not factor in declustered reocovery
+        lDrive = lSite
+        if self.rados.copies == 1:
+            lDrive /= 2                # failure happens mid-recovery
+            lDrive /= self.rados.pgs   # declustering limits data lost
+
+        # return the weighted average
+        return (self.pSite * lSite) + (self.pDrive * lDrive)
 
     def p_nre(self):
         """ probability of NRE during recovery """

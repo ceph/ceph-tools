@@ -67,7 +67,9 @@ def simulate():
     # create the multi-site simulation
     if cfg.remote_sites > 1:
         multi = MultiSite.MultiSite(rados, site,
-            speed=cfg.remote_recover, sites=cfg.remote_sites)
+            speed=cfg.remote_recover,
+            latency=cfg.remote_latency,
+            sites=cfg.remote_sites)
     else:
         multi = None
 

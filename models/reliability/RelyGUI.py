@@ -52,8 +52,8 @@ class RelyGUI:
     ]
 
     async_latencies = [  # list of likely asynchronous replication latencies
-        0, 1, 5, 10, 20, 50, 100, 200, 500,
-        1000, 5000, 10000, 50000, 100000, 500000
+        0, 1, 5, 10, 30, 60, 300, 600, 900, 1800, 3600,
+        2 * 3600, 6 * 3600, 12 * 3600, 18 * 3600, 24 * 3600
     ]
 
     fullness = [    # list of likely volume fullness percentages
@@ -274,12 +274,12 @@ class RelyGUI:
         self.site_num.insert(0, "%d" % cfg.remote_sites)
         Label(f).grid(row=r + 2)
         r += 3
-        Label(f, text="Rep Latency (ms)").grid(row=r)
-        self.rados_latency = Spinbox(f, values=self.async_latencies,
+        Label(f, text="Rep Latency (s)").grid(row=r)
+        self.remote_latency = Spinbox(f, values=self.async_latencies,
                     width=self.long_wid)
-        self.rados_latency.grid(row=r + 1)
-        self.rados_latency.delete(0, END)
-        self.rados_latency.insert(0, "%d" % (cfg.rados_latency))
+        self.remote_latency.grid(row=r + 1)
+        self.remote_latency.delete(0, END)
+        self.remote_latency.insert(0, "%d" % (cfg.remote_latency * 60 * 60))
         Label(f).grid(row=r + 2)
         r += 3
         Label(f, text="Recovery (MB/s)").grid(row=r)
@@ -369,7 +369,7 @@ class RelyGUI:
         cfg.rados_recover = int(self.rados_speed.get()) * MB
         cfg.rados_decluster = int(self.rados_pgs.get())
         cfg.rados_fullness = float(self.rados_fullness.get()) / 100
-        cfg.rados_latency = int(self.rados_latency.get())
+        cfg.remote_latency = float(self.remote_latency.get()) / (60 * 60)
         cfg.remote_sites = int(self.site_num.get())
         cfg.remote_recover = int(self.remote_speed.get()) * MB
 

@@ -88,38 +88,39 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
 
     print("RAID parameters")
     print("    replace:  %16s" % (printTime(raid.delay)))
-    print("    recovery: %10s/s (%s)" %
+    print("    recovery rate: %7s/s (%s)" %
                 (printSize(raid.speed), printTime(raid.rebuild_time())))
-    print("    NRE model:%10s" % (raid.nre))
+    print("    NRE model:        %10s" % (raid.nre))
 
     print("RADOS parameters")
-    print("    fullness:  %9d%%" % (rados.full * 100))
-    print("    mark-out:  %16s" % printTime(rados.delay))
-    print("    recovery:  %10s/s (%s)" %
+    print("    auto mark-out: %14s" % printTime(rados.delay))
+    print("    recovery rate: %8s/s (%s)" %
                 (printSize(rados.speed), printTime(rados.rebuild_time())))
-    print("    object size:%9s" % printSize(objsize))
+    print("    object size:  %7s" % printSize(objsize))
+    print("    osd fullness: %7d%%" % (rados.full * 100))
+    print("    declustering: %7d PG/OSD" % (rados.pgs))
 
     hfmt = "    %-20s %12s %12s %12s %12s"
     dfmt = "    %-20s %12s %12.2E %12.2E %12s"
 
     if site != None:
-        if multi != None:
-            print("Sites: %d" % (multi.sites))
-        else:
-            print("Sites:")
+        print("Site parameters")
+        s = 0 if multi == None else multi.sites
+        print("    sites:   %12d" % (s))
         if site.fits == 0:
-            print("    disasters:  IGNORED")
+            print("    disasters:    IGNORED")
         else:
             tf = RelyFuncts.BILLION / site.fits
-            print("    disasters:    %12s (%d FITS)" %
+            print("    disaster rate: %12s (%d FITS)" %
                 (printTime(tf), site.fits))
             if site.replace == 0:
-                print("    site recover:        NEVER")
+                print("    site recovery:   NEVER")
             else:
-                print("    site recover: %12s" % (printTime(site.replace)))
+                print("    site recovery: %11s" % (printTime(site.replace)))
         if multi != None:
-            print("    recovery: %10s/s (%s)" %
+            print("    recovery rate: %8s/s (%s)" %
                 (printSize(multi.speed), printTime(multi.recovery)))
+            print("    rep latency:       %10s" % (printTime(multi.latency)))
 
     print("")
 
@@ -133,6 +134,7 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
     # expected data loss after drive failures
     for t in tests:
         if t == None:
+            print("")
             continue
 
         # probability of a data loss due to drive failure

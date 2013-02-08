@@ -31,10 +31,10 @@ class TestConfig:
         self.rados_recover = 50 * MB
         self.rados_decluster = 200
         self.rados_fullness = 0.75
-        self.rados_latency = 0
 
         self.remote_sites = 1
         self.remote_recover = 10 * MB
+        self.remote_latency = 0
         self.remote_replace = 6 * 30 * 24
         self.majeure = 0
         self.site_recover = 0

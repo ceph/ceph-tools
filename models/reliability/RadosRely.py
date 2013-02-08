@@ -34,7 +34,7 @@ class RADOS:
         self.delay = delay
         self.full = fullness
         self.nre = nre
-        self.description = "RADOS: %d cp, %d pg" % (copies, pg)
+        self.description = "RADOS: %d cp" % (copies)
 
     def rebuild_time(self):
         """ expected time to recover from a drive failure """

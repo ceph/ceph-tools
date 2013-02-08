@@ -17,11 +17,13 @@ PB = TB * 1000
 
 class MultiSite:
 
-    def __init__(self, rados, site, speed=10 * MB, sites=1):
+    def __init__(self, rados, site, speed=10 * MB,
+                latency=5 * RelyFuncts.MINUTE, sites=1):
         """ create a site reliability simulation
             rados -- single site rados model
             site -- site model
             speed -- multi-site recovery speed
+            latency -- replication latency
             sites -- number of sites
         """
         self.rados = rados
@@ -29,7 +31,8 @@ class MultiSite:
         self.sites = sites
         self.speed = speed
         self.recovery = (rados.disk.size / speed) * RelyFuncts.SECOND
-        self.description = "%d-site, %d-cp RADOS" % (sites, rados.copies)
+        self.latency = latency
+        self.description = "RADOS: %d-site, %d-cp" % (sites, rados.copies)
         self.pSite = .5     # fix this in p_failure
         self.pDrive = .5    # fix this in p_failure
 
@@ -65,6 +68,8 @@ class MultiSite:
             p *= (psc + psd + psf)
             failed += 1
 
+        # probability (negligible) of losing the primary before it replicates
+        p += self.site.p_failure(self.latency)
         return p
 
     def loss(self):

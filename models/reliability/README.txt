@@ -169,3 +169,56 @@ Notes on Reliability Modeling:
 	    
 	If an NRE is considered to be a failure, the amount of data lost is
 	assumed to be the smaller of a placement group or an object.
+
+
+    Comments on site-and multi-site reliability modeling
+
+	I characterize sites by a FIT rate, which can be based on the
+	expected periodicity of the regional disaster (e.g. a 100 year
+	flood or a 1000 year earthquake).   Perhaps the model should
+	allow different sites to have different FIT rates ... although
+	I fear that this might add worthless precision to otherwise
+	approximate numbers.
+
+	It is tempting to think that four geo-sites is plenty, but after
+	a 200 year hurricane hits Atlanta, you will only have three.  Thus
+	the time to re-replicate to a new site (e.g. 10 days to obtain 1,000
+	drives, rack them up, re-replicate, ship them to a new data center
+	and bring those replicas back on line).  The ratio of MTTF/(MTTF+MTTR)
+	is then the long term availability for each replica.
+
+	When modeling multi-site replicated data, I broke out several independent
+	terms: 
+
+	    a.	The probability that the primary site will be destroyed before 
+		a newly created object can be replicated to other sites.  This 
+		is a very small number, but when we are talking ten or more nines, 
+		there are no negligible terms. 
+
+	    b.	The probability that a primary site will lose all of its copies
+
+		b1. the probability of one copy failing during the period of
+		    interest (e.g. one year) and all others failing during the
+ 		    local recovery period ... which has already been computed
+		    above in the RADOS model.
+
+		b2. the probability that the primary site will fail during
+		    the preriod of interest (e.g. one year)
+
+	    c.	The probability that a secondary site will be unable to make up
+		for failure b is the sum of:
+		
+		c1.  the probability the secondary site will lose all of its
+		     copies during the time required for a remote recovery
+
+		c2.  the probability the secondary site will have already been
+ 		     destroyed by the time the recovery is needed.
+
+		c3.  the probability the secondary site will be destroyed 
+		     during the remote recovery
+
+	the probability of data loss in a system with N such data centers is modeled as:
+	
+		a + ((b1+b2) * (c1+c2+c3)^(N-1))  
+
+	but I fear that term (a) is wrong, as this seems a single event probability

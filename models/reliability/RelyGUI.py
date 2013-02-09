@@ -16,77 +16,107 @@ TB = GB * 1000
 class RelyGUI:
     """ GUI for driving storage reliability simulations """
 
+    #
+    # enumerated values for menus and spin boxes
+    #
+    disk_type = None
     diskTypes = [       # menu of disk drive types
         "Enterprise", "Consumer  ", "Real      "
     ]
 
+    disk_nre = None
     nre_rates = [       # list of likely NRE rates ... correspond to above
         "1.0E-15", "1.0E-14", "1.0E-13"
     ]
 
+    disk_fit = None
     fit_rates = [       # list of FIT rates ... correspond to the above
         826, 1320, 7800
     ]
 
+    raid_type = None
     raidTypes = [       # menu of RAID types
         "RAID-1", "RAID-5", "RAID-6"
     ]
+
+    raid_vols = None
     raid_volcount = [   # dflt vols per raid group ... correspond to above
         2, 3, 6
     ]
 
+    nre_meaning = None
     nreTypes = [      # ways of modeling NREs
         "ignore",  "error", "fail", "ignore+fail/2"
     ]
 
+    raid_rplc = None
     replace_times = [   # list of likely drive replacement times (hours)
         0, 1, 2, 4, 6, 8, 10, 12, 18, 24
     ]
 
+    rados_down = None
     markout_times = [  # list of likely OSD mark-down times (minutes)
         0, 1, 2, 3, 4, 5, 10, 15, 20, 30, 45, 60
     ]
 
+    raid_speed = None
+    rados_speed = None
     rebuild_speeds = [  # list of likely rebuild speeds (MB/s)
         1,  2, 5, 10, 20, 25, 40, 50, 60, 80, 100, 120, 140, 160
     ]
 
+    remote_latency = None
     async_latencies = [  # list of likely asynchronous replication latencies
         0, 1, 5, 10, 30, 60, 300, 600, 900, 1800, 3600,
         2 * 3600, 6 * 3600, 12 * 3600, 18 * 3600, 24 * 3600
     ]
 
+    rados_fullness = None
     fullness = [    # list of likely volume fullness percentages
         50, 75, 80, 85, 90, 95, 100
     ]
 
+    site_num = None
     site_count = [  # list of likely remote site numbers
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10
     ]
 
+    remote_speed = None
     remote_speeds = [   # list of likely remote recovery speeds (MB/s)
         1,  2, 5, 10, 20, 25, 40, 50, 60, 80, 100, 150,
         200, 300, 400, 500, 600, 800, 1000
     ]
 
+    remote_fail = None
     site_destroy = [    # force majeure event frequency
         10, 100, 1000, 10000, 100000, "never"
     ]
 
+    remote_rplc = None
     site_recover = [    # number of days to recover a destroyed facility
         1, 2, 4, 8, 12, 16, 20, 30, 40, 50, 60, 80,
         100, 150, 200, 250, 300, 365, "never"
     ]
 
+    parameters = None
+    headers = None
     yes_no = [
         "no", "yes"
     ]
 
+    period = None
+    disk_size = None
+    rados_pgs = None
+    rados_cpys = None
+
+    obj_size = None
     object_sizes = []       # generate this one dynamically
     min_obj_size = 1 * MB
     max_obj_size = 1 * TB
 
     # GUI widget field widths
+    ROWS = 20
+    BORDER = 5
     short_wid = 2
     med_wid = 4
     long_wid = 6
@@ -95,40 +125,36 @@ class RelyGUI:
     long_fmt = "%6d"
 
     # references to the input widget fields (I know ...)
-    disk_type = None
-    disk_size = None
-    disk_fit = None
-    disk_nre = None
-    raid_type = None
-    raid_rplc = None
-    raid_speed = None
-    raid_vols = None
-    rados_pgs = None
-    rados_cpys = None
-    rados_down = None
-    rados_speed = None
-    site_num = None
-    remote_speed = None
-    remote_rplc = None
-    remote_fail = None
-    period = None
-    nre_meaning = None
-    obj_size = None
-    parameters = None
-    headers = None
 
-    ROWS = 20
-    BORDER = 5
+    def do_disk(self):
+        """ calculate disk reliability """
+        self.CfgInfo()
+        self.doit(self.cfg, "disk")
 
-    def __init__(self, cfg, do_disk, do_raid, do_rados, do_sites):
-        """ create a GUI panel
-            cfg -- default parameter values
-            do_parms -- call back for parms button
-            do_disk -- call back for disk button
-            do_raid -- call back for raid button
-            do_rados -- call back for rados button
-            do_sites -- call back for sites button
+    def do_raid(self):
+        """ calculate raid reliability """
+        self.CfgInfo()
+        self.doit(self.cfg, "raid")
+
+    def do_rados(self):
+        """ calculate RADOS reliability """
+        self.CfgInfo()
+        self.doit(self.cfg, "rados")
+
+    def do_sites(self):
+        """ calculate Multi-Site RADOS reliability """
+        self.CfgInfo()
+        self.doit(self.cfg, "multi")
+
+    def __init__(self, cfg, doit):
+        """ create the GUI panel widgets
+            cfg -- parameter values (input and output)
+            doit -- method to call to run simulations
             """
+
+        # gather the basic parameters
+        self.cfg = cfg
+        self.doit = doit
 
         self.root = Tk()
         self.root.title('Data Reliability Model')
@@ -141,7 +167,7 @@ class RelyGUI:
         Label(f, text="Disk Type").grid(row=r)
         self.disk_type = StringVar(f)
         self.disk_type.set(self.diskTypes[0])
-        OptionMenu(f, self.disk_type, *self.diskTypes, \
+        OptionMenu(f, self.disk_type, *self.diskTypes,
                     command=self.diskchoice).grid(row=r + 1)
         Label(f).grid(row=r + 2)
         r += 3
@@ -167,7 +193,7 @@ class RelyGUI:
         while r < self.ROWS:
             Label(f).grid(row=r)
             r += 1
-        Button(f, text="RELIABILITY", command=do_disk).grid(row=r)
+        Button(f, text="RELIABILITY", command=self.do_disk).grid(row=r)
         f.grid(column=1, row=1)
 
         # second stack (RAID)
@@ -204,7 +230,7 @@ class RelyGUI:
         while r < self.ROWS:
             Label(f).grid(row=r)
             r += 1
-        Button(f, text="RELIABILITY", command=do_raid).grid(row=r)
+        Button(f, text="RELIABILITY", command=self.do_raid).grid(row=r)
         f.grid(column=2, row=1)
 
         # third stack (RADOS)
@@ -273,7 +299,7 @@ class RelyGUI:
         while r < self.ROWS:
             Label(f).grid(row=r)
             r += 1
-        Button(f, text="RELIABILITY", command=do_rados).grid(row=r)
+        Button(f, text="RELIABILITY", command=self.do_rados).grid(row=r)
         f.grid(column=3, row=1)
 
         # fourth stack (remote site)
@@ -322,7 +348,7 @@ class RelyGUI:
         while r < self.ROWS:
             Label(f).grid(row=r)
             r += 1
-        Button(f, text="RELIABILITY", command=do_sites).grid(row=r)
+        Button(f, text="RELIABILITY", command=self.do_sites).grid(row=r)
         f.grid(column=4, row=1)
 
         # and the control panel
@@ -374,45 +400,46 @@ class RelyGUI:
                 return
             i += 1
 
-    def CfgInfo(self, cfg):
+    def CfgInfo(self):
         """ scrape configuration information out of the widgets """
-        cfg.period = 365.25 * 24 * int(self.period.get())
-        cfg.disk_type = self.disk_type.get()
-        cfg.disk_size = int(self.disk_size.get()) * GB
-        cfg.disk_nre = float(self.disk_nre.get())
-        cfg.disk_fit = int(self.disk_fit.get())
+        self.cfg.period = 365.25 * 24 * int(self.period.get())
+        self.cfg.disk_type = self.disk_type.get()
+        self.cfg.disk_size = int(self.disk_size.get()) * GB
+        self.cfg.disk_nre = float(self.disk_nre.get())
+        self.cfg.disk_fit = int(self.disk_fit.get())
         # cfg.node_fit = int(self.node_fit.get())
-        cfg.raid_vols = int(self.raid_vols.get())
-        cfg.raid_type = self.raid_type.get()
-        cfg.raid_replace = int(self.raid_rplc.get())
-        cfg.raid_recover = int(self.raid_speed.get()) * MB
-        cfg.nre_meaning = self.nre_meaning.get()
-        cfg.rados_copies = int(self.rados_cpys.get())
-        cfg.rados_markout = float(self.rados_down.get()) / 60
-        cfg.rados_recover = int(self.rados_speed.get()) * MB
-        cfg.rados_decluster = int(self.rados_pgs.get())
-        cfg.rados_fullness = float(self.rados_fullness.get()) / 100
-        cfg.remote_latency = float(self.remote_latency.get()) / (60 * 60)
-        cfg.remote_sites = int(self.site_num.get())
-        cfg.remote_recover = int(self.remote_speed.get()) * MB
-        cfg.parms = 1 if self.parameters.get() == "yes" else 0
-        cfg.headings = 1 if self.headings.get() == "yes" else 0
+        self.cfg.raid_vols = int(self.raid_vols.get())
+        self.cfg.raid_type = self.raid_type.get()
+        self.cfg.raid_replace = int(self.raid_rplc.get())
+        self.cfg.raid_recover = int(self.raid_speed.get()) * MB
+        self.cfg.nre_meaning = self.nre_meaning.get()
+        self.cfg.rados_copies = int(self.rados_cpys.get())
+        self.cfg.rados_markout = float(self.rados_down.get()) / 60
+        self.cfg.rados_recover = int(self.rados_speed.get()) * MB
+        self.cfg.rados_decluster = int(self.rados_pgs.get())
+        self.cfg.rados_fullness = float(self.rados_fullness.get()) / 100
+        self.cfg.remote_latency = float(self.remote_latency.get()) / (60 * 60)
+        self.cfg.remote_sites = int(self.site_num.get())
+        self.cfg.remote_recover = int(self.remote_speed.get()) * MB
+        self.cfg.parms = 1 if self.parameters.get() == "yes" else 0
+        self.cfg.headings = 1 if self.headings.get() == "yes" else 0
 
         # these two parameters can also have the value "never"
         v = self.remote_fail.get()
-        cfg.majeure = 0 if v == "never" else \
-            float(self.remote_fail.get()) * 365.25 * 24
+        self.cfg.majeure = 0 if v == "never" else \
+            1000000000 / (float(self.remote_fail.get()) * 365.25 * 24)
         v = self.remote_avail.get()
-        cfg.site_recover = 0 if v == "never" else \
+        self.cfg.site_recover = 0 if v == "never" else \
             float(self.remote_avail.get()) * 24
 
         # a more complex process due to the selection format
-        cfg.obj_size = self.min_obj_size
+        self.cfg.obj_size = self.min_obj_size
         i = 0
-        while i < len(self.object_sizes) and cfg.obj_size < self.max_obj_size:
+        while i < len(self.object_sizes) and \
+                self.cfg.obj_size < self.max_obj_size:
             if self.obj_size.get() == self.object_sizes[i]:
                 break
-            cfg.obj_size *= 10
+            self.cfg.obj_size *= 10
             i += 1
 
     def mainloop(self):

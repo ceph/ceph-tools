@@ -73,42 +73,42 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB,
     multi = None
     for t in tests:
         c = t.__class__.__name__
-        if disk == None and "Disk" in c:
+        if disk is None and "Disk" in c:
             disk = t
-        if raid == None and c.startswith("RAID"):
+        if raid is None and c.startswith("RAID"):
             raid = t
-        if rados == None and c.startswith("RADOS"):
+        if rados is None and c.startswith("RADOS"):
             rados = t
-        if site == None and c.startswith("Site"):
+        if site is None and c.startswith("Site"):
             site = t
-        if multi == None and c.startswith("MultiSite"):
+        if multi is None and c.startswith("MultiSite"):
             multi = t
 
     # find elements that only exist beneath others
-    if site == None and multi != None:
+    if site is None and multi is not None:
         site = multi.site
-    if rados == None and multi != None:
+    if rados is None and multi is not None:
         rados = multi.rados
-    if disk == None and rados != None:
+    if disk is None and rados is not None:
         disk = rados.disk
-    if disk == None and raid != None:
+    if disk is None and raid is not None:
         disk = raid.disk
 
-    if parms and disk != None:
+    if parms and disk is not None:
         print("Disk Modeling Parameters")
         print("    size:     %10s" % printSize(disk.size))
         print("    FIT rate: %10d (%f/year)" %
               (disk.fits, disk.p_failure(period=RelyFuncts.YEAR)))
         print("    NRE rate: %10.1E" % (disk.nre))
 
-    if parms and raid != None:
+    if parms and raid is not None:
         print("RAID parameters")
         print("    replace:  %16s" % (printTime(raid.delay)))
         print("    recovery rate: %7s/s (%s)" %
                     (printSize(raid.speed), printTime(raid.rebuild_time())))
         print("    NRE model:        %10s" % (raid.nre))
 
-    if parms and rados != None:
+    if parms and rados is not None:
         print("RADOS parameters")
         print("    auto mark-out: %14s" % printTime(rados.delay))
         print("    recovery rate: %8s/s (%s)" %
@@ -118,10 +118,9 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB,
         print("    declustering: %7d PG/OSD" % (rados.pgs))
         print("    NRE model:        %10s" % (rados.nre))
 
-    if parms and site != None:
+    if parms and site is not None:
         print("Site parameters")
-        s = 0 if multi == None else multi.sites
-        print("    sites:   %12d" % (s))
+        s = 0 if multi is None else multi.sites
         if site.fits == 0:
             print("    disasters:    IGNORED")
         else:
@@ -134,7 +133,7 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB,
             print("    site recovery: %11s" %
                     (printTime(site.replace)))
 
-        if multi != None:
+        if multi is not None:
             print("    recovery rate: %8s/s (%s)" %
                 (printSize(multi.speed), printTime(multi.recovery)))
             print("    rep latency:       %10s" %
@@ -152,7 +151,7 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB,
 
     # expected data loss after drive failures
     for t in tests:
-        if t == None:
+        if t is None:
             print("")
             print(hfmt % heads)
             print(hfmt % lines)

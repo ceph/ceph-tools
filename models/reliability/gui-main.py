@@ -16,21 +16,32 @@ import TestRun
 import RelyGUI
 
 
-def simulate():
-    """ this function is invoked when the COMPUTE button is clicked
+def simdisk():
+    """ this function is invoked when the disk COMPUTE button is clicked
+    """
+
+    gui.CfgInfo(cfg)    # gather all of the configuration info
+    t = cfg.period
+    p = False if cfg.parms == 0 else True
+    h = False if cfg.headings == 0 else True
+
+    # instantiate the chosen disk
+    disk = DiskRely.Disk(size=cfg.disk_size, fits=cfg.disk_fit,
+                        nre=cfg.disk_nre,
+                        desc="Disk: %s" % (cfg.disk_type))
+    TestRun.TestRun([disk], period=t, parms=p, headings=h)
+
+
+def simraid():
+    """ this function is invoked when the RAID COMPUTE button is clicked
         collect the parameters, instantiate and run the described
         simulations
     """
 
     gui.CfgInfo(cfg)    # gather all of the configuration info
-
-    # create the site simulation
-    if cfg.remote_sites > 1 or cfg.majeure > 0:
-        f = 0 if cfg.majeure == 0 \
-            else float(RelyFuncts.BILLION) / cfg.majeure
-        site = SiteRely.Site(fits=f, rplc=cfg.site_recover)
-    else:
-        site = None
+    t = cfg.period
+    p = False if cfg.parms == 0 else True
+    h = False if cfg.headings == 0 else True
 
     # instantiate the chosen disk
     disk = DiskRely.Disk(size=cfg.disk_size, fits=cfg.disk_fit,
@@ -56,6 +67,49 @@ def simulate():
     else:
         raid = None
 
+    TestRun.TestRun([raid], period=t, parms=p, headings=h)
+
+
+def simrados():
+    """ this function is invoked when the RADOS COMPUTE button is clicked
+    """
+
+    gui.CfgInfo(cfg)    # gather all of the configuration info
+    t = cfg.period
+    p = False if cfg.parms == 0 else True
+    h = False if cfg.headings == 0 else True
+
+    disk = DiskRely.Disk(size=cfg.disk_size, fits=cfg.disk_fit,
+                        nre=cfg.disk_nre,
+                        desc="Disk: %s" % (cfg.disk_type))
+
+    # create the RADOS simulation
+    rados = RadosRely.RADOS(disk, pg=cfg.rados_decluster,
+                            copies=cfg.rados_copies,
+                            speed=cfg.rados_recover,
+                            fullness=cfg.rados_fullness,
+                            nre=cfg.nre_meaning,
+                            delay=cfg.rados_markout)
+    TestRun.TestRun([rados], period=t, parms=p, headings=h,
+                    objsize=cfg.obj_size)
+
+
+def simsites():
+    """ this function is invoked when the sites COMPUTE button is clicked
+    """
+
+    gui.CfgInfo(cfg)    # gather all of the configuration info
+    t = cfg.period
+    p = False if cfg.parms == 0 else True
+    h = False if cfg.headings == 0 else True
+    f = 0 if cfg.majeure == 0 \
+        else float(RelyFuncts.BILLION) / cfg.majeure
+
+    # instantiate the chosen disk
+    disk = DiskRely.Disk(size=cfg.disk_size, fits=cfg.disk_fit,
+                        nre=cfg.disk_nre,
+                        desc="Disk: %s" % (cfg.disk_type))
+
     # create the RADOS simulation
     rados = RadosRely.RADOS(disk, pg=cfg.rados_decluster,
                             copies=cfg.rados_copies,
@@ -64,23 +118,20 @@ def simulate():
                             nre=cfg.nre_meaning,
                             delay=cfg.rados_markout)
 
-    # create the multi-site simulation
-    if cfg.remote_sites > 1:
-        multi = MultiSite.MultiSite(rados, site,
-            speed=cfg.remote_recover,
-            latency=cfg.remote_latency,
-            sites=cfg.remote_sites)
-    else:
-        multi = None
+    # create the site and multi-site simulations
+    site = SiteRely.Site(fits=f, rplc=cfg.site_recover)
+    multi = MultiSite.MultiSite(rados, site,
+                speed=cfg.remote_recover,
+                latency=cfg.remote_latency,
+                sites=cfg.remote_sites)
 
-    # and actually run the tests
-    TestRun.TestRun((disk, raid, rados, site, multi),
-        period=cfg.period, objsize=cfg.obj_size)
+    TestRun.TestRun((site, multi), period=t, parms=p, headings=h,
+        objsize=cfg.obj_size)
 
 #
 # If I were a better python programmer I probably would have been
 # able to figure out how to do this without the globals gui+cfg
 #
 cfg = TestConfig.TestConfig()
-gui = RelyGUI.RelyGUI(cfg, simulate)
+gui = RelyGUI.RelyGUI(cfg, simdisk, simraid, simrados, simsites)
 gui.mainloop()

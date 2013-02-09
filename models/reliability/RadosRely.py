@@ -19,7 +19,7 @@ class RADOS:
                 speed=RECOVER,      # typical large object speed
                 delay=MARKOUT,      # default mark-out
                 fullness=FULL,      # how full are the volumes
-                nre="ignore"):      # largely eliminate these
+                nre="ignore"):      # scrub largely eliminates these
         """ create a RADOS reliability simulation
             pg -- number of placement groups per OSD
             copies -- number of copies for these objects

@@ -78,6 +78,10 @@ class RelyGUI:
         100, 150, 200, 250, 300, 365, "never"
     ]
 
+    yes_no = [
+        "no", "yes"
+    ]
+
     object_sizes = []       # generate this one dynamically
     min_obj_size = 1 * MB
     max_obj_size = 1 * TB
@@ -110,14 +114,20 @@ class RelyGUI:
     period = None
     nre_meaning = None
     obj_size = None
+    parameters = None
+    headers = None
 
     ROWS = 20
     BORDER = 5
 
-    def __init__(self, cfg, doit):
+    def __init__(self, cfg, do_disk, do_raid, do_rados, do_sites):
         """ create a GUI panel
             cfg -- default parameter values
-            doit -- call back for compute button
+            do_parms -- call back for parms button
+            do_disk -- call back for disk button
+            do_raid -- call back for raid button
+            do_rados -- call back for rados button
+            do_sites -- call back for sites button
             """
 
         self.root = Tk()
@@ -157,6 +167,7 @@ class RelyGUI:
         while r < self.ROWS:
             Label(f).grid(row=r)
             r += 1
+        Button(f, text="RELIABILITY", command=do_disk).grid(row=r)
         f.grid(column=1, row=1)
 
         # second stack (RAID)
@@ -193,6 +204,7 @@ class RelyGUI:
         while r < self.ROWS:
             Label(f).grid(row=r)
             r += 1
+        Button(f, text="RELIABILITY", command=do_raid).grid(row=r)
         f.grid(column=2, row=1)
 
         # third stack (RADOS)
@@ -261,6 +273,7 @@ class RelyGUI:
         while r < self.ROWS:
             Label(f).grid(row=r)
             r += 1
+        Button(f, text="RELIABILITY", command=do_rados).grid(row=r)
         f.grid(column=3, row=1)
 
         # fourth stack (remote site)
@@ -309,18 +322,28 @@ class RelyGUI:
         while r < self.ROWS:
             Label(f).grid(row=r)
             r += 1
+        Button(f, text="RELIABILITY", command=do_sites).grid(row=r)
         f.grid(column=4, row=1)
 
         # and the control panel
         Label(t).grid(column=1, row=2)
         Label(t, text="NRE model").grid(column=1, row=3)
-        self.nre_meaning = StringVar(f)
+        self.nre_meaning = StringVar(t)
         self.nre_meaning.set(self.nreTypes[0])
         OptionMenu(t, self.nre_meaning, *self.nreTypes).grid(column=1, row=4)
-        Label(t).grid(row=2, column=2)
-        Label(t).grid(row=3, column=2)
-        Button(t, text="COMPUTE RELIABILITIES", command=doit).grid(
-            row=4, column=2, columnspan=2)
+
+        Label(t).grid(column=2, row=2)
+        Label(t, text="Parameters").grid(column=2, row=3)
+        self.parameters = StringVar(t)
+        self.parameters.set(self.yes_no[cfg.parms])
+        OptionMenu(t, self.parameters, *self.yes_no).grid(column=2, row=4)
+
+        Label(t).grid(column=3, row=2)
+        Label(t, text="Headings").grid(column=3, row=3)
+        self.headings = StringVar(t)
+        self.headings.set(self.yes_no[cfg.headings])
+        OptionMenu(t, self.headings, *self.yes_no).grid(column=3, row=4)
+
         Label(t).grid(column=4, row=2)
         Label(t, text="Period (years)").grid(column=4, row=3)
         self.period = Spinbox(t, from_=1, to=10, width=self.short_wid)
@@ -372,6 +395,8 @@ class RelyGUI:
         cfg.remote_latency = float(self.remote_latency.get()) / (60 * 60)
         cfg.remote_sites = int(self.site_num.get())
         cfg.remote_recover = int(self.remote_speed.get()) * MB
+        cfg.parms = 1 if self.parameters.get() == "yes" else 0
+        cfg.headings = 1 if self.headings.get() == "yes" else 0
 
         # these two parameters can also have the value "never"
         v = self.remote_fail.get()

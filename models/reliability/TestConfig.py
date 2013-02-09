@@ -13,6 +13,9 @@ class TestConfig:
     def __init__(self):
         """ default test parameters """
 
+        self.parms = 1
+        self.headings = 1
+
         self.period = 365.25 * 24
         self.nre_meaning = "ignore"
         self.obj_size = 1 * GB

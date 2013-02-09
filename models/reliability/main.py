@@ -34,6 +34,6 @@ multi22 = MultiSite.MultiSite(rados2, site, sites=2)
 multi32 = MultiSite.MultiSite(rados2, site, sites=3)
 multi42 = MultiSite.MultiSite(rados2, site, sites=4)
 
-TestRun.TestRun((None, disk, raid5, raid1, rados2, raid6, rados3,
+TestRun.TestRun((disk, raid5, raid1, rados2, raid6, rados3,
     None, site, multi11, multi12, multi21, multi22,
     multi31, multi32, multi41, multi42))

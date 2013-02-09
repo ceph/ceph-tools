@@ -48,24 +48,33 @@ def printTime(t):
         return "%5.1f years" % (t / RelyFuncts.YEAR)
 
 
-def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
+def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB,
+            parms=True, headings=True):
     """ run and report a set of specified simulations
         tests -- actual list of simulations to run
-        disk -- disk simulation (for parameter reporting)
-        raid -- raid simulation (for parameter reporting)
-        rados -- rados simulation (for parameter reporting)
-        multi -- multi-site simulation (for parameter reporting)
+                (print a header line for each None test)
         period -- simulation period
         objsize -- size of a single object
+        parms -- print out general simulation parameters
+        heads -- print out column headings
     """
 
+    # output formats
+    hfmt = "    %-20s %12s %12s %12s %12s"
+    dfmt = "    %-20s %12s %12.2E %12.2E %12s"
+    lines = ("-------", "----------", "-----------", "--------", "----------")
+    heads = ("storage", "fail/unit", "bytes/unit", "bytes/PB", "durability")
+
     # introspect the tests to find the disk/raid/rados parameters
+    disk = None
     raid = None
     rados = None
     site = None
     multi = None
     for t in tests:
         c = t.__class__.__name__
+        if disk == None and "Disk" in c:
+            disk = t
         if raid == None and c.startswith("RAID"):
             raid = t
         if rados == None and c.startswith("RADOS"):
@@ -75,35 +84,41 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
         if multi == None and c.startswith("MultiSite"):
             multi = t
 
-    disk = rados.disk
+    # find elements that only exist beneath others
+    if site == None and multi != None:
+        site = multi.site
+    if rados == None and multi != None:
+        rados = multi.rados
+    if disk == None and rados != None:
+        disk = rados.disk
+    if disk == None and raid != None:
+        disk = raid.disk
 
-    print("")
-    print("Disk Modeling Parameters")
-    print("    size:     %10s" % printSize(rados.disk.size))
-    print("    FIT rate: %10d (%f/year)" %
-          (rados.disk.fits, rados.disk.p_failure(period=RelyFuncts.YEAR)))
-    print("    NRE rate: %10.1E" % (rados.disk.nre))
+    if parms and disk != None:
+        print("Disk Modeling Parameters")
+        print("    size:     %10s" % printSize(disk.size))
+        print("    FIT rate: %10d (%f/year)" %
+              (disk.fits, disk.p_failure(period=RelyFuncts.YEAR)))
+        print("    NRE rate: %10.1E" % (disk.nre))
 
-    vol_per_pb = PB / rados.disk.size
+    if parms and raid != None:
+        print("RAID parameters")
+        print("    replace:  %16s" % (printTime(raid.delay)))
+        print("    recovery rate: %7s/s (%s)" %
+                    (printSize(raid.speed), printTime(raid.rebuild_time())))
+        print("    NRE model:        %10s" % (raid.nre))
 
-    print("RAID parameters")
-    print("    replace:  %16s" % (printTime(raid.delay)))
-    print("    recovery rate: %7s/s (%s)" %
-                (printSize(raid.speed), printTime(raid.rebuild_time())))
-    print("    NRE model:        %10s" % (raid.nre))
+    if parms and rados != None:
+        print("RADOS parameters")
+        print("    auto mark-out: %14s" % printTime(rados.delay))
+        print("    recovery rate: %8s/s (%s)" %
+                    (printSize(rados.speed), printTime(rados.rebuild_time())))
+        print("    object size:  %7s" % printSize(objsize))
+        print("    osd fullness: %7d%%" % (rados.full * 100))
+        print("    declustering: %7d PG/OSD" % (rados.pgs))
+        print("    NRE model:        %10s" % (rados.nre))
 
-    print("RADOS parameters")
-    print("    auto mark-out: %14s" % printTime(rados.delay))
-    print("    recovery rate: %8s/s (%s)" %
-                (printSize(rados.speed), printTime(rados.rebuild_time())))
-    print("    object size:  %7s" % printSize(objsize))
-    print("    osd fullness: %7d%%" % (rados.full * 100))
-    print("    declustering: %7d PG/OSD" % (rados.pgs))
-
-    hfmt = "    %-20s %12s %12s %12s %12s"
-    dfmt = "    %-20s %12s %12.2E %12.2E %12s"
-
-    if site != None:
+    if parms and site != None:
         print("Site parameters")
         s = 0 if multi == None else multi.sites
         print("    sites:   %12d" % (s))
@@ -113,28 +128,34 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
             tf = RelyFuncts.BILLION / site.fits
             print("    disaster rate: %12s (%d FITS)" %
                 (printTime(tf), site.fits))
-            if site.replace == 0:
-                print("    site recovery:   NEVER")
-            else:
-                print("    site recovery: %11s" % (printTime(site.replace)))
+        if site.replace == 0:
+            print("    site recovery:   NEVER")
+        else:
+            print("    site recovery: %11s" %
+                    (printTime(site.replace)))
+
         if multi != None:
             print("    recovery rate: %8s/s (%s)" %
                 (printSize(multi.speed), printTime(multi.recovery)))
-            print("    rep latency:       %10s" % (printTime(multi.latency)))
+            print("    rep latency:       %10s" %
+                (printTime(multi.latency)))
 
-    print("")
+    if parms:
+        print("")
+        print("Expected failures, data loss (per drive/site, per PB) in %s" %
+                (printTime(period)))
 
-    print("Expected failures, data loss (per drive/site, per PB) in %s" %
-                    (printTime(period)))
-    print(hfmt % ("storage", "fail/unit", "bytes/unit",
-            "bytes/PB", "durability"))
-    print(hfmt % ("-------", "----------", "-----------",
-            "--------", "----------"))
+    if headings:
+        print("")
+        print(hfmt % heads)
+        print(hfmt % lines)
 
     # expected data loss after drive failures
     for t in tests:
         if t == None:
             print("")
+            print(hfmt % heads)
+            print(hfmt % lines)
             continue
 
         # probability of a data loss due to drive failure
@@ -159,6 +180,7 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB):
             loss_p = loss_d * PB / t.site.size
             durability = float(1 - p_fail)
         else:
+            vol_per_pb = PB / disk.size
             loss_p = loss_d * vol_per_pb
             durability = float(1 - p_fail) ** vol_per_pb
 

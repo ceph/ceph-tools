@@ -136,8 +136,11 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB,
         if multi is not None:
             print("    recovery rate: %8s/s (%s)" %
                 (printSize(multi.speed), printTime(multi.recovery)))
-            print("    rep latency:       %10s" %
-                (printTime(multi.latency)))
+            if multi.latency == 0:
+                print("    replication:       synchronous")
+            else:
+                print("    replication:       asynchronous (%s delay)" %
+                            (printTime(multi.latency)))
 
     if parms:
         print("")

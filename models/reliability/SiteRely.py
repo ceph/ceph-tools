@@ -4,17 +4,17 @@
 
 import RelyFuncts
 
-MB = 1000000
-GB = MB * 1000
-TB = GB * 1000
-PB = TB * 1000
+M = 1000000
+G = M * 1000
+T = G * 1000
+P = T * 1000
 
 DISASTER = RelyFuncts.BILLION / (1000 * RelyFuncts.YEAR)
 
 
 class Site:
 
-    def __init__(self, fits=DISASTER, rplc=0, size=1 * PB):
+    def __init__(self, fits=DISASTER, rplc=0, size=1 * P):
         """ create a site reliability simulation
             fits -- catastrophic site failures per billion hours
             rplc -- how long it will take to replace a failed facility
@@ -23,10 +23,10 @@ class Site:
         self.fits = fits
         self.replace = rplc
         self.size = size
-        if size >= PB:
-            self.description = "Site (%d PB)" % (size / PB)
+        if size >= P:
+            self.description = "Site (%d PB)" % (size / P)
         else:
-            self.description = "Site (%d TB)" % (size / TB)
+            self.description = "Site (%d TB)" % (size / T)
 
     def p_failure(self, period=RelyFuncts.YEAR):
         """ probability of catastrophic site failure during a period """

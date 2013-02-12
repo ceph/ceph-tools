@@ -19,15 +19,15 @@ TB = GB * 1000
 PB = TB * 1000
 
 
-def printSize(sz):
+def printSize(sz, unit=1000):
     """ print out a size with the appropriate unit suffix """
 
     fmt = ["%dB", "%dKB", "%dMB", "%dGB", "%dTB", "%dPB"]
     i = 0
     while i < len(fmt):
-        if sz < 1000:
+        if sz < unit:
             break
-        sz /= 1000
+        sz /= unit
         i += 1
     return fmt[i] % (sz)
 
@@ -48,13 +48,15 @@ def printTime(t):
         return "%5.1f years" % (t / RelyFuncts.YEAR)
 
 
-def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB,
+def TestRun(tests, period=RelyFuncts.YEAR,
+            objsize=1 * GB, stripe=4 * MB,
             parms=True, headings=True):
     """ run and report a set of specified simulations
         tests -- actual list of simulations to run
                 (print a header line for each None test)
         period -- simulation period
         objsize -- size of a single object
+        stripe -- width for striped objects
         parms -- print out general simulation parameters
         heads -- print out column headings
     """
@@ -113,10 +115,12 @@ def TestRun(tests, period=RelyFuncts.YEAR, objsize=1 * GB,
         print("    auto mark-out: %14s" % printTime(rados.delay))
         print("    recovery rate: %8s/s (%s)" %
                     (printSize(rados.speed), printTime(rados.rebuild_time())))
-        print("    object size:  %7s" % printSize(objsize))
         print("    osd fullness: %7d%%" % (rados.full * 100))
         print("    declustering: %7d PG/OSD" % (rados.pgs))
         print("    NRE model:        %10s" % (rados.nre))
+        print("    object size:  %7s" % printSize(objsize, unit=1024))
+        print("    stripe width: %7s" %
+            ("NONE" if stripe == 0 else printSize(stripe, unit=1024)))
 
     if parms and site is not None:
         print("Site parameters")

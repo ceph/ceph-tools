@@ -60,6 +60,9 @@ Notes on Reliability Modeling:
 	   of the placement group, divided by two (assuming that, on average,
 	   half of the objects in the placement group will have been recovered).
 
+	   For striped objects, this base durability must be raised to the
+	   power of the number of volumes across which it is striped.
+
 	   For whole-site failures, the annual durability of an (arbitrary)
  	   object is equal to the annual durability of the site.
 
@@ -86,39 +89,6 @@ Notes on Reliability Modeling:
 		disk divided by the specified recovery rate (which applies
 		to the target drive, not to the individual source drives)
 		
-
-	Given:
-
-	    a redundancy 'C' (number of copies or parity volumes - 1)
-
-	    a target set 'T' (number of volumes required to recover)
-		one for mirroring
-		number of data volumes for RAID-5 or RAID-6
-	    
-	    a drive replacment time of Trplc
-
-	    a drive recovery time of Trecov = useful capacity / recovery rate
-		
-	The probability of RAID failure during time 't' is modeled as the product of
-
-	   (a)	the probability of a single drive failure during time 't'
-
-	   (b)	the probability that one of 'T' drives will fail during time
-		(Treplc + Trecov), raised to the power C
-
-	If a RAID recovery fails, it is assumed that one entire disk is lost.
-	
-	NRE's during recovery are treated as described in general note 3.
-
-
-    Comments on RAID Reliability modeing
-
-	The recovery time is modeled as the sum of:
-
-	   (a)	the drive replacement time (assume detection to be instant)
-	
-	   (b)	the rebuild time, which is computed as the useful size of the
-		disk divided by the specified recovery rate
 
 	Given:
 
@@ -261,4 +231,4 @@ Notes on Reliability Modeling:
 
 	the probability of data loss in a system with N such data centers is modeled as:
 	
-		a + ((b1+b2) * (c1+c2+c3)^(N-1))  
+		a + ((b1+b2) * (c1+c2+c3)^(N-1))

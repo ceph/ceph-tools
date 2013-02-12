@@ -4,10 +4,17 @@
 
 from Tkinter import *
 
-# CONVENIENT UNITS
-MB = 1000000
-GB = MB * 1000
-TB = GB * 1000
+# speeds and disk sizes
+K = 1000
+M = K * 1000
+G = M * 1000
+T = G * 1000
+
+# file sizes
+KB = 1024
+MB = KB * 1024
+GB = MB * 1024
+TB = GB * 1024
 
 
 # Let me apologize in advance for this brute-force GUI.
@@ -109,10 +116,17 @@ class RelyGUI:
     rados_pgs = None
     rados_cpys = None
 
+    # these we generate dynamically
     obj_size = None
-    object_sizes = []       # generate this one dynamically
-    min_obj_size = 1 * MB
-    max_obj_size = 1 * TB
+    object_sizes = []
+    min_obj_size = 1 * 1024 * 1024
+    max_obj_size = 1 * 1024 * 1024 * 1024 * 1024
+    step_obj_size = 16
+    stripe_width = None
+    stripe_widths = ["none"]
+    min_stripe_width = 256 * 1024
+    max_stripe_width = 256 * 1024 * 1024
+    step_stripe_width = 4
 
     # GUI widget field widths
     ROWS = 20
@@ -186,7 +200,7 @@ class RelyGUI:
         Label(f, text="Size (GB)").grid(row=r)
         self.disk_size = Entry(f, width=self.long_wid)
         self.disk_size.delete(0, END)
-        self.disk_size.insert(0, self.long_fmt % (cfg.disk_size / GB))
+        self.disk_size.insert(0, self.long_fmt % (cfg.disk_size / G))
         self.disk_size.grid(row=r + 1)
         Label(f).grid(row=r + 2)
         r += 3
@@ -219,7 +233,7 @@ class RelyGUI:
                     values=self.rebuild_speeds)
         self.raid_speed.grid(row=r + 1)
         self.raid_speed.delete(0, END)
-        self.raid_speed.insert(0, "%d" % (cfg.raid_recover / MB))
+        self.raid_speed.insert(0, "%d" % (cfg.raid_recover / M))
         Label(f).grid(row=r + 2)
         r += 3
         Label(f, text="Volumes").grid(row=r)
@@ -257,7 +271,7 @@ class RelyGUI:
                     values=self.rebuild_speeds)
         self.rados_speed.grid(row=r + 1)
         self.rados_speed.delete(0, END)
-        self.rados_speed.insert(0, "%d" % (cfg.rados_recover / MB))
+        self.rados_speed.insert(0, "%d" % (cfg.rados_recover / M))
         Label(f).grid(row=r + 2)
         r += 3
         Label(f, text="Space Usage (%)").grid(row=r)
@@ -276,7 +290,7 @@ class RelyGUI:
         Label(f).grid(row=r + 2)
         r += 3
         Label(f, text="Object size").grid(row=r)
-        # generate this list dynamically
+        # generate object sizes dynamically from parameters
         os = self.min_obj_size
         while os <= self.max_obj_size:
             if os < MB:
@@ -288,7 +302,7 @@ class RelyGUI:
             else:
                 s = "%dTB" % (os / TB)
             self.object_sizes.append(s)
-            os *= 10
+            os *= self.step_obj_size
         self.obj_size = Spinbox(f, values=self.object_sizes,
             width=self.long_wid)
         self.obj_size.grid(row=r + 1)
@@ -326,7 +340,7 @@ class RelyGUI:
             width=self.med_wid)
         self.remote_speed.grid(row=r + 1)
         self.remote_speed.delete(0, END)
-        self.remote_speed.insert(0, "%d" % (cfg.remote_recover / MB))
+        self.remote_speed.insert(0, "%d" % (cfg.remote_recover / M))
         Label(f).grid(row=r + 2)
         r += 3
         Label(f, text="Disaster (years)").grid(row=r)
@@ -343,6 +357,23 @@ class RelyGUI:
         self.remote_avail.grid(row=r + 1)
         self.remote_avail.delete(0, END)
         self.remote_avail.insert(0, "never")
+        Label(f).grid(row=r + 2)
+        r += 3
+        Label(f, text="Stripe Width").grid(row=r)
+        # generate stripe widths dynamically from parameters
+        w = self.min_stripe_width
+        while w <= self.max_stripe_width:
+            if w < MB:
+                s = "%dKB" % (w / KB)
+            else:
+                s = "%dMB" % (w / MB)
+            self.stripe_widths.append(s)
+            w *= self.step_stripe_width
+        self.stripe_width = Spinbox(f, values=self.stripe_widths,
+            width=self.long_wid)
+        self.stripe_width.grid(row=r + 1)
+        self.stripe_width.delete(0, END)
+        self.stripe_width.insert(0, self.stripe_widths[0])
         Label(f).grid(row=r + 2)
         r += 3
         while r < self.ROWS:
@@ -404,27 +435,27 @@ class RelyGUI:
         """ scrape configuration information out of the widgets """
         self.cfg.period = 365.25 * 24 * int(self.period.get())
         self.cfg.disk_type = self.disk_type.get()
-        self.cfg.disk_size = int(self.disk_size.get()) * GB
+        self.cfg.disk_size = int(self.disk_size.get()) * G
         self.cfg.disk_nre = float(self.disk_nre.get())
         self.cfg.disk_fit = int(self.disk_fit.get())
         # cfg.node_fit = int(self.node_fit.get())
         self.cfg.raid_vols = int(self.raid_vols.get())
         self.cfg.raid_type = self.raid_type.get()
         self.cfg.raid_replace = int(self.raid_rplc.get())
-        self.cfg.raid_recover = int(self.raid_speed.get()) * MB
+        self.cfg.raid_recover = int(self.raid_speed.get()) * M
         self.cfg.nre_meaning = self.nre_meaning.get()
         self.cfg.rados_copies = int(self.rados_cpys.get())
         self.cfg.rados_markout = float(self.rados_down.get()) / 60
-        self.cfg.rados_recover = int(self.rados_speed.get()) * MB
+        self.cfg.rados_recover = int(self.rados_speed.get()) * M
         self.cfg.rados_decluster = int(self.rados_pgs.get())
         self.cfg.rados_fullness = float(self.rados_fullness.get()) / 100
         self.cfg.remote_latency = float(self.remote_latency.get()) / (60 * 60)
         self.cfg.remote_sites = int(self.site_num.get())
-        self.cfg.remote_recover = int(self.remote_speed.get()) * MB
+        self.cfg.remote_recover = int(self.remote_speed.get()) * M
         self.cfg.parms = 1 if self.parameters.get() == "yes" else 0
         self.cfg.headings = 1 if self.headings.get() == "yes" else 0
 
-        # these two parameters can also have the value "never"
+        # these parameters can also have the value "never"
         v = self.remote_fail.get()
         self.cfg.majeure = 0 if v == "never" else \
             1000000000 / (float(self.remote_fail.get()) * 365.25 * 24)
@@ -432,15 +463,32 @@ class RelyGUI:
         self.cfg.site_recover = 0 if v == "never" else \
             float(self.remote_avail.get()) * 24
 
-        # a more complex process due to the selection format
+        # a more complex process for the dynamically generated lists
         self.cfg.obj_size = self.min_obj_size
         i = 0
         while i < len(self.object_sizes) and \
                 self.cfg.obj_size < self.max_obj_size:
             if self.obj_size.get() == self.object_sizes[i]:
                 break
-            self.cfg.obj_size *= 10
+            self.cfg.obj_size *= self.step_obj_size
             i += 1
+
+        v = self.stripe_width.get()
+        if v == self.stripe_widths[0]:
+            self.cfg.stripe_width = 0
+        else:
+            i = 1
+            self.cfg.stripe_width = self.min_stripe_width
+            while i < len(self.stripe_widths) and \
+                    self.cfg.stripe_width < self.max_stripe_width:
+                if v == self.stripe_widths[i]:
+                    break
+                self.cfg.stripe_width *= self.step_stripe_width
+                i += 1
+        if self.cfg.stripe_width > self.cfg.obj_size:
+            print("\nIGNORING stripe width (%d) > object size (%d)\n" %
+                (self.cfg.stripe_width, self.cfg.obj_size))
+            self.cfg.stripe_width = 0
 
     def mainloop(self):
         self.root.mainloop()

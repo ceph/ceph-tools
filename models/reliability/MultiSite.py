@@ -9,15 +9,12 @@
 
 import RelyFuncts
 
-MB = 1000000
-GB = MB * 1000
-TB = GB * 1000
-PB = TB * 1000
+M = 1000000
 
 
 class MultiSite:
 
-    def __init__(self, rados, site, speed=10 * MB, latency=0, sites=1):
+    def __init__(self, rados, site, speed=10 * M, latency=0, sites=1):
         """ create a site reliability simulation
             rados -- single site rados model
             site -- site model

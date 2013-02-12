@@ -73,7 +73,8 @@ def simulate(cfg, todo):
 
     # run all the instantiated tests
     import TestRun
-    TestRun.TestRun(tests, period=t, parms=p, headings=h, objsize=cfg.obj_size)
+    TestRun.TestRun(tests, period=t, parms=p, headings=h,
+        objsize=cfg.obj_size, stripe=cfg.stripe_width)
 
 
 def main():

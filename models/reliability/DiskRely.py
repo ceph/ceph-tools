@@ -4,10 +4,10 @@
 
 import RelyFuncts
 
-MB = 1000000
-GB = MB * 1000
-TB = GB * 1000
-PB = TB * 1000
+M = 1000000
+G = M * 1000
+T = G * 1000
+P = T * 1000
 
 
 class Disk:
@@ -48,7 +48,7 @@ class Disk:
 class EnterpriseDisk(Disk):
     """ Spec'd Enterprise Drive (Seagate Barracuda) """
 
-    def __init__(self, size=2 * TB):
+    def __init__(self, size=2 * T):
         Disk.__init__(self, size=size, fits=826, nre=1.0e-15,
                     desc="Enterprise drive")
 
@@ -56,7 +56,7 @@ class EnterpriseDisk(Disk):
 class ConsumerDisk(Disk):
     """ Spec'd Consumer Drive (Seagate Barracuda) """
 
-    def __init__(self, size=2 * TB):
+    def __init__(self, size=2 * T):
         Disk.__init__(self, size=size, fits=1320, nre=1.0e-14,
                     desc="Consumer drive")
 
@@ -64,6 +64,6 @@ class ConsumerDisk(Disk):
 class RealDisk(Disk):
     """ Specs from Schroeders 2007 FAST paper """
 
-    def __init__(self, size=2 * TB):
+    def __init__(self, size=2 * T):
         Disk.__init__(self, size=size, fits=7800, nre=1.0e-14,
                     desc="real-world disk")

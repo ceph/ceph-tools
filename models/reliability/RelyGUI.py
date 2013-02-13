@@ -121,7 +121,7 @@ class RelyGUI:
     object_sizes = []
     min_obj_size = 1 * 1024 * 1024
     max_obj_size = 1 * 1024 * 1024 * 1024 * 1024
-    step_obj_size = 16
+    step_obj_size = 4
     stripe_width = None
     stripe_widths = ["none"]
     min_stripe_width = 256 * 1024

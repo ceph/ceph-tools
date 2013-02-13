@@ -51,6 +51,8 @@ def simulate(cfg, todo):
                             copies=cfg.rados_copies,
                             speed=cfg.rados_recover,
                             fullness=cfg.rados_fullness,
+                            objsize=cfg.obj_size,
+                            stripe=cfg.stripe_width,
                             nre=cfg.nre_meaning,
                             delay=cfg.rados_markout)
         if "rados" in todo:
@@ -58,11 +60,11 @@ def simulate(cfg, todo):
 
     if "multi" in todo or "site" in todo:
         import SiteRely
-        import MultiSite
+        import MultiRely
 
         # create the site and multi-site simulations
         site = SiteRely.Site(fits=cfg.majeure, rplc=cfg.site_recover)
-        multi = MultiSite.MultiSite(rados, site,
+        multi = MultiRely.MultiSite(rados, site,
                     speed=cfg.remote_recover,
                     latency=cfg.remote_latency,
                     sites=cfg.remote_sites)
@@ -73,8 +75,7 @@ def simulate(cfg, todo):
 
     # run all the instantiated tests
     import TestRun
-    TestRun.TestRun(tests, period=t, parms=p, headings=h,
-        objsize=cfg.obj_size, stripe=cfg.stripe_width)
+    TestRun.TestRun(tests, period=t, parms=p, headings=h)
 
 
 def main():
@@ -106,16 +107,17 @@ def main():
         # disk and raid reliability
         cfg.parms = 1
         cfg.headings = 1
-        cfg.raid_type = "RAID-1"
-        cfg.raid_vols = 2
+        cfg.raid_type = "RAID-5"
+        cfg.raid_vols = 4
+        speed = cfg.raid_recover
+        cfg.raid_recover = speed / (cfg.raid_vols - 1)
         simulate(cfg, "disk,raid")
         cfg.parms = 0
         cfg.headings = 0
 
-        speed = cfg.raid_recover
-        cfg.raid_type = "RAID-5"
-        cfg.raid_vols = 4
-        cfg.raid_recover = speed / (cfg.raid_vols - 1)
+        cfg.raid_type = "RAID-1"
+        cfg.raid_vols = 2
+        cfg.raid_recover = speed
         simulate(cfg, "raid")
         cfg.raid_type = "RAID-6"
         cfg.raid_vols = 8

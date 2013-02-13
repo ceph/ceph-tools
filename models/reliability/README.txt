@@ -104,7 +104,7 @@ Notes on Reliability Modeling:
 		
 	The probability of RAID failure during time 't' is modeled as the product of
 
-	   (a)	the probability of a single drive failure during time 't'
+	   (a)	the probability of any of the drives failing during time 't'
 
 	   (b)	the probability that one of 'T' drives will fail during time
 		(Treplc + Trecov), raised to the power C
@@ -136,6 +136,8 @@ Notes on Reliability Modeling:
 	    a redundancy 'C' (number of copies - 1)
 
 	    a declustering factor 'D' (number of volumes required to recover)
+            which is not quite the same as the number of PGs/OSD because
+            this may be larger than the number of drives
 	    
 	    a drive markout time of Tmark
 
@@ -143,10 +145,19 @@ Notes on Reliability Modeling:
 		
 	The probability of RADOS failure during time 't' is modeled as the product of
 
-	   (a)	the probability of a single drive failure during time 't'
+	   (a)	the probability of any of the copies failing during time 't'
 
 	   (b)	the probability that one of 'D' drives will fail during time
-		(Treplc + Trecov), raised to the power C
+		(Treplc + Trecov)
+
+	   (c) the probability that a single drive will fail during the time
+		(Treplc + Trecov) raised to the power of C  - 1
+
+		The difference between (b) and (c) is that the second 
+		copies are spread over D drives, and hence a failure of
+		any of them will impact the recovery.  But after the
+		second failure, the third copy is on exactly one drive.
+		Declustring makes it unlikely that any other PGs are affected.
 
 	If a RADOS recovery fails, it is assumed we loose one half (because
 	the failure will happen half way through the recovery) of a disk
@@ -203,12 +214,13 @@ Notes on Reliability Modeling:
 		data loss is low, but durability doesn't distinguish the loss
 		of a byte from the loss of a petabyte.
 
-	    b.	The probability that a primary site will lose all of its copies
+	    b.	The probability that some first site will lose all of its copies
 
 		b1. the probability of one copy failing during the period of
 		    interest (e.g. one year) and all others failing during the
  		    local recovery period ... which has already been computed
-		    above in the RADOS model.
+		    above in the RADOS model, but with a FIT rate multiplied
+		    by the number of sites
 
 		b2. the probability that the primary site will fail during
 		    the preriod of interest (e.g. one year)
@@ -232,3 +244,9 @@ Notes on Reliability Modeling:
 	the probability of data loss in a system with N such data centers is modeled as:
 	
 		a + ((b1+b2) * (c1+c2+c3)^(N-1))
+
+        the fraction of objects affected by an (a) event is roughly equal
+        to the replication speed times the latency divided by the cluster size
+
+        the fraction of objects affected by (b) failures is 1/2 placement
+        group, unless we lost all the sites, in which case it is everything

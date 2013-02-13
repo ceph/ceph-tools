@@ -1,6 +1,8 @@
 #
 # basic site reliability model
 #
+#   the modeled unit is a site
+#
 
 import RelyFuncts
 
@@ -28,9 +30,16 @@ class Site:
         else:
             self.description = "Site (%d TB)" % (size / T)
 
-    def p_failure(self, period=RelyFuncts.YEAR):
-        """ probability of catastrophic site failure during a period """
-        return float(1) - RelyFuncts.Pn(self.fits, period, n=0)
+    def durability(self, period=RelyFuncts.YEAR):
+        """ probability of survival for an arbitrary object """
+        return RelyFuncts.Pn(self.fits, period, n=0)
+
+    def p_failure(self, period=RelyFuncts.YEAR, mult=1):
+        """ probability of catastrophic site failure during a period
+                period -- time period over which to estimate failures
+                mult -- FIT rate multiplier
+        """
+        return float(1) - RelyFuncts.Pn(self.fits * mult, period, n=0)
 
     def availability(self):
         """ fraction of the time during which a remote copy is available """
@@ -46,18 +55,22 @@ class Site:
         mttf = RelyFuncts.BILLION / self.fits
         return float(mttf) / (mttf + self.replace)
 
-    def loss(self):
-        """ amouint of data lost after a drive failure """
-        return self.size
+    def loss(self, period=RelyFuncts.YEAR, per=0):
+        """ amouint of data lost after a complete site failure
+            period -- over which we are calculating loss
+            per -- 0 -> site, else size of the farm
+        """
+        # if we lose it, we lose it all
+        return self.size if per == 0 else per
 
     def p_nre(self):
         """ probability of NRE during recovery """
         return 0        # meaningless for a site
 
-    def loss_nre(self, objsize=0):
+    def loss_nre(self):
         """ expected data loss due to NRE's during recovery """
         return 0        # meaningless for a site
 
-    def corrupted_bytes(self, bytecount, objsize=0):
+    def corrupted_bytes(self, bytecount):
         """ number of bytes expected to be lost due to NRE """
         return 0        # meaningless for a site

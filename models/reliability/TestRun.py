@@ -12,11 +12,11 @@ import RadosRely
 
 
 # handy storage units
-KB = 1000
-MB = KB * 1000
-GB = MB * 1000
-TB = GB * 1000
-PB = TB * 1000
+K = 1000
+M = K * 1000
+G = M * 1000
+T = G * 1000
+P = T * 1000
 
 
 def printSize(sz, unit=1000):
@@ -49,14 +49,11 @@ def printTime(t):
 
 
 def TestRun(tests, period=RelyFuncts.YEAR,
-            objsize=1 * GB, stripe=4 * MB,
             parms=True, headings=True):
     """ run and report a set of specified simulations
         tests -- actual list of simulations to run
                 (print a header line for each None test)
         period -- simulation period
-        objsize -- size of a single object
-        stripe -- width for striped objects
         parms -- print out general simulation parameters
         heads -- print out column headings
     """
@@ -64,8 +61,8 @@ def TestRun(tests, period=RelyFuncts.YEAR,
     # output formats
     hfmt = "    %-20s %12s %12s %12s %12s"
     dfmt = "    %-20s %12s %12.2E %12.2E %12s"
-    lines = ("-------", "----------", "-----------", "--------", "----------")
-    heads = ("storage", "fail/unit", "bytes/unit", "bytes/PB", "durability")
+    lines = ("-------", "---------", "----------", "--------", "----------")
+    heads = ("storage", "fail/unit", " loss/unit", " loss/PB", "durability")
 
     # introspect the tests to find the disk/raid/rados parameters
     disk = None
@@ -118,9 +115,10 @@ def TestRun(tests, period=RelyFuncts.YEAR,
         print("    osd fullness: %7d%%" % (rados.full * 100))
         print("    declustering: %7d PG/OSD" % (rados.pgs))
         print("    NRE model:        %10s" % (rados.nre))
-        print("    object size:  %7s" % printSize(objsize, unit=1024))
+        print("    object size:  %7s" % printSize(rados.objsize, unit=1024))
         print("    stripe width: %7s" %
-            ("NONE" if stripe == 0 else printSize(stripe, unit=1024)))
+            ("NONE" if rados.stripe == 0 \
+                    else printSize(rados.stripe, unit=1024)))
 
     if parms and site is not None:
         print("Site parameters")
@@ -147,9 +145,14 @@ def TestRun(tests, period=RelyFuncts.YEAR,
                             (printTime(multi.latency)))
 
     if parms:
+        s = printTime(period)
         print("")
-        print("Expected failures, data loss (per drive/site, per PB) in %s" %
-                (printTime(period)))
+        print("Column legend")
+        print("\t1. storage configuration being modeled")
+        print("\t2. probability of unit (drive/group/PG) failure per %s" % (s))
+        print("\t3. expected lost bytes (per unit) per %s" % (s))
+        print("\t4. expected lost bytes (per PB) per %s" % (s))
+        print("\t5. P(no damage/loss) for an arbitrary object in %s" % (s))
 
     if headings:
         print("")
@@ -172,25 +175,18 @@ def TestRun(tests, period=RelyFuncts.YEAR,
             p = "%12.3e" % (p_fail)
 
         # expected data loss due to such failures
-        l_fail = p_fail * t.loss()
+        l_fail = p_fail * t.loss(period=period)
 
         # expected data loss from NREs during recovery
-        l_nre = p_fail * t.p_nre() * t.loss_nre(objsize)
+        l_nre = p_fail * t.p_nre() * t.loss_nre()
 
         # total expected loss (per drive, and per PB)
         loss_d = l_fail + l_nre
-        if t.__class__.__name__ == "Site":
-            loss_p = loss_d * PB / t.size
-            durability = float(1 - p_fail)
-        elif t.__class__.__name__ == "MultiSite":
-            loss_p = loss_d * PB / t.site.size
-            durability = float(1 - p_fail)
-        else:
-            vol_per_pb = PB / disk.size
-            loss_p = loss_d * vol_per_pb
-            durability = float(1 - p_fail) ** vol_per_pb
+        loss_p = p_fail * t.loss(period=period, per=P)
+        # FIX this does not include NRE losses
 
-        # figure out how to render the durability
+        # figure out and render the durability
+        durability = t.durability(period=period)
         if durability < .99999:
             d = "%6.3f%%" % (durability * 100)
         else:

@@ -1,81 +1,163 @@
 #!/usr/bin/python
 #
-# reliability simulation driver
+# Ceph - scalable distributed file system
+#
+# Copyright (C) Inktank
+#
+# This is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License version 2.1, as published by the Free Software
+# Foundation.  See file COPYING.
 #
 
+"""
+main routine for driving simulations
+    process args and invoke gui or a default set of tests
+"""
 
-def simulate(cfg, todo):
-    """ this function is invoked to run a specified set of simulations
-        with a specified set of parameters
-        cfg -- configuration parameters
-        todo -- simulations to run
+from DiskRely import Disk
+from RaidRely import RAID0, RAID1, RAID5, RAID6
+from RadosRely import RADOS
+from SiteRely import Site
+from MultiRely import MultiSite
+from Config import Config
+from Run import Run
+
+
+def oneTest(cfg, which):
+    """
+    run a single simulation (call-back from the GUI)
+        cfg -- configuration values to use
+        which -- type of simulation to be run
     """
 
-    tests = []
-    t = cfg.period
-    p = False if cfg.parms == 0 else True
-    h = False if cfg.headings == 0 else True
-
-    # instantiate the chosen disk
-    import DiskRely
-    disk = DiskRely.Disk(size=cfg.disk_size, fits=cfg.disk_fit,
+    # everybody needs a disk simulation
+    disk = Disk(size=cfg.disk_size,
+                        fits=cfg.disk_fit, fits2=cfg.disk_fit2,
                         nre=cfg.disk_nre,
                         desc="Disk: %s" % (cfg.disk_type))
-    if "disk" in todo:
-        tests.append(disk)
 
-    # create the RAID simulation
-    if "raid" in todo:
-        import RaidRely
-        if cfg.raid_type == "RAID-1":
-            raid = RaidRely.RAID1(disk, volumes=cfg.raid_vols,
-                                  nre=cfg.nre_meaning,
+    if which == "disk":
+        Run([disk], period=cfg.period, verbosity=cfg.verbose)
+        return
+
+    if which == "raid":
+        if cfg.raid_type == "RAID-0":
+            raid = RAID0(disk, volumes=cfg.raid_vols,
+                                  nre_model=cfg.nre_model,
                                   recovery=cfg.raid_recover,
-                                  delay=cfg.raid_replace)
+                                  delay=cfg.raid_replace,
+                                  objsize=cfg.obj_size)
+        elif cfg.raid_type == "RAID-1":
+            raid = RAID1(disk, volumes=cfg.raid_vols,
+                                  nre_model=cfg.nre_model,
+                                  recovery=cfg.raid_recover,
+                                  delay=cfg.raid_replace,
+                                  objsize=cfg.obj_size)
         elif cfg.raid_type == "RAID-5":
-            raid = RaidRely.RAID5(disk, volumes=cfg.raid_vols,
-                                  nre=cfg.nre_meaning,
+            raid = RAID5(disk, volumes=cfg.raid_vols,
+                                  nre_model=cfg.nre_model,
                                   recovery=cfg.raid_recover,
-                                  delay=cfg.raid_replace)
+                                  delay=cfg.raid_replace,
+                                  objsize=cfg.obj_size)
         elif cfg.raid_type == "RAID-6":
-            raid = RaidRely.RAID6(disk, volumes=cfg.raid_vols,
-                                  nre=cfg.nre_meaning,
+            raid = RAID6(disk, volumes=cfg.raid_vols,
+                                  nre_model=cfg.nre_model,
                                   recovery=cfg.raid_recover,
-                                  delay=cfg.raid_replace)
-        tests.append(raid)
+                                  delay=cfg.raid_replace,
+                                  objsize=cfg.obj_size)
+        Run([raid], period=cfg.period, verbosity=cfg.verbose)
+        return
 
-    # create the RADOS simulation
-    if "rados" in todo or "multi" in todo or "site" in todo:
-        import RadosRely
-        rados = RadosRely.RADOS(disk, pg=cfg.rados_decluster,
-                            copies=cfg.rados_copies,
-                            speed=cfg.rados_recover,
-                            fullness=cfg.rados_fullness,
-                            objsize=cfg.obj_size,
-                            stripe=cfg.stripe_width,
-                            nre=cfg.nre_meaning,
-                            delay=cfg.rados_markout)
-        if "rados" in todo:
-            tests.append(rados)
+    rados = RADOS(disk, pg=cfg.rados_decluster,
+                    copies=cfg.rados_copies,
+                    speed=cfg.rados_recover,
+                    fullness=cfg.rados_fullness,
+                    objsize=cfg.obj_size,
+                    stripe=cfg.stripe_length,
+                    nre_model=cfg.nre_model,
+                    delay=cfg.rados_markout)
+    if which == "rados":
+        Run([rados], period=cfg.period, verbosity=cfg.verbose)
+        return
 
-    if "multi" in todo or "site" in todo:
-        import SiteRely
-        import MultiRely
+    if which == "multi":
+        site = Site(fits=cfg.majeure, rplc=cfg.site_recover)
+        multi = MultiSite(rados, site,
+                speed=cfg.remote_recover,
+                latency=cfg.remote_latency,
+                sites=cfg.remote_sites)
+        Run([multi], period=cfg.period, verbosity=cfg.verbose)
+        return
 
-        # create the site and multi-site simulations
-        site = SiteRely.Site(fits=cfg.majeure, rplc=cfg.site_recover)
-        multi = MultiRely.MultiSite(rados, site,
+
+def defaultTests(cfg):
+    """
+    run a standard set of interesting simulations
+        cfg -- default configuration values
+    """
+    disk = Disk(size=cfg.disk_size, fits=cfg.disk_fit,
+                        nre=cfg.disk_nre,
+                        desc="Disk: %s" % (cfg.disk_type))
+
+    raid0 = RAID0(disk, volumes=2,
+                          nre_model=cfg.nre_model,
+                          recovery=cfg.raid_recover,
+                          delay=cfg.raid_replace,
+                          objsize=cfg.obj_size)
+    raid1 = RAID1(disk, volumes=2,
+                          nre_model=cfg.nre_model,
+                          recovery=cfg.raid_recover,
+                          delay=cfg.raid_replace,
+                          objsize=cfg.obj_size)
+    raid5 = RAID5(disk, volumes=4,
+                          nre_model=cfg.nre_model,
+                          recovery=cfg.raid_recover,
+                          delay=cfg.raid_replace,
+                          objsize=cfg.obj_size)
+    raid6 = RAID6(disk, volumes=8,
+                          nre_model=cfg.nre_model,
+                          recovery=cfg.raid_recover,
+                          delay=cfg.raid_replace,
+                          objsize=cfg.obj_size)
+
+    tests = [disk, raid0, raid5, raid1, raid6]
+
+    # single site RADOS
+    for cp in (1, 2, 3):
+        rados = RADOS(disk, pg=cfg.rados_decluster,
+                        copies=cp,
+                        speed=cfg.rados_recover,
+                        fullness=cfg.rados_fullness,
+                        objsize=cfg.obj_size,
+                        stripe=cfg.stripe_length,
+                        nre_model=cfg.nre_model,
+                        delay=cfg.rados_markout)
+        tests.append(rados)
+
+    # multi-site RADOS
+    tests.append(None)
+    site = Site(fits=cfg.majeure, rplc=cfg.site_recover)
+    tests.append(site)
+    for sites in (1, 2, 3, 4):
+        for cp in (1, 2, 3):
+            rados = RADOS(disk, pg=cfg.rados_decluster,
+                        copies=cp,
+                        speed=cfg.rados_recover,
+                        fullness=cfg.rados_fullness,
+                        objsize=cfg.obj_size,
+                        stripe=cfg.stripe_length,
+                        nre_model=cfg.nre_model,
+                        delay=cfg.rados_markout)
+
+            multi = MultiSite(rados, site,
                     speed=cfg.remote_recover,
                     latency=cfg.remote_latency,
-                    sites=cfg.remote_sites)
+                    sites=sites)
+            tests.append(multi)
 
-        if "site" in todo:
-            tests.append(site)
-        tests.append(multi)
-
-    # run all the instantiated tests
-    import TestRun
-    TestRun.TestRun(tests, period=t, parms=p, headings=h)
+    # and run them all
+    Run(tests, period=cfg.period, verbosity=cfg.verbose)
 
 
 def main():
@@ -95,54 +177,14 @@ def main():
             opts.gui = True
 
     # default configuration parameters
-    import TestConfig
-    cfg = TestConfig.TestConfig()
+    cfg = Config()
     if opts.gui:     # use the GUI to control the computations
-        import RelyGUI
-        gui = RelyGUI.RelyGUI(cfg, simulate)
+        from RelyGUI import RelyGUI
+        gui = RelyGUI(cfg, oneTest)
         gui.mainloop()
     else:       # run a stanadrd set of models
+        defaultTests(cfg)
 
-        print("BASIC RELIABILITIES, IGNORING DISASTERS")
-        # disk and raid reliability
-        cfg.parms = 1
-        cfg.headings = 1
-        cfg.raid_type = "RAID-5"
-        cfg.raid_vols = 4
-        speed = cfg.raid_recover
-        cfg.raid_recover = speed / (cfg.raid_vols - 1)
-        simulate(cfg, "disk,raid")
-        cfg.parms = 0
-        cfg.headings = 0
-
-        cfg.raid_type = "RAID-1"
-        cfg.raid_vols = 2
-        cfg.raid_recover = speed
-        simulate(cfg, "raid")
-        cfg.raid_type = "RAID-6"
-        cfg.raid_vols = 8
-        cfg.raid_recover = speed / (cfg.raid_vols - 2)
-        simulate(cfg, "raid")
-
-        # single-site RADOS reliability, ignoring site failures
-        cfg.disk_nre = 1E-20    # we have scrubbing
-        for cp in (2, 3):
-            cfg.rados_copies = cp
-            simulate(cfg, "rados")
-
-        print("")
-        print("MULTI-SITE RELIABILITIES, INCLUDING DISASTERS")
-
-        # multi-site RADOS reliability, with site failures
-        cfg.parms = 1
-        cfg.headings = 1
-        for sites in (1, 2, 3, 4):
-            cfg.remote_sites = sites
-            for cp in (1, 2, 3):
-                cfg.rados_copies = cp
-                simulate(cfg, "multi")
-                cfg.parms = 0
-                cfg.headings = 0
 
 if __name__ == "__main__":
     main()

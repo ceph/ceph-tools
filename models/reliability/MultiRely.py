@@ -1,147 +1,112 @@
 #
-# Multi-site recovery model
+# Ceph - scalable distributed file system
 #
-#   the modeled unit is, again, a Placement Group, but now we factor
-#   in multi-site replication, force majeure events and site repairs.
+# Copyright (C) Inktank
 #
-#   This makes all of the functions in this module more complex than
-#   their single-site counterparts, because they factor in combinations
-#   of device and site failures
+# This is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License version 2.1, as published by the Free Software
+# Foundation.  See file COPYING.
 #
 
-import RelyFuncts
+"""
+Multi-site recovery model
 
-M = 1000000
+   the modeled unit is, again, a Placement Group, but now we factor
+   in multi-site replication, force majeure events and site repairs.
+
+   This makes all of the functions in this module more complex than
+   their single-site counterparts, because they factor in combinations
+   of device and site failures
+"""
+
+from RelyFuncts import SECOND, YEAR
+
+MiB = 1000000
 
 
 class MultiSite:
 
-    def __init__(self, rados, site, speed=10 * M, latency=0, sites=1):
+    def __init__(self, rados, site, speed=10 * MiB, latency=0, sites=1):
         """ create a site reliability simulation
-            rados -- single site rados model
-            site -- site model
+            rados -- single site rados reliability model
+            site -- site reliability model
             speed -- multi-site replication/recovery speed
             latency -- replication latency
-            sites -- number of sites
+            sites -- number of sites replicating a single object
         """
         self.rados = rados
         self.site = site
         self.sites = sites
         self.speed = speed
-        self.recovery = (rados.disk.size / speed) * RelyFuncts.SECOND
         self.latency = latency
-        self.size = site.size   # size of each site
+        self.size = site.size   # useful size of each site
+        self.rawsize = site.size * sites
         self.description = "RADOS: %d-site, %d-cp" % (sites, rados.copies)
 
-    def compute(self, period=RelyFuncts.YEAR):
-        """ compute the probabilities of each type of failure """
-
-        # probability of losing a first site or all of its copies
-        self.ppf = self.site.p_failure(period, mult=self.sites)
-        self.ppc = self.rados.p_failure(period, mult=self.sites)
-
-        # probability (non-trivial) of remote site being down when we need it
-        self.psd = 1.0 - self.site.availability()
-
-        # probability (low) of losing all secondary copies during recovery
-        drives = self.site.size / self.rados.disk.size
-        needed = 1.0 if drives >= self.rados.pgs else \
-                    float(self.rados.pgs) / drives
-        # FIX this is what we need from second site, but it is less for third
-        self.psc = self.rados.p_failure(self.recovery, mult=needed)
-
-        # probability (negligible) of site failing during recovery
-        self.psf = self.site.p_failure(self.recovery)
-
-        # probability of losing all backup copies before we can recover
-        self.multifail = 1                  # given we have lost primary copies
-        failed = 1
-        while failed < self.sites:
-            self.multifail *= (self.psc + self.psd + self.psf)
-            failed += 1
-
-    def durability(self, period=RelyFuncts.YEAR):
-        """ probability of survival of an arbitrary object """
-
-        # figure out the probabilities
-        self.compute(period=period)
-
-        # primary site and all copies fail ... every object lost
-        Pf = self.ppf * self.multifail
-
-        # primary and all other copies fail ... probably 1/2 Placement Group
-        mult = self.sites * self.rados.obj_stripe()
-        Pc = self.rados.p_failure(period, mult=mult) * self.multifail
-        Pc *= self.rados.loss_fraction(sites=self.sites)
-
-        # failure to replicate loses work in transit
-        if self.latency > 0:
-            Pr = self.ppf
-            # BOGOSITY ALERT!!! ... fraction of objects affected
-            Pr *= RelyFuncts.SECOND * period * self.speed \
-                 / (self.site.size * 2)
-        else:
-            Pr = 0
-
-        return float(1) - (Pf + Pc + Pr)
-
-    def p_failure(self, period=RelyFuncts.YEAR):
-        """ probability of losing all copies during a perild """
-
-        # figure out the probabilities
-        self.compute(period=period)
-
-        # if there is only one site, this is simple
-        if self.sites < 2:
-            return self.ppf + self.ppc
-
-        # do we have to deal with pre-replication failures
-        #    if so, primary site failures are total failures
-        if self.latency > 0:
-            return self.ppf + (self.ppc * self.multifail)
-        else:
-            return (self.ppf + self.ppc) * self.multifail
-
-    #
-    # this is more complex than any of the other loss functions
-    # because multi-site includes different types of failures
-    #
-    def loss(self, period=RelyFuncts.YEAR, per=0):
-        """ amouint of data lost after failure
-            period -- over which we are calculating loss
-            per -- 0 -> single incident, else size of the farm
+    def descend(self, period, p, f, survivors):
+        """ recursive per site failure model
+            period -- the period during which this site must remain up
+            p -- accumulated probability of reaching this point
+            f -- tupple of accumulated failures thus far
+                 (sites, all copies on site, NREs)
+            survivors -- number of surviving replica sites
         """
-        # figure out the probabilities
-        self.compute(period=period)
 
-        # expected loss from complete site failures
-        Ls = self.site.loss(period=period, per=per)
-        if per > 0:
-            Ls *= float(per) / (self.site.size * self.sites)
-        Ps = self.ppf * (self.psf ** (self.sites - 1))
+        # probabilities of site or copy failures during period
+        self.site.compute(period=period, mult=survivors)
+        self.rados.compute(period=period)
+        if survivors > 1:
+            # we haven't yet reached the bottom of the tree
+            self.descend(self.site.replace, p * self.site.P_site,
+                        (f[0] + 1, f[1], f[2]), survivors - 1)
+            self.descend(self.rados.rebuild_time(self.speed),
+                        p * self.rados.P_drive,
+                        (f[0], f[1] + 1, f[2]), survivors - 1)
+            obj_fetch = SECOND * self.rados.objsize / self.speed
+            self.descend(obj_fetch, p * self.rados.P_nre,
+                        (f[0], f[1], f[2] + 1), survivors - 1)
+            return
 
-        # expected loss from failures of copies
-        Lc = self.rados.disk.size * self.rados.full * \
-             self.rados.loss_fraction(sites=self.sites)
-        if per > 0:
-            Lc *= per / (self.rados.disk.size * self.rados.copies * self.sites)
-        Pc = (self.ppf + self.ppc) * self.multifail
+        # we are down to the last site
+        if f[0] + f[1] == self.sites - 1:   # these are last copies
+            self.P_drive += p * self.rados.P_drive
+            self.L_drive = self.rados.L_drive   # sb 1/2 PG
+            self.P_nre += p * self.rados.P_nre      # FIX ... wrong bytecount
+            self.L_nre = self.rados.L_nre           # sb one object
+            if f[0] == self.sites - 1:      # this is last site
+                self.P_site += p * self.site.P_site
+                self.L_site = self.site.L_site
 
-        # expected data loss from not-yet-replicated data
-        Lr = RelyFuncts.SECOND * self.latency * self.speed / 2
-        Pr = self.ppf
+    def compute(self, period=YEAR, mult=1):
+        """ compute the failure tree for multiple sites """
 
-        # return the probability weighted loss
-        return ((Ps * Ls) + (Pc * Lc) + (Pr * Lr)) / (Ps + Pc + Pr)
+        # initialize probabilities
+        self.dur = 1.0
+        self.P_site = 0
+        self.P_drive = 0
+        self.P_nre = 0
+        self.P_rep = 0
+        self.L_rep = 0
+        self.L_nre = 0
+        self.L_drive = 0
+        self.L_site = 0
 
-    def p_nre(self):
-        """ probability of NRE during recovery """
-        return 0        # meaningless for a site
+        # note a few important sizes
+        disk_size = self.rados.size * self.rados.full
+        pg_size = disk_size / self.rados.pgs
 
-    def loss_nre(self, period=RelyFuncts.YEAR):
-        """ expected data loss due to NRE's during recovery """
-        return 0        # meaningless for a site
+        # descend the tree of probabilities and tally the damage
+        self.descend(period=period, p=1.0, f=(0, 0, 0), survivors=self.sites)
 
-    def corrupted_bytes(self, bytecount):
-        """ number of bytes expected to be lost due to NRE """
-        return 0        # meaningless for a site
+        # compute the probability/loss for asynchronous replication failure
+        if self.latency > 0:
+            self.site.compute(period=YEAR)
+            self.P_rep = self.site.P_site
+            self.L_rep = self.latency * self.speed / (2 * SECOND)
+
+        # compute the (loss weighted) overall multi-site durability
+        self.dur -= self.P_site
+        self.dur -= self.P_drive * self.L_drive / disk_size
+        self.dur -= self.P_nre * self.L_nre / disk_size
+        self.dur -= self.P_rep * self.L_rep / disk_size

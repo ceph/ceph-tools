@@ -1,0 +1,39 @@
+TEST CASES:
+
+DO:
+	add copyrights
+
+	tweak default parameters for more meaningful output
+
+    
+VALIDATE RESULTS
+	test my results vs servethehome.com/raid-calclulator
+		they support RAID-0 and get a very different number than I do
+		we used to agree on RAID-1 (do we still)
+		2+1 ... I say .000124, they say .00052
+		6+2 ...	I say 1.6E-9, they say 6E-6
+		but they are counting reads and writes, which I should
+http://www.servethehome.com/raid-calculator/raid-reliability-calculator-simple-mttdl-model/
+
+	but reconsider what I want to do with it,
+	    come up with a new model for what it should be in each
+		disk does NRE probability and loss computations
+		disk incorporates scrubbing
+		?does disk control the nre model?
+	    come up with a new code refactoring for who does what
+	    implement it
+
+	AND ... there was another calculator
+
+
+INVESTIGATE:
+
+FIX     1 site 3cp is 200x more reliable than 3site 1cp
+	because my psc computation for the third failure still
+	assumes that I need NPG drives after 2nd drive failure
+
+CONSIDER ADD fit2 support to the DiskRely
+
+CONSIDER ADD scrubbing and scrub efficacy in eliminating NREs
+
+CONSIDER ADD RAID stripes on top of the others

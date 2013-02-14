@@ -1,0 +1,495 @@
+<html>
+<head>
+<title>Notes on Reliability Modeling</title>
+</head>
+<body>
+
+<h1>
+<center>
+Notes on Reliability Modeling
+</center>
+</h1>
+
+<h2>
+General Notes
+</h2>
+
+<OL type=1>
+
+<LI> What is being modeled
+	<P>
+	When attempting models like this, I often find myself modeling
+	failures and recoveries that, while vital to correct operation,
+	turn out not to be correct terms in the problem at hand.  
+	The only defense I have found against such blunders is a clear 
+	statement of exactly what is (and what is not) to be modeled.
+	<P>
+	<UL>
+	   <LI> scope<br>
+		<P>
+		This is a model of the 
+		<strong>durability of a single, arbitrary, object</strong>
+		(with a specified size and layout).  That object lives in a
+		Placement Group, stored and replicated on disks in sites, and so
+		we must model the failures and recoveries of all of those components.
+		The models will follow cascades of operations, any of which may
+		succeed, fail or initiate their own recoveries, which will be 
+		dependent on other components.  But my goal is to focus at all
+		times on failures and recoveries of the components that contain
+		the object in question.  To the extent that I make no limiting
+		assumptions in the analysis, the same results should be equally
+		valid for any other object.</li>
+	    <li> pre-existing conditions<br>
+		<P>
+		The model begins with the <strong>first failure of any copy of the
+		chosen object</strong>, and follows all paths to the ultimate failure
+		of its last replica.  Because the model begins with the first 
+		such failure, there are no pre-existing failures, and the model
+		can focus exclusively on subsequent failures.</li>
+	</UL>
+<LI> Units
+	<P>
+	Failure rates are characterized in units of failures per billion hours 
+	(<strong>FITs</strong>),
+	and so I have tried to represent all periodicities in 
+	<strong>FITs</strong> and all times in hours.
+</LI>
+<P>
+<LI> Event Probabilities
+	<P>
+     	Failure events are considered to be Poisson, 
+	and given a failure rate <em>&lambda;</em>
+	the probability of <em>n</em> failure events during time <em>t</em> is
+	<UL>
+		P<sub>n</sub>(&lambda;,t) = (&lambda;t)<sup>n</sup> e<sup>-&lambda;t</sup> / n!
+	</UL>
+	<P>
+	Where there are multiple units that could contribute a failure, the 
+	failure rate should be multiplied by the number of units.  So, if 
+	copies are on three drives, the probability of an initial failure 
+	can reasonably be modeled (assuming independence) as
+	<UL>
+		P<sub>1</sub>(3f,t) ... as opposed to 3P<sub>1</sub>(f,t)
+	</UL>
+	<P>
+</LI>
+<P>
+<LI> Non-Recoverable Errors (NREs)
+	<P>
+	Non-Recoverable Errors (NREs) are read errors that cannot
+	be corrected by retries or ECC.  The most common causes are:
+	<OL type=a>
+		<li> media noise (single bit errors due to bad signal written to disk)</li>
+	    	<li> high-fly (weak signal written to disk, may come in bursts)</li>
+	    	<li> off-track writes (written in the wrong place, may come in bursts)</li>
+	    	<li> inability to read data back because of degradation due to thermal damage 
+			(from prolonged and repeated head contact?)</li>
+	    	<li> inability to read data back due to interference from particulate 
+			contaminants</li>
+	</OL>
+	<P>
+	I have not yet found numbers, but it seems that the incremental
+	contribution of post-write errors is small.  This means that the
+	primary value of "disk scrubbing" is that latent errors can be
+	found and corrected while there is still redundancy.  It is NREs
+	that are not discovered until recovery that give rise to data loss.
+	<P>
+	Given an expected average NRE rate of E/bit, the probability of
+	one or more NREs during a recovery of B bits is
+	<UL>
+	    1 - P<sub>0</sub>(E,B)
+	</UL>
+	<P>
+	It is not clear how to model their consequences.  I don't know
+	that there are any good choices, so I provide the user with a
+	few options:
+	<UL>
+	   <li> ignore them ... NRE's never happen
+		which might be true on scrubbed volumes
+	   </li>
+	   <li> consider them to cause a recovery to fail
+		which might be true for many RAID controllers
+	   </li>
+	   <li> consider them to result in a few corrupted bytes
+		which is surely true for undetected errors, and may be
+		true for detected errors with some RAID controllers
+	   </li>
+	   <li> consider half to fail, half to be corruption
+		a semi-arbitrary but commonly used modeling assumption
+	   </li>
+	</UL>
+</LI>
+<P>
+<LI> Combinations of failures
+	<P>
+	A few  different (causally independent) failures are possible:
+	<UL>
+	    <li>site failures (e.g. due to regional disasters)</li>
+	    <li>drive failures</li>
+	    <li>NREs</li>
+	</ul>
+	<P>
+	Because we have redundant information, data loss requires a
+	cascade of failures, but fortunately most of these combinations are not
+	interesting:
+	<UL>
+	    If an entire site fails, drive failures and NREs within that
+	    site have no further consequences.
+	    <P>
+	    If a drive fails during recovery, this will dwarf the consequences
+	    of any NREs that drive may have expereinced.
+	    <P>
+            the probability of an NRE (e.g. 10<sup>-15</sup>/bit) is so low 
+	    that we can ignore the possibility of independent NREs 
+	    on distinct volumes taking out all copies of the same data.
+	    As such the only NREs that have any interesting consequences 
+	    are those involving the last surviving copy.
+	</UL>
+	<P>
+	I assert that the <strong>only</strong> failure cases with
+	statistically interesting consequences are:
+	<OL type=a>
+	    <LI>the failure of all sites and/or copies</li>
+	    <LI>the failure of all but one copy, followed by a single NRE on that copy.
+	    </LI>
+	</OL>
+</LI>
+<P>
+<LI> The independence assumption
+	<P>
+	Several studies have demonstrated <em>cohort</em> effects in disk
+	drives, where the probability of drive failure is significantly
+	influenced by a shared history (same batches, brought into service
+	at the same time, subjected to the same enviroment and similar
+	use).  
+	There is not yet well accepted data on the magnitude of such
+	effects, but they can be reasonably modeled by introducing a 
+	distinct (higher) FIT rate for secondary failures.
+	<P>
+	Drive failure and NRE rates are backed up by a great deal
+	of data.  Site failure rates resulting from <em>force majeure</em>
+	events (e.g. Richter 9+ earthquakes, Category 5 hurricanes,
+	hundred year floods) are much more speculative.   Moreover,
+	once we venture beyond two-nines events we pass from 
+	regional- to continental- and even global-scale disasters, 
+	and the assumed <em>independence of site failures</em>
+	breaks down.  The consequences of such events would extend
+	well beyond the abilities of reliable storage systems, and
+	so such events are (I think reasonably) well outside the
+	scope of these models.
+	<P>
+	This suggests that one should not get too worked-up over
+	low order durability nines.  I am not sure what the real
+	import of 11-nines annual durability is when the comet 
+	that took out the dinosaurs was only an 8-nines annual 
+	durability event. 
+</LI>
+<P>
+<LI> Site reliability modeling
+	<P>
+	I do not know how Amazon has modeled site reliability, but
+	the two Werner Vogels quotes on the subject are:
+	<UL>
+	    <LI>the S3 service is design[ed] for 99.999999999% durability</LI>
+
+	    <LI>Amazon S3 is designed to sustain the concurrent loss of data 
+	    in two facilities</LI>
+	</UL>
+	<P>
+	The second quote would seem to suggest three copies.  It is
+	not clear whether or not the eleven-nines design modeling
+	includes regional disasters, but such numbers are easily 
+	obtained by three sites if regional disasters are ignored.
+	My take is that it is not possible to discuss more than 
+	four nines of annual durability without factoring in
+	facility and regional disasters (which are probably 2-4 
+	nines events).
+	<P>
+	I characterize sites by a FIT rate, which can be based on the
+	expected periodicity of the regional disaster (e.g. a 100 year
+	flood or a 1000 year earthquake).   Perhaps the model should
+	allow different sites to have different FIT rates ... although
+	I fear that this might add meaningless precision to numbers that
+	are already highly speculative.
+</LI>
+<P>
+<LI> Other exclusions
+	<P>
+	These models do not attempt to account for brief outages resulting
+	from power or connectivity failures as they do not (for the most
+	part) directly result in data loss.  Rather they result in reduced
+	availability and (for brief periods) reduced redundancy.
+	<P>
+	These models also make no attempt to account for s/w errors and
+	willful attacks.  These are legitimate susceptibilities, but beyond
+	my skill to quantitatively model.
+</LI>
+</OL>
+
+
+<h2>
+Single Site Reliability
+</h2>
+<H3>RAID Modeling</H3>
+<P>
+After a failure, there is a configurable <em>delay</em> (e.g. for an
+operator to notice the failure and replace the failed drive) before
+recovery can be initiated.  An entire volume worth of data is then 
+read from some number of surviving volumes (depending on the RAID model) 
+and written to the new volume at the specified <em>recovery</em> rate.  
+<UL>
+    <li> the probability of an NRE during recovery is based on 
+ 	 the total number of bytes to be read and written.
+	<P>
+	For non-redundant systems (just to have a number to report) I 
+	compute the probability of data loss due to NRE as the probability 
+	of an NRE during a single reading of the entire volume.</li>
+    <li> the probability of a subsequent drive failures during
+	 recovery is based on the time required to write a
+  	 full volume of data at the specified recovery speed.
+	<P>
+	For multiply redundant systems (like RAID6), recovery from a second
+	failure would probably extend the time to complete the recovery
+	(slightly increasing the probability of a third failure).  I have
+	ignored this as a small differfence at the end of a low-probability
+	chain.</li>
+</UL>
+
+<P>
+<H3>RADOS Modeling</H3>
+<P>
+After a failure, there is a configurable <em>mark-out</em> period
+before re-replication begins.  Because RADOS volumes are required
+to have a non-trivial free space margin, the amount of data to be 
+re-replicated is assumed to be the size of a volume times a 
+specified <em>fullness</em> factor.  It is then assumed that
+recovery proceeds (in parallel, many-to-many).  The number of
+OSDs read-from and written-to is assumed to be equal to the
+specified <em>declustering</em> factor, with each of those
+transfers happening at the specified <em>recovery speed</em>.
+<UL>
+    <li> the probability of an NRE during the recovery is based
+         on the total number of bytes to be read or written
+         (the size of a volume times the fullness factor).</li>
+	 <P>
+    <li> the time for recovery is assumed to be the number of
+	 bytes to be recovered, divided by the recovery speed
+         and the declustering factor.</li>
+	 <P>
+    <li> the probability of additional failures during the
+	 recovery is based on that recovery time, but using
+  	 a FIT rate multiplied by the declustering factor.
+	 <P>
+	 Note that this does not include failures of the 
+	 OSDs to which copies are being made ... because
+	 these failures (while they prolong the recovery
+	 process) do not lose additional redundancy.
+	 <P>
+	 As with RAID, this modeling of third failures
+	 does not reflect the increased risk of data loss
+	 during a lengthened recovery time (caused by the
+	 second failure) ... because (again) this is a 
+	 small difference at the end of a very low probability chain.</li>
+	</li>
+</UL>
+
+<H3>The Math</H3>
+Given :
+<UL>
+    N<sub>m</sub> ... minimum number of required volumes per redundancy group<br>
+    N<sub>r</sub> ... number of redundant volumes per redundancy group<br>
+    F<sub>1</sub> ... per copy primary FIT rate<br>
+    F<sub>2</sub> ... per copy secondary FIT rate<br>
+    F<sub>m</sub> ... the probability of a single-site Force Majeure event<br>
+    B  ... the number of useful bytes in a copy volume<br>
+    E  ... NRE rate<br>
+    T<sub>i</sub> ... period of interest<br>
+    T<sub>r</sub> ... recovery time<br>
+</UL>
+<OL type=a>
+
+	<li> The probability of an initial data loss incident is:<br>
+	    <ul>
+	    P<sub>1</sub>( (N<sub>m</sub>+N<sub>r</sub>)F<sub>1</sub>, T<sub>i</sub> )
+	    </ul>
+	</li>
+	<P>
+	<li> Having sufferred this loss, the probability of losing remaining redundancy is
+	    based on the recovery time (T<sub>r</sub> vs the period of interest 
+	   T<sub>i</sub>), and a (possibly different) secondary failure rate F<sub>2</sub>:<br>
+	    <ul>
+		<font size="1">n=N<sub>m</sub></font><br>
+		<font size="7">&Pi;</font> P<sub>1</sub>(nF<sub>2</sub>, T<sub>r</sub>)<br>
+		<font size="1">n=N<sub>m</sub>+N<sub>r</sub>-1</font><br>
+	    </ul>
+	</li>
+	<P>
+	<li>Thus the probability of losing all copies is the product of:
+	    <ul> 
+		the probability of an initial failure during the period of interest (term a)<br>
+ 		the probability of losing all additional copies during recovery (term b)<br>
+	    </ul>
+	    Since this failure takes out all objects in the redundancy group, the
+	    un-durability due to volume failures is equal to the probability of failure.
+	</li>
+	<P>
+	<li> To restore a single level of redundancy, we must completely read N<sub>m</sub> volumes,
+	    and then write one new copy.<br>
+	    The probability of getting one or more NRE during this recovery is:<br>
+	    <ul>
+		1 - P<sub>0</sub>(E, 8B(N<sub>m</sub>+1))
+	    </ul>
+	</li>
+	<P>
+	<li> the probability of losing all but the final copy, and then experiencing an NRE is
+	    the product of 
+	    <ul>
+		the probability of an intial failure during the period of interest (term a)<br>
+		the probability of losing all but the final copy during recovery
+			(term b, with <big>&Pi;</big> 
+			<small>n=N<sub>m</sub>+N<sub>r</sub>-1 to N<sub>m</sub>+1</small>)<br>
+		the probability of an NRE during recovery (term d)
+	    </ul>
+	    The amount of data affected by the NRE(s) is dependent on the redundancy
+	    mechanism.  If only a fraction of the objects in a redundancy group are
+	    lost, the failure probability can be scaled down by that fraction to
+	    compute the un-durability due to NREs.
+	</li>
+	<P>
+	<li> The probability of losing an entire site due to a <em>force majeure</em> 
+	     event during the period of interest is:
+	     <ul>
+	    P<sub>1</sub>(F<sub>m</sub>, T<sub>i</sub>)
+	     </ul>
+	    <P>
+	    Like drive falures, site failures take out all objects, so the 
+	    un-durability due to site failures is also equal to the probability of failure.
+	    <P>
+	    It is tempting to think that four geo-sites is plenty, but after
+	    a 200 year hurricane hits Atlanta, you will only have three.  This
+	    seems very unlikely, but when we are talking low order durability
+	    nines, we are talking low probability events.  
+	    <P>
+	    To reasonably model this, we incorporate a site replacement time
+	    (e.g. 10 days to obtain 1,000 drives, rack them up, re-replicate, 
+	    ship them to a new data center and bring those replicas back on line).  
+	</li>
+</OL>
+
+<h2>
+Multi-Site Reliability
+</h2>
+<P>
+Here, the combinatorics become more interesting.  The interesting failure cases would 
+seem to be:
+<UL>
+	<LI> the failure of all sites and/or copies</LI>
+	<LI> the failure of all sites/copies but one, which experiences an NRE </LI>
+	<LI> the failure of a site before it can (asynchronously) replicate recent changes</LI>
+	<LI> (and, just for completeness) NREs in multiple copies of a single object</LI>
+</UL>
+If we want to compute the probabilities for a fixed number of sites, the trees
+only have three or four branches per level and most of the individual branch
+probabilities have already been computed above.  But if we want to model an
+arbitrary number of sites, I think a recursive algorithmic approach makes more 
+sense than closed form equations:
+<UL>
+	<LI> we enter with:
+	<UL>
+		<LI> a base probability of having reached this point </LI>
+		<LI> a number of site failures, drive failures, and NREs 
+			experienced thus far, in the current walk</LI>
+		<LI> the time period during which we must maintain object integrity</LI>
+		<LI> the number of disk bytes we must read to recover data for others</LI>
+	</LI>
+	</UL>
+	<LI> given this we compute:
+	<UL>
+		<LI> the probability our site will fail during the prescribed period
+			(from the single site model)</LI>
+		<LI> the probability we will lose all of our copies during 
+		     the prescribed period (from the single site model)</LI>
+		<LI> the probability we will experience an NRE on the last copy 
+		     while returning the specified number of bytes
+			(from the single site model)</LI>
+	</UL>
+	</LI>
+	<LI> and for each of these eventualities, we recursively compute the
+	     probability of subsequent failures based on:
+	<UL>
+		<LI> the number of surviving sites</LI>
+		<LI> the amount of data we will have to read in order to do that recovery
+		<UL>
+			<LI> an entire site worth of data for site failures </LI>
+			<LI> one placement group for disk and copy failures </LI>
+			<LI> one object for NREs </LI>
+		</UL>
+		<LI> the amount of time it will take to recover from the most recent failure</LI>
+		<UL>
+			<li>for disk/copy failures and NREs, the amount of data to be 
+				copied divided by the inter-site recovery bandwidth</li>
+			<li>for site failures, the specified site replacement time</li>
+		</UL>
+		</LI>
+	</UL>
+	</LI>
+	<LI> At the bottom of the recursion (the final site), we will look at the 
+	     accumulated failures (all sites, all copies, NRE in the last copy)
+	     and add the compounded probability of this event to the probability
+	     of the associated mode of failure.
+	</LI>
+</UL>
+<P>
+Note that initial asynchronous replication failures do not require recursive
+analysis.  These can result from a single-site failure, and so 
+are computed much more simply:
+	<UL>
+		The probability of a replication failure is simply the probability
+		of a site failure during the period of interest.
+		<P>
+		The amount of data lost due to a replication failure is 
+		the amount of data that has been acked to local clients
+		but not yet transmitted to a remote host.  This can be no
+		more than could be transmitted (at inter-site replication speed)
+		during the specified replication latency.  This is probably a very
+		conservative number as it assumes the link is always running at
+		full speed, and on average, we should lose at most 1/2 that amount.
+		<P>
+		How many objects are affected is less clear ... but for the 
+		initial analysis I assume the updates are whole objects, and 
+		simply divide the number of lost bytes by the specified object size.
+	</UL>
+
+<h2>
+Testing Strategy
+</h2>
+I would love to test these models by verifying them against specific configurations 
+for which there are accepted results.  Sadly, few calculators yield the same 
+results for even simple computations, even with the same parameters.   And 
+even if I could so verify my basic RAID models, this wouldn't help with 
+the verification of RADOS results (for which there are no other models).
+I have chosen a different strategy:
+<UL>
+   <LI>	Construct naive but relatively obvious models (that compute probabilities
+	by division, multiplication, and addition).  Their obviousness will make
+	them much easier to understand (and review for correctness).</LI>
+   <LI>	Compare the results of those crude models with the results from these
+	(hopefully) more correct models, within a reasonable epsilon.  Some 
+	estimates (e.g. the probability of simple events over long periods
+	of time) should be right to within a few tenths of a percent.
+	Others (e.g. cascaded failures among multiple components) may only 
+	be estimated to within five percent ... but even the wide ranges will 
+	catch (have caught) many bugs.  Moreover, where the variance is
+	wide, it should be possible to justify the variation (by the weakness
+	of the crude approximation).</li>
+   <LI>	Vary each of the simulation parameters and confirm that it has
+	the expected effect on the results (e.g. doubling a period or FIT
+	rate should roughly double the probability of failure).</li>
+   <LI> Compare the results of more complex scenarios with crude deltas 
+	to the results of their simpler components, to verify the relationship
+	between those results.</li>
+</UL>
+This is not as good as golden results, but a few dozen such assertions will
+go a long way towards building (at least my) confidence in these models.
+<body>
+</html>

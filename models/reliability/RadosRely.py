@@ -1,12 +1,21 @@
+# Ceph - scalable distributed file system
 #
-# RADOS reliability models
+# Copyright (C) Inktank
 #
-#   the modeled unit is a Placement Group
+# This is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License version 2.1, as published by the Free Software
+# Foundation.  See file COPYING.
 #
 
-import RelyFuncts
+"""
+RADOS reliability model
+    the modeled unit is a Placement Group
+"""
 
-MARKOUT = 10 * RelyFuncts.MINUTE
+from RelyFuncts import SECOND, MINUTE, YEAR
+
+MARKOUT = 10 * MINUTE
 RECOVER = 50 * 1000000
 FULL = 0.75
 
@@ -25,16 +34,16 @@ class RADOS:
                 delay=MARKOUT,      # default mark-out
                 fullness=FULL,      # how full are the volumes
                 objsize=1 * GB,     # average object size
-                stripe=4 * MB,      # typical stripe width
-                nre="ignore"):      # scrub largely eliminates these
+                stripe=1,           # typical stripe length
+                nre_model="ignore"):  # scrub largely eliminates these
         """ create a RADOS reliability simulation
             pg -- number of placement groups per OSD
             copies -- number of copies for these objects
             speed -- expected recovery rate (bytes/second)
             delay -- automatic mark-out interval (hours)
             objsize -- typical object size
-            stripe -- typical stripe width
-            nre -- how to handle NREs (ignore, error, fail)
+            stripe -- typical stripe length
+            nre_model -- how to handle NREs (ignore, error, fail)
         """
         self.disk = disk
         self.speed = speed
@@ -44,22 +53,20 @@ class RADOS:
         self.full = fullness
         self.objsize = objsize
         self.stripe = stripe
-        self.nre = nre
-        self.size = disk.size * copies  # size of a set of copies
+        self.nre_model = nre_model
+        self.size = disk.size                # useful data
+        self.rawsize = disk.size * copies    # space consumed
         self.description = "RADOS: %d cp" % (copies)
 
-    def rebuild_time(self):
+        self.P_site = 0     # inapplicable
+        self.L_site = 0     # inapplicable
+        self.P_rep = 0      # inapplicable
+        self.L_rep = 0      # inapplicable
+
+    def rebuild_time(self, speed):
         """ expected time to recover from a drive failure """
-        seconds = (self.disk.size * self.full) / (self.speed * self.pgs)
-        return seconds * RelyFuncts.SECOND
-
-    def obj_stripe(self):
-        """ the number of OSDs across which a user object is striped """
-
-        if self.stripe == 0 or self.stripe >= self.objsize:
-            return 1
-        x = self.objsize / self.stripe
-        return x if x < self.pgs else self.pgs
+        seconds = float(self.disk.size * self.full) / (speed * self.pgs)
+        return seconds * SECOND
 
     def loss_fraction(self, sites=1):
         """ the fraction of objects that are lost when a drive fails """
@@ -68,77 +75,46 @@ class RADOS:
             return 1
         return float(1) / (2 * self.pgs)
 
-    def durability(self, period=RelyFuncts.YEAR, mult=1):
-        """ probability of an arbitrary object surviving the period """
-
-        # probability of losing a all copies of Placement Group
-        mult *= self.obj_stripe()
-        f = self.p_failure(period=period, mult=mult)
-
-        # but most of the PGs on a failed drive wll survive
-        f *= self.loss_fraction()
-
-        return float(1) - f
-
-    def p_failure(self, period=RelyFuncts.YEAR, mult=1):
-        """ probability of losing a PG as a result of drive failures
+    def compute(self, period=YEAR, mult=1):
+        """ probability of an arbitrary object surviving the period
                 period -- time over which Pfail should be estimated
                 mult -- FIT rate multiplier
         """
+        self.dur = 1.0
 
         # probability of an initial failure (of any copy)
-        p_fail = self.disk.p_failure(period=period, mult=mult * self.copies)
+        n = mult * self.copies * self.stripe
+        self.disk.compute(period=period, mult=n)
+        self.P_drive = self.disk.P_drive
+        self.P_nre = self.disk.P_drive
 
-        # probability of losing backups before we can recover
-        recover = float(self.delay) + self.rebuild_time()
-        if self.copies > 1:
-            # probability of losing the second copy of this PG
-            p_fail *= self.disk.p_failure(period=recover, mult=self.pgs)
+        # probability of losing the remaining copies
+        n = self.pgs
+        recover = float(self.delay) + self.rebuild_time(self.speed)
+        copies = self.copies - 1
+        while copies > 0:
+            self.disk.compute(period=recover, mult=copies * n,
+                            secondary=True)
+            self.P_drive *= self.disk.P_drive
+            if copies > 1:
+                self.P_nre *= self.disk.P_drive
+            copies -= 1
 
-            # probability of losing any additional copies
-            copies = self.copies - 2
-            while copies > 0:
-                p_fail *= self.disk.p_failure(period=recover, mult=copies)
-                copies -= 1
+        # amount of data to be read and written
+        read_bytes = self.size * self.full
+        write_bytes = read_bytes if self.copies > 1 else 0
 
-        return p_fail
+        # fraction of objects affected by this failure
+        fraction = self.loss_fraction()
+        self.L_drive = read_bytes * fraction
+        self.dur = 1.0 - (self.P_drive * fraction)
 
-    def p_nre(self):
-        """ probability of an NRE during recovery """
-        if self.nre == "ignore":
-            return 0
-
-        # FIX ... this only works for disk size * nre << 1
-        return self.disk.size * self.full * self.disk.nre
-
-    def loss(self, period=RelyFuncts.YEAR, per=0):
-        """ amouint of data lost as a result of drive failures
-            period -- over which we are calculating loss
-            per -- 0 -> drive, else size of the farm
-        """
-
-        # we could, in principle lose a whole drive worth of data
-        l = self.disk.size * self.full * self.loss_fraction()
-
-        # scale this up to the specified farm size
-        if per > 0:
-            l *= per / (self.copies * self.disk.size)
-
-        return l
-
-    def loss_nre(self):
-        """ amount of data lost by NRE during recovery """
-        if self.nre == "ignore":
-            return 0
-
-        badBytes = self.disk.corrupted_bytes(self.disk.size)
-        pgSize = self.disk.size * self.full / self.pgs
-        loss = self.objsize if self.objsize > 0 and self.objsize < pgSize \
-                else pgSize
-
-        if self.nre == "fail":
-            return loss         # one NRE = one lost object
-        elif self.nre == "error":
-            return badBytes     # one NRE = one lost byte
-        else:   # half lost objects, half undetected errors
-            return (badBytes + loss) / 2
+        # probability of and expected loss due to NREs
+        if self.nre_model == "ignore":
+            self.P_nre = 0
+            self.L_nre = 0
+        else:       # we will lose the lesser of a PG or object
+            self.P_nre *= self.disk.p_nre(bytes=read_bytes + write_bytes)
+            pg = self.size * self.full * fraction
+            self.L_nre = self.objsize if self.objsize < pg else pg
+            self.dur -= self.P_nre * self.L_nre / (self.size * self.full)

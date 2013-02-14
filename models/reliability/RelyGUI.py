@@ -1,14 +1,25 @@
-#!/USR/BIn/python
 #
-# GUI for setting reliability model parameters
+# Ceph - scalable distributed file system
+#
+# Copyright (C) Inktank
+#
+# This is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License version 2.1, as published by the Free Software
+# Foundation.  See file COPYING.
+#
+
+"""
+GUI for playing with reliability model parameters
+"""
 
 from Tkinter import *
 
 # speeds and disk sizes
-K = 1000
-M = K * 1000
-G = M * 1000
-T = G * 1000
+KiB = 1000
+MiB = KiB * 1000
+GiB = MiB * 1000
+TiB = GiB * 1000
 
 # file sizes
 KB = 1024
@@ -28,32 +39,46 @@ class RelyGUI:
     #
     disk_type = None
     diskTypes = [       # menu of disk drive types
-        "Enterprise", "Consumer  ", "Real      "
+        "Enterprise", "Consumer", "Real"
     ]
 
     disk_nre = None
     nre_rates = [       # list of likely NRE rates ... correspond to above
-        "1.0E-15", "1.0E-14", "1.0E-13"
+        "1.0E-17", "1.0E-16", "1.0E-15", "1.0E-14", "1.0E-13"
     ]
 
-    disk_fit = None
-    fit_rates = [       # list of FIT rates ... correspond to the above
-        826, 1320, 7800
-    ]
+    # default FIT rates for various classes of drives
+    fit_map = {
+        'Enterprise': "826",
+        'Consumer': "1320",
+        'Real': "7800"
+    }
+
+    # default NRE rates for various classes of drives
+    nre_map = {
+        'Enterprise': "1.0E-16",
+        'Consumer': "1.0E-15",
+        'Real': "1.0E-14"
+    }
 
     raid_type = None
     raidTypes = [       # menu of RAID types
-        "RAID-1", "RAID-5", "RAID-6"
+        "RAID-0", "RAID-1", "RAID-5", "RAID-6"
     ]
 
     raid_vols = None
-    raid_volcount = [   # dflt vols per raid group ... correspond to above
-        2, 3, 6
-    ]
 
-    nre_meaning = None
+    # default volume counts for various RAID configurations
+    vol_map = {
+        'RAID-0': 1,
+        'RAID-1': 2,
+        'RAID-5': 3,
+        'RAID-6': 6,
+    }
+
+    nre_model = None
     nreTypes = [      # ways of modeling NREs
-        "ignore",  "error", "fail", "ignore+fail/2"
+        "ignore",  "error", "fail", "error+fail/2"
     ]
 
     raid_rplc = None
@@ -69,7 +94,7 @@ class RelyGUI:
     raid_speed = None
     rados_speed = None
     rebuild_speeds = [  # list of likely rebuild speeds (MB/s)
-        1,  2, 5, 10, 20, 25, 40, 50, 60, 80, 100, 120, 140, 160
+        1,  2, 5, 10, 15, 20, 25, 40, 50, 60, 80, 100, 120, 140, 160
     ]
 
     remote_latency = None
@@ -105,16 +130,19 @@ class RelyGUI:
         100, 150, 200, 250, 300, 365, "never"
     ]
 
-    parameters = None
-    headers = None
-    yes_no = [
-        "no", "yes"
+    verbosities = [    # display verbosity
+        "all",
+        "parameters",
+        "headings",
+        "data only"
     ]
 
+    verbosity = None
     period = None
     disk_size = None
     rados_pgs = None
     rados_cpys = None
+    stripe_length = None
 
     # these we generate dynamically
     obj_size = None
@@ -122,11 +150,6 @@ class RelyGUI:
     min_obj_size = 1 * 1024 * 1024
     max_obj_size = 1 * 1024 * 1024 * 1024 * 1024
     step_obj_size = 4
-    stripe_width = None
-    stripe_widths = ["none"]
-    min_stripe_width = 256 * 1024
-    max_stripe_width = 256 * 1024 * 1024
-    step_stripe_width = 4
 
     # GUI widget field widths
     ROWS = 20
@@ -142,23 +165,37 @@ class RelyGUI:
 
     def do_disk(self):
         """ calculate disk reliability """
-        self.CfgInfo()
+        self.getCfgInfo()
         self.doit(self.cfg, "disk")
 
     def do_raid(self):
         """ calculate raid reliability """
-        self.CfgInfo()
+        self.getCfgInfo()
         self.doit(self.cfg, "raid")
 
     def do_rados(self):
         """ calculate RADOS reliability """
-        self.CfgInfo()
+        self.getCfgInfo()
         self.doit(self.cfg, "rados")
 
     def do_sites(self):
         """ calculate Multi-Site RADOS reliability """
-        self.CfgInfo()
+        self.getCfgInfo()
         self.doit(self.cfg, "multi")
+
+    def diskchoice(self, value):
+        """ change default FIT and NRE rates to match disk selection """
+        self.disk_nre.delete(0, END)
+        self.disk_nre.insert(0, self.nre_map[value])
+        self.disk_fit.delete(0, END)
+        self.disk_fit.insert(0, self.fit_map[value])
+        self.disk_fit2.delete(0, END)
+        self.disk_fit2.insert(0, self.fit_map[value])
+
+    def raidchoice(self, value):
+        """ change default # of volumes to match RAID levels """
+        self.raid_vols.delete(0, END)
+        self.raid_vols.insert(0, self.vol_map[value])
 
     def __init__(self, cfg, doit):
         """ create the GUI panel widgets
@@ -185,11 +222,21 @@ class RelyGUI:
                     command=self.diskchoice).grid(row=r + 1)
         Label(f).grid(row=r + 2)
         r += 3
-        Label(f, text="disk FITs").grid(row=r)
+        Label(f, text="Size (GiB)").grid(row=r)
+        self.disk_size = Entry(f, width=self.long_wid)
+        self.disk_size.delete(0, END)
+        self.disk_size.insert(0, self.long_fmt % (cfg.disk_size / GiB))
+        self.disk_size.grid(row=r + 1)
+        Label(f).grid(row=r + 2)
+        r += 3
+        Label(f, text="Primary FITs").grid(row=r)
         self.disk_fit = Entry(f, width=self.long_wid)
-        self.disk_fit.delete(0, END)
-        self.disk_fit.insert(0, self.fit_rates[0])
         self.disk_fit.grid(row=r + 1)
+        Label(f).grid(row=r + 2)
+        r += 3
+        Label(f, text="Secondary FITs").grid(row=r)
+        self.disk_fit2 = Entry(f, width=self.long_wid)
+        self.disk_fit2.grid(row=r + 1)
         Label(f).grid(row=r + 2)
         r += 3
         Label(f, text="NRE rate").grid(row=r)
@@ -197,25 +244,19 @@ class RelyGUI:
         self.disk_nre.grid(row=r + 1)
         Label(f).grid(row=r + 2)
         r += 3
-        Label(f, text="Size (GB)").grid(row=r)
-        self.disk_size = Entry(f, width=self.long_wid)
-        self.disk_size.delete(0, END)
-        self.disk_size.insert(0, self.long_fmt % (cfg.disk_size / G))
-        self.disk_size.grid(row=r + 1)
-        Label(f).grid(row=r + 2)
-        r += 3
         while r < self.ROWS:
             Label(f).grid(row=r)
             r += 1
         Button(f, text="RELIABILITY", command=self.do_disk).grid(row=r)
         f.grid(column=1, row=1)
+        self.diskchoice(self.diskTypes[0])  # set default disk type
 
         # second stack (RAID)
         f = Frame(t, bd=self.BORDER, relief=RIDGE)
         r = 1
         Label(f, text="RAID Type").grid(row=r)
         self.raid_type = StringVar(f)
-        self.raid_type.set(self.raidTypes[0])
+        self.raid_type.set("RAID-1")
         OptionMenu(f, self.raid_type, *self.raidTypes,
                    command=self.raidchoice).grid(row=r + 1)
         Label(f).grid(row=r + 2)
@@ -228,18 +269,19 @@ class RelyGUI:
         self.raid_rplc.insert(0, "%d" % cfg.raid_replace)
         Label(f).grid(row=r + 2)
         r += 3
-        Label(f, text="Rebuild (MB/s)").grid(row=r)
+        Label(f, text="Rebuild (MiB/s)").grid(row=r)
         self.raid_speed = Spinbox(f, width=self.med_wid,
                     values=self.rebuild_speeds)
         self.raid_speed.grid(row=r + 1)
         self.raid_speed.delete(0, END)
-        self.raid_speed.insert(0, "%d" % (cfg.raid_recover / M))
+        self.raid_speed.insert(0, "%d" % (cfg.raid_recover / MiB))
         Label(f).grid(row=r + 2)
         r += 3
         Label(f, text="Volumes").grid(row=r)
-        self.raid_vols = Spinbox(f, from_=2, to=10, width=self.short_wid)
+        self.raid_vols = Spinbox(f, from_=1, to=10, width=self.short_wid)
         self.raid_vols.grid(row=r + 1)
         Label(f).grid(row=r + 2)
+        self.raidchoice("RAID-1")   # set default number of volumes
         r += 3
         while r < self.ROWS:
             Label(f).grid(row=r)
@@ -266,12 +308,12 @@ class RelyGUI:
         self.rados_down.insert(0, "%d" % (cfg.rados_markout * 60))
         Label(f).grid(row=r + 2)
         r += 3
-        Label(f, text="Recovery (MB/s)").grid(row=r)
+        Label(f, text="Recovery (MiB/s)").grid(row=r)
         self.rados_speed = Spinbox(f, width=self.med_wid,
                     values=self.rebuild_speeds)
         self.rados_speed.grid(row=r + 1)
         self.rados_speed.delete(0, END)
-        self.rados_speed.insert(0, "%d" % (cfg.rados_recover / M))
+        self.rados_speed.insert(0, "%d" % (cfg.rados_recover / MiB))
         Label(f).grid(row=r + 2)
         r += 3
         Label(f, text="Space Usage (%)").grid(row=r)
@@ -289,25 +331,11 @@ class RelyGUI:
         self.rados_pgs.grid(row=r + 1)
         Label(f).grid(row=r + 2)
         r += 3
-        Label(f, text="Object size").grid(row=r)
-        # generate object sizes dynamically from parameters
-        os = self.min_obj_size
-        while os <= self.max_obj_size:
-            if os < MB:
-                s = "%dKB" % (os / KB)
-            elif os < GB:
-                s = "%dMB" % (os / MB)
-            elif os < TB:
-                s = "%dGB" % (os / GB)
-            else:
-                s = "%dTB" % (os / TB)
-            self.object_sizes.append(s)
-            os *= self.step_obj_size
-        self.obj_size = Spinbox(f, values=self.object_sizes,
-            width=self.long_wid)
-        self.obj_size.grid(row=r + 1)
-        self.obj_size.delete(0, END)
-        self.obj_size.insert(0, self.object_sizes[0])
+        Label(f, text="Stripe Length").grid(row=r)
+        self.stripe_length = Entry(f, width=self.med_wid)
+        self.stripe_length.delete(0, END)
+        self.stripe_length.insert(0, self.med_fmt % cfg.stripe_length)
+        self.stripe_length.grid(row=r + 1)
         Label(f).grid(row=r + 2)
         r += 3
         while r < self.ROWS:
@@ -335,12 +363,12 @@ class RelyGUI:
         self.remote_latency.insert(0, "%d" % (cfg.remote_latency * 60 * 60))
         Label(f).grid(row=r + 2)
         r += 3
-        Label(f, text="Recovery (MB/s)").grid(row=r)
+        Label(f, text="Recovery (MiB/s)").grid(row=r)
         self.remote_speed = Spinbox(f, values=self.remote_speeds,
             width=self.med_wid)
         self.remote_speed.grid(row=r + 1)
         self.remote_speed.delete(0, END)
-        self.remote_speed.insert(0, "%d" % (cfg.remote_recover / M))
+        self.remote_speed.insert(0, "%d" % (cfg.remote_recover / MiB))
         Label(f).grid(row=r + 2)
         r += 3
         Label(f, text="Disaster (years)").grid(row=r)
@@ -348,7 +376,8 @@ class RelyGUI:
             width=self.long_wid)
         self.remote_fail.grid(row=r + 1)
         self.remote_fail.delete(0, END)
-        self.remote_fail.insert(0, "never")
+        self.remote_fail.insert(0, "1000")
+        # FIX - get this from cfg ... but translate from FITS
         Label(f).grid(column=2, row=r + 2)
         r += 3
         Label(f, text="Site Recover (days)").grid(row=r)
@@ -356,24 +385,8 @@ class RelyGUI:
             width=self.long_wid)
         self.remote_avail.grid(row=r + 1)
         self.remote_avail.delete(0, END)
-        self.remote_avail.insert(0, "never")
-        Label(f).grid(row=r + 2)
-        r += 3
-        Label(f, text="Stripe Width").grid(row=r)
-        # generate stripe widths dynamically from parameters
-        w = self.min_stripe_width
-        while w <= self.max_stripe_width:
-            if w < MB:
-                s = "%dKB" % (w / KB)
-            else:
-                s = "%dMB" % (w / MB)
-            self.stripe_widths.append(s)
-            w *= self.step_stripe_width
-        self.stripe_width = Spinbox(f, values=self.stripe_widths,
-            width=self.long_wid)
-        self.stripe_width.grid(row=r + 1)
-        self.stripe_width.delete(0, END)
-        self.stripe_width.insert(0, self.stripe_widths[0])
+        self.remote_avail.insert(0, "30")
+        # FIX - get this from cfg ... but translate from FITS
         Label(f).grid(row=r + 2)
         r += 3
         while r < self.ROWS:
@@ -383,77 +396,77 @@ class RelyGUI:
         f.grid(column=4, row=1)
 
         # and the control panel
-        Label(t).grid(column=1, row=2)
-        Label(t, text="NRE model").grid(column=1, row=3)
-        self.nre_meaning = StringVar(t)
-        self.nre_meaning.set(self.nreTypes[0])
-        OptionMenu(t, self.nre_meaning, *self.nreTypes).grid(column=1, row=4)
+        r = 2
+        c = 1
+        Label(t).grid(column=c, row=r)
+        Label(t, text="NRE model").grid(column=c, row=r + 1)
+        self.nre_model = StringVar(t)
+        self.nre_model.set(self.cfg.nre_model)
+        OptionMenu(t, self.nre_model, *self.nreTypes).grid(column=c,
+                                                        row=r + 2)
 
-        Label(t).grid(column=2, row=2)
-        Label(t, text="Parameters").grid(column=2, row=3)
-        self.parameters = StringVar(t)
-        self.parameters.set(self.yes_no[cfg.parms])
-        OptionMenu(t, self.parameters, *self.yes_no).grid(column=2, row=4)
-
-        Label(t).grid(column=3, row=2)
-        Label(t, text="Headings").grid(column=3, row=3)
-        self.headings = StringVar(t)
-        self.headings.set(self.yes_no[cfg.headings])
-        OptionMenu(t, self.headings, *self.yes_no).grid(column=3, row=4)
-
-        Label(t).grid(column=4, row=2)
-        Label(t, text="Period (years)").grid(column=4, row=3)
+        c = 2
+        Label(t).grid(column=c, row=r)
+        Label(t, text="Period (years)").grid(column=c, row=r + 1)
         self.period = Spinbox(t, from_=1, to=10, width=self.short_wid)
-        self.period.grid(row=4, column=4)
+        self.period.grid(column=c, row=r + 2)
+
+        c = 3
+        Label(t).grid(column=c, row=r)
+        Label(t, text="Object size").grid(column=c, row=r + 1)
+        # generate object sizes dynamically from parameters
+        os = self.min_obj_size
+        while os <= self.max_obj_size:
+            if os < MB:
+                s = "%dKB" % (os / KB)
+            elif os < GB:
+                s = "%dMB" % (os / MB)
+            elif os < TB:
+                s = "%dGB" % (os / GB)
+            else:
+                s = "%dTB" % (os / TB)
+            self.object_sizes.append(s)
+            os *= self.step_obj_size
+        self.obj_size = Spinbox(t, values=self.object_sizes,
+            width=self.long_wid)
+        self.obj_size.grid(column=c, row=r + 2)
+        self.obj_size.delete(0, END)
+        self.obj_size.insert(0, self.object_sizes[0])
+
+        c = 4
+        Label(t).grid(column=c, row=r)
+        Label(t, text="Verbosity").grid(column=c, row=r + 1)
+        self.verbosity = StringVar(t)
+        self.verbosity.set(cfg.verbose)
+        OptionMenu(t, self.verbosity, *self.verbosities).grid(column=c,
+                                                        row=r + 2)
 
         # and then finalize everything
         t.grid()
 
-    def diskchoice(self, value):
-        """ change default FIT and NRE rates to match disk selection """
-        self.disk_nre.delete(0, END)
-        self.disk_fit.delete(0, END)
-        i = 0
-        while i < len(self.diskTypes):
-            if value == self.diskTypes[i]:
-                self.disk_nre.insert(0, self.nre_rates[i])
-                self.disk_fit.insert(0, self.fit_rates[i])
-                return
-            i += 1
-
-    def raidchoice(self, value):
-        """ change default # of volumes to match RAID levels """
-        self.raid_vols.delete(0, END)
-        i = 0
-        while i < len(self.raidTypes):
-            if value == self.raidTypes[i]:
-                self.raid_vols.insert(0, self.raid_volcount[i])
-                return
-            i += 1
-
-    def CfgInfo(self):
+    def getCfgInfo(self):
         """ scrape configuration information out of the widgets """
         self.cfg.period = 365.25 * 24 * int(self.period.get())
         self.cfg.disk_type = self.disk_type.get()
-        self.cfg.disk_size = int(self.disk_size.get()) * G
+        self.cfg.disk_size = int(self.disk_size.get()) * GiB
         self.cfg.disk_nre = float(self.disk_nre.get())
         self.cfg.disk_fit = int(self.disk_fit.get())
-        # cfg.node_fit = int(self.node_fit.get())
+        self.cfg.disk_fit2 = int(self.disk_fit2.get())
         self.cfg.raid_vols = int(self.raid_vols.get())
         self.cfg.raid_type = self.raid_type.get()
         self.cfg.raid_replace = int(self.raid_rplc.get())
-        self.cfg.raid_recover = int(self.raid_speed.get()) * M
-        self.cfg.nre_meaning = self.nre_meaning.get()
+        self.cfg.raid_recover = int(self.raid_speed.get()) * MiB
+        self.cfg.nre_model = self.nre_model.get()
         self.cfg.rados_copies = int(self.rados_cpys.get())
         self.cfg.rados_markout = float(self.rados_down.get()) / 60
-        self.cfg.rados_recover = int(self.rados_speed.get()) * M
+        self.cfg.rados_recover = int(self.rados_speed.get()) * MiB
         self.cfg.rados_decluster = int(self.rados_pgs.get())
+        self.cfg.stripe_length = int(self.stripe_length.get())
         self.cfg.rados_fullness = float(self.rados_fullness.get()) / 100
         self.cfg.remote_latency = float(self.remote_latency.get()) / (60 * 60)
         self.cfg.remote_sites = int(self.site_num.get())
-        self.cfg.remote_recover = int(self.remote_speed.get()) * M
-        self.cfg.parms = 1 if self.parameters.get() == "yes" else 0
-        self.cfg.headings = 1 if self.headings.get() == "yes" else 0
+        self.cfg.remote_recover = int(self.remote_speed.get()) * MiB
+        self.cfg.verbose = self.verbosity.get()
 
         # these parameters can also have the value "never"
         v = self.remote_fail.get()
@@ -473,22 +486,13 @@ class RelyGUI:
             self.cfg.obj_size *= self.step_obj_size
             i += 1
 
-        v = self.stripe_width.get()
-        if v == self.stripe_widths[0]:
-            self.cfg.stripe_width = 0
-        else:
-            i = 1
-            self.cfg.stripe_width = self.min_stripe_width
-            while i < len(self.stripe_widths) and \
-                    self.cfg.stripe_width < self.max_stripe_width:
-                if v == self.stripe_widths[i]:
-                    break
-                self.cfg.stripe_width *= self.step_stripe_width
-                i += 1
-        if self.cfg.stripe_width > self.cfg.obj_size:
-            print("\nIGNORING stripe width (%d) > object size (%d)\n" %
-                (self.cfg.stripe_width, self.cfg.obj_size))
-            self.cfg.stripe_width = 0
+        # sanity checking on arguments with limits
+        if self.cfg.stripe_length < 1:
+            self.cfg.stripe_length = 1
+        if self.cfg.stripe_length > self.cfg.rados_decluster:
+            print("\nIGNORING stripe width (%d) > decluster (%d)\n" %
+                (self.cfg.stripe_length, self.cfg.rados_decluster))
+            self.cfg.stripe_length = self.cfg.rados_decluster
 
     def mainloop(self):
         self.root.mainloop()

@@ -1,70 +1,78 @@
 #
-# basic disk reliability model
+# Ceph - scalable distributed file system
 #
-#   the modeled unit is one drive
+# Copyright (C) Inktank
+#
+# This is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License version 2.1, as published by the Free Software
+# Foundation.  See file COPYING.
 #
 
-import RelyFuncts
+"""
+basic disk reliability model
+   the modeled unit is one drive
+"""
 
-M = 1000000
-G = M * 1000
-T = G * 1000
-P = T * 1000
+from RelyFuncts import YEAR, Pfail, Pn
+
+GiB = 1000000000
+TiB = GiB * 1000
+
+DISKSIZE = 2 * TiB
 
 
 class Disk:
 
-    def __init__(self, size, fits, nre, desc):
+    def __init__(self, size, fits, nre, desc, fits2=0):
         """ create a disk reliability simulation
             size -- in bytes
             fits -- failures per billion hours
             nre -- non-recoverable errors per byte
             desc -- description for reporting purposes
+            fits2 -- secondary failure rate
         """
         self.size = size
+        self.rawsize = size
         self.fits = fits
+        self.fits2 = fits if fits2 == 0 else fits2
         self.nre = nre
         self.description = desc
 
-    def durability(self, period=RelyFuncts.YEAR, mult=1):
-        """ probability of an arbitrary object surviving the period
-            period -- over which we want to model reliability
-            mult -- FIT rate multiplier
+        self.P_rep = 0      # inapplicable
+        self.L_rep = 0      # inapplicable
+        self.P_site = 0     # inapplicable
+        self.L_site = 0     # inapplicable
+
+    def compute(self, period=YEAR, mult=1, secondary=False):
+        """ compute probabilities and expected data loss for likely failures
+            period -- time over which we want to model failures
+            mult -- FIT rate multiplier (e.g. many parallel units)
+            secondary -- this is a second (more likely) failure
         """
+        fits = self.fits2 if secondary else self.fits
+        self.P_drive = float(1) - Pfail(fits * mult, period, n=0)
+        self.L_drive = self.size
+        self.P_nre = self.p_nre(bytes=self.size * mult)
+        self.L_nre = self.size
+        self.dur = 1.0 - (self.P_drive + self.P_nre)
 
-        return RelyFuncts.Pn(self.fits * mult, period, n=0)
-
-    def p_failure(self, period=RelyFuncts.YEAR, mult=1):
-        """ probability of drive failure during a period
-            period -- over which we want to model reliability
-            mult -- FIT rate multiplier
+    def p_nre(self, bytes=0):
+        """ probability of NRE during reading or writing
+                bytes -- number of bytes to be written or read
         """
-        return float(1) - RelyFuncts.Pn(self.fits * mult, period, n=0)
+        if bytes == 0:
+            bytes = self.size
 
-    def loss(self, period=RelyFuncts.YEAR, per=0):
-        """ amouint of data lost after a drive failure
-            period -- over which we are calculating loss
-            per -- 0 -> drive, else size of the farm
-        """
-        return self.size if per == 0 else per
-
-    def p_nre(self):
-        """ probability of NRE during recovery """
-        return 0        # meaningless for a single disk
-
-    def loss_nre(self, period=RelyFuncts.YEAR):
-        """ expected data loss due to NRE's during recovery """
-        return 0        # meaningless for a single disk
-
-    def corrupted_bytes(self, bytecount):
-        """ number of bytes expected to be lost due to NRE """
-        return float(self.nre) * bytecount
+        # uses a different flavor probability function
+        p = Pn(self.nre * bytes * 8, 1)
+        return p
 
 
 class EnterpriseDisk(Disk):
     """ Spec'd Enterprise Drive (Seagate Barracuda) """
 
-    def __init__(self, size=2 * T):
+    def __init__(self, size=DISKSIZE):
         Disk.__init__(self, size=size, fits=826, nre=1.0e-15,
                     desc="Enterprise drive")
 
@@ -72,7 +80,7 @@ class EnterpriseDisk(Disk):
 class ConsumerDisk(Disk):
     """ Spec'd Consumer Drive (Seagate Barracuda) """
 
-    def __init__(self, size=2 * T):
+    def __init__(self, size=DISKSIZE):
         Disk.__init__(self, size=size, fits=1320, nre=1.0e-14,
                     desc="Consumer drive")
 
@@ -80,6 +88,6 @@ class ConsumerDisk(Disk):
 class RealDisk(Disk):
     """ Specs from Schroeders 2007 FAST paper """
 
-    def __init__(self, size=2 * T):
+    def __init__(self, size=DISKSIZE):
         Disk.__init__(self, size=size, fits=7800, nre=1.0e-14,
                     desc="real-world disk")

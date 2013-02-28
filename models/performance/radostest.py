@@ -1,6 +1,18 @@
 #!/usr/bin/python
 #
-# RADOS simulation exerciser
+# Ceph - scalable distributed file system
+#
+# Copyright (C) Inktank
+#
+# This is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License version 2.1, as published by the Free Software
+# Foundation.  See file COPYING.
+#
+
+"""
+RADOS simulation exerciser
+"""
 
 # mnemonic scale constants
 MILLION = 1000000   # capacities and speeds

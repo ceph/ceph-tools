@@ -1,22 +1,33 @@
 #
-# This is intended to be able to simulate the performance of
-# a specified file system for a few basic types of I/O.
-# Rather than attempt a (prohibitively difficult) low
-# level simulation, it simply attempts to model the overheads
-# that a file system imposes on various operations.
+# Ceph - scalable distributed file system
 #
-# Simple models of complex things are (IMHO) fundamentally
-# star-crossed, but all we need is an approximate modeling
-# of the average costs of a few things:
-#   O_DIRECT fio tests (seq/random) with variable size and depth
-#   filestore data and journal reads and writes
+# Copyright (C) Inktank
 #
-# NOTE:
-#   we are modeling the time to perform a single operation,
-#   but these are fundamentally throughput models, so it should
-#   be assumed that another operation will come immediately
-#   after the one we are simulating.
+# This is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License version 2.1, as published by the Free Software
+# Foundation.  See file COPYING.
 #
+
+"""
+This is intended to be able to simulate the performance of
+a specified file system for a few basic types of I/O.
+Rather than attempt a (prohibitively difficult) low
+level simulation, it simply attempts to model the overheads
+that a file system imposes on various operations.
+
+Simple models of complex things are (IMHO) fundamentally
+star-crossed, but all we need is an approximate modeling
+of the average costs of a few things:
+   O_DIRECT fio tests (seq/random) with variable size and depth
+   filestore data and journal reads and writes
+
+NOTE:
+   we are modeling the time to perform a single operation,
+   but these are fundamentally throughput models, so it should
+   be assumed that another operation will come immediately
+   after the one we are simulating.
+"""
 
 
 def log2(v):

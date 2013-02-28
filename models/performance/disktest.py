@@ -1,8 +1,20 @@
 #!/usr/bin/python
 #
-# disk simulation exerciser
-#   prints out all of the interesting disk performance
-#   parameters and simulated bandwidth for standard tests
+# Ceph - scalable distributed file system
+#
+# Copyright (C) Inktank
+#
+# This is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License version 2.1, as published by the Free Software
+# Foundation.  See file COPYING.
+#
+
+"""
+disk simulation exerciser
+   prints out all of the interesting disk performance
+   parameters and simulated bandwidth for standard tests
+"""
 
 # mnemonic scale constants
 MILLION = 1000000    # capacities and speeds

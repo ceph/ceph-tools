@@ -1,10 +1,21 @@
 #!/usr/bin/python
 #
-#   this module creates the objects to be tested and kicks off
-#   a standard set of tests.  The primary entry point (test) is
-#   driven by a set of configuration dictionaries, describing
-#   the devices, cluster, and tests to be run
+# Ceph - scalable distributed file system
 #
+# Copyright (C) Inktank
+#
+# This is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License version 2.1, as published by the Free Software
+# Foundation.  See file COPYING.
+#
+
+"""
+This module creates test objects and kicks off a standard set of tests.
+
+The primary entry point (test) is driven by a set of configuration
+dictionaries, describing the devices, cluster, and tests to be run
+"""
 
 # simulations
 import SimDisk

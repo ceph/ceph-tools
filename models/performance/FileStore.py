@@ -1,13 +1,24 @@
 #
-# This is intended to be able to simulate the overhead that
-# the RADOS filestore adds to standard I/O test patterns
+# Ceph - scalable distributed file system
 #
-# NOTE:
-#   we are modeling the time to perform a single operation,
-#   but these are fundamentally throughput models, so it should
-#   be assumed that another operation will come immediately
-#   after the one we are simulating.
+# Copyright (C) Inktank
 #
+# This is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License version 2.1, as published by the Free Software
+# Foundation.  See file COPYING.
+#
+
+"""
+This is intended to be able to simulate the overhead that
+the RADOS filestore adds to standard I/O test patterns
+
+NOTE:
+   we are modeling the time to perform a single operation,
+   but these are fundamentally throughput models, so it should
+   be assumed that another operation will come immediately
+   after the one we are simulating.
+"""
 
 import Poisson
 

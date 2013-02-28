@@ -1,22 +1,33 @@
 #
-# This is intended to be able to simulate the overhead that
-# a remote RADOS client experiences for standard test loads
+# Ceph - scalable distributed file system
 #
-# NOTE:
+# Copyright (C) Inktank
 #
-#   All of the lower level models try to estimate single operation
-#   latency (at a request depth, with amortized costs for async
-#   operations) for a single resource (e.g. disk).
+# This is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License version 2.1, as published by the Free Software
+# Foundation.  See file COPYING.
 #
-#   This is a model for a parallel system.  I found it difficult
-#   to model parallel latencies, so I decided to do this one as a
-#   throughput model.  This is confusing because all of the quantities
-#   we are dealing with are latencies ... so when I do some baffling
-#   multiply or divide to a time, understand it as the inverse operation
-#   on a throughput.  I considered inverting everything to make these
-#   computations more obvious, but the before-and-after inversions
-#   were even more confusing.
-#
+
+"""
+This is intended to be able to simulate the overhead that
+a remote RADOS client experiences for standard test loads
+
+NOTE:
+
+   All of the lower level models try to estimate single operation
+   latency (at a request depth, with amortized costs for async
+   operations) for a single resource (e.g. disk).
+
+   This is a model for a parallel system.  I found it difficult
+   to model parallel latencies, so I decided to do this one as a
+   throughput model.  This is confusing because all of the quantities
+   we are dealing with are latencies ... so when I do some baffling
+   multiply or divide to a time, understand it as the inverse operation
+   on a throughput.  I considered inverting everything to make these
+   computations more obvious, but the before-and-after inversions
+   were even more confusing.
+"""
 
 # useful unit multipliers
 GIG = 1000000000

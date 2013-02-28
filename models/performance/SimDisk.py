@@ -1,10 +1,21 @@
 #
-# This is intended to be able to simulate disk drives with a range of
-# smarts.  It is probably pretty accurate with respect to random access
-# performance (which is dominated by physics) but only a crude approximation
-# for small-block sequential access (which is dominated by  caching.
-# Fortunately, small-block streaming is not (for us) a typical load.
+# Ceph - scalable distributed file system
 #
+# Copyright (C) Inktank
+#
+# This is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License version 2.1, as published by the Free Software
+# Foundation.  See file COPYING.
+#
+
+"""
+This is intended to be able to simulate disk drives with a range of
+smarts.  It is probably pretty accurate with respect to random access
+performance (which is dominated by physics) but only a crude approximation
+for small-block sequential access (which is dominated by  caching.
+Fortunately, small-block streaming is not (for us) a typical load.
+"""
 
 import math
 

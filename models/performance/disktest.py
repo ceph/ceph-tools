@@ -17,11 +17,13 @@ disk simulation exerciser
 """
 
 # mnemonic scale constants
-MILLION = 1000000    # capacities and speeds
+MILLION = 1000000
+BILLION = 1000 * MILLION
 
 import SimDisk
 
 
+# unit conversion functions
 def kb(val):
     """ number of kilobytes (1024) in a block """
     return val / 1024
@@ -29,17 +31,17 @@ def kb(val):
 
 def meg(val):
     """ mumber of millions (10^6) of bytes """
-    return val / 1000000
+    return val / MILLION
 
 
 def gig(val):
     """ mumber of billions (10^9) of bytes """
-    return val / 1000000000
+    return val / BILLION
 
 
 def iops(us):
     """ convert a us/operation into IOPS """
-    return 1000000 / us
+    return MILLION / us
 
 
 def bw(bs, us):
@@ -48,6 +50,12 @@ def bw(bs, us):
 
 
 def tptest(disk, filesize, depth):
+    """
+    run a standard set of throughputs against a specified device
+        disk -- device to be tested
+        filesize -- size of the file used for the test
+        depth -- number of queued parallel operations
+    """
     print("\t    bs\t    seq read\t   seq write\t   rnd read\t   rnd write")
     print("\t -----\t    --------\t   ---------\t   --------\t   ---------")
     for bs in (4096, 128 * 1024, 4096 * 1024):
@@ -67,7 +75,9 @@ def tptest(disk, filesize, depth):
 
 
 def disktest(disk):
-    """ compute & display basic performance data for a simulated disk """
+    """ compute & display basic performance data for a simulated disk
+        disk -- device to be tested
+    """
 
     print("    basic disk parameters:")
     print("\tdrive size\t%d GB" % gig(disk.size))
@@ -100,3 +110,21 @@ def disktest(disk):
         print("\t%7d  %7dus  %7dus" %
             (cyls, disk.seekTime(cyls), disk.seekTime(cyls, read=False)))
         cyls *= 10
+
+#
+# basic unit test exerciser
+#
+if __name__ == '__main__':
+    GIG = 1000000000
+    for t in ["disk", "ssd"]:
+        if t == "disk":
+            disk = SimDisk.Disk(size=2000 * GIG)
+        else:
+            disk = SimDisk.SSD(size=20 * GIG)
+
+        print("\nDefault %s simulation" % (t))
+        disktest(disk)
+        for depth in [1, 32]:
+            print("")
+            print("    Estimated Throughput (depth=%d)" % depth)
+            tptest(disk, filesize=16 * GIG, depth=depth)

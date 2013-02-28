@@ -77,7 +77,7 @@ def disktest(disk):
         (disk.settle_read, disk.max_seek, disk.avg_seek))
     print("\twrite back\t%s" % ("True" if disk.do_writeback else "False"))
     print("\tread ahead\t%s" % ("True" if disk.do_readahead else "False"))
-    print("\tmax depth \t%d" % disk.max_depth)
+    print("\tmax depth \t%d" % disk.nr_requests)
 
     print("\n    computed performance parameters:")
     rot = 0 if disk.rpm == 0 else (MILLION / (disk.rpm / 60))

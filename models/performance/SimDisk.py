@@ -37,7 +37,7 @@ class Disk:
     write_delta = 600               # us: penalty for full settle-down
     max_seek = 13000                # us: full stroke seek time
     avg_seek = 5500                 # us: full stroke/3
-    max_depth = 128                 # max concurrent queued operations
+    nr_requests = 128               # max concurrent queued operations
     do_writeback = True             # drive does write-back (vs writethrough)
     do_readahead = True    	    # drive does read-ahead caching
     sched_rotate = True             # latency optimization scheduling
@@ -46,6 +46,8 @@ class Disk:
     cache_multiplier = 96            # ideal read-ahead
     cache_max_tracks = 4             # max amount to cache
     cache_max_depth = 5              # max depth multiplier
+    # FIX: it would be nice if this could be expressed in terms
+    #      of max_sectors_kb and readahead_kb
 
     def __init__(self, rpm=7200, size=2 * TERABYTE,
                 bw=150 * MEGABYTE, heads=10):
@@ -196,8 +198,8 @@ class Disk:
         tXfer = self.xferTime(bsize, read)
 
         # requests can't queue deeper than the drive supports
-        if depth > self.max_depth:
-            depth = self.max_depth
+        if depth > self.nr_requests:
+            depth = self.nr_requests
         tLatency = self.latency(bsize, read, seq, depth)
 
         if seq:
@@ -233,7 +235,7 @@ class DumbDisk(Disk):
         self.do_writeback = False
         self.do_readahead = False
         self.sched_rotate = False
-        self.max_depth = 1
+        self.nr_requests = 1
         self.settle_read = 1000
         self.write_delta = 1000
         self.max_seek = 20000
@@ -255,7 +257,7 @@ class SSD(Disk):
         self.size = size
         self.media_speed = bw
         self.max_iops = iops		# single stream
-        self.max_depth = streams
+        self.nr_requests = streams
 
         # magic numbers to model more complex behavior
         self.write_penalty = 1.05   # allocation overhead
@@ -280,6 +282,6 @@ class SSD(Disk):
 
         # IOPS limitations ... which depend on the number of streams
         setup = SECOND / self.max_iops
-        setup /= depth if depth < self.max_depth else self.max_depth
+        setup /= depth if depth < self.nr_requests else self.nr_requests
 
         return setup + tXfer

@@ -14,29 +14,11 @@
 RADOS simulation exerciser
 """
 
-# mnemonic scale constants
-MILLION = 1000000   # capacities and speeds
-SECOND = 1000000    # times are in micro-seconds
-
+from units import *
 import FileStore
 
 
-def kb(val):
-    """ number of kilobytes (1024) in a block """
-    return val / 1024
-
-
-def iops(us):
-    """ convert a us/operation into IOPS """
-    return SECOND / us
-
-
-def bw(bs, us):
-    """ convert block size and us/operation into MB/s bandwidth """
-    return bs / us
-
-
-def radostest(fs, obj_size=16 * MILLION, nobj=2500,
+def radostest(fs, obj_size=16 * MEG, nobj=2500,
             clients=1, depth=1, copies=1, crtdlt=False):
     """ compute & display standard filestore test results """
 

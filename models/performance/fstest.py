@@ -10,32 +10,15 @@
 # Foundation.  See file COPYING.
 #
 
+from units import *
+
+
 """
 file system simulation exerciser
 """
 
-# mnemonic scale constants
-MILLION = 1000000    # capacities and speeds
 
-import SimFS
-
-
-def kb(val):
-    """ number of kilobytes (1024) in a block """
-    return val / 1024
-
-
-def iops(us):
-    """ convert a us/operation into IOPS """
-    return 1000000 / us
-
-
-def bw(bs, us):
-    """ convert block size and us/operation into MB/s bandwidth """
-    return bs / us
-
-
-def fstest(fs, filesize=16 * MILLION, depth=1, direct=False,
+def fstest(fs, filesize=16 * MEG, depth=1, direct=False,
             sync=False, crtdlt=False):
     """ compute & display standard fio to filesystem on a disk
         fs -- file system to be tested

@@ -1,13 +1,11 @@
 #!/usr/bin/python
 #
 #   this is a configuration file for a performance simulation
+#   that captures (I believe) the parameters to simulate the
+#   results from our own burnupi
 #
 
-# size constants
-MEG = 1000 * 1000
-GIG = 1000 * MEG
-TERA = 1000 * GIG
-
+from units import *
 import test
 
 data = {        # data storage devices

@@ -182,7 +182,8 @@ def test(data, journal, cluster, tests):
         filestoretest.fstoretest(myFstore, nobj=no, obj_size=sz, depth=d)
         print("")
 
-    msg = "smalliobench-rados (%dx%d), %d copy, clients*instances*depth=(%d*%d*%d)"
+    msg = "smalliobench-rados (%dx%d), %d copy, "
+    msg += "clients*instances*depth=(%d*%d*%d)"
     sz = tests['SioRsize']
     no = tests['SioRnobj']
     for x in tests['SioRcopies']:

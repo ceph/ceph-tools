@@ -138,7 +138,8 @@ class FileStore:
             # in principle, journal and data writes are parallel
             if jt > dt + mt:
                 if not "journal caps" in self.warnings:
-                    msg = "\n\tjournal caps throughput for %d parallel %d byte writes"
+                    msg = "\n\tjournal caps throughput"
+                    msg += "for %d parallel %d byte writes"
                     self.warnings += msg % (self.journal_share, bsize)
                 return lt + jt
             else:

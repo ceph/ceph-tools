@@ -16,37 +16,8 @@ disk simulation exerciser
    parameters and simulated bandwidth for standard tests
 """
 
-# mnemonic scale constants
-MILLION = 1000000
-BILLION = 1000 * MILLION
-
+from units import *
 import SimDisk
-
-
-# unit conversion functions
-def kb(val):
-    """ number of kilobytes (1024) in a block """
-    return val / 1024
-
-
-def meg(val):
-    """ mumber of millions (10^6) of bytes """
-    return val / MILLION
-
-
-def gig(val):
-    """ mumber of billions (10^9) of bytes """
-    return val / BILLION
-
-
-def iops(us):
-    """ convert a us/operation into IOPS """
-    return MILLION / us
-
-
-def bw(bs, us):
-    """ convert block size and us/operation into MB/s bandwidth """
-    return bs / us
 
 
 def tptest(disk, filesize, depth):
@@ -90,7 +61,7 @@ def disktest(disk):
     print("\tmax depth \t%d" % disk.nr_requests)
 
     print("\n    computed performance parameters:")
-    rot = 0 if disk.rpm == 0 else (MILLION / (disk.rpm / 60))
+    rot = 0 if disk.rpm == 0 else (MEG / (disk.rpm / 60))
     print("\trotation   \t%dus" % (rot))
     print("\ttrack size \t%d bytes" % disk.trk_size)
     print("\theads      \t%d" % disk.heads)
@@ -115,16 +86,15 @@ def disktest(disk):
 # basic unit test exerciser
 #
 if __name__ == '__main__':
-    GIG = 1000000000
     for t in ["disk", "ssd"]:
         if t == "disk":
-            disk = SimDisk.Disk(size=2000 * GIG)
+            disk = SimDisk.Disk(size=2000 * BILLION)
         else:
-            disk = SimDisk.SSD(size=20 * GIG)
+            disk = SimDisk.SSD(size=20 * BILLION)
 
         print("\nDefault %s simulation" % (t))
         disktest(disk)
         for depth in [1, 32]:
             print("")
             print("    Estimated Throughput (depth=%d)" % depth)
-            tptest(disk, filesize=16 * GIG, depth=depth)
+            tptest(disk, filesize=16 * BILLION, depth=depth)

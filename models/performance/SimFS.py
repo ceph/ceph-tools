@@ -126,7 +126,8 @@ class FS:
 
         self.desc = "BSD"
         self.disk = disk
-        self.md_seek = md_span * disk.size
+        self.size = disk.size
+        self.md_seek = md_span * self.size
 
     def flush_depth(self, bsize, time):
         """ write depth resulting from cache flushes

@@ -35,7 +35,7 @@ class FileStore:
     sync_time = 5000000    # flush interval (in micro-seconds)
 
     # magic tunables (to which we shouldn't be all that sensitive)
-    md_fraction = .001     # fraction of disk containing metadata
+    md_fraction = .001     # fraction of FS containing metadata
     md_cache_sz = 2500     # number of objects we cache
     rd_cache_sz = 1 * GIG  # available data cache
 
@@ -53,8 +53,8 @@ class FileStore:
         self.journal_share = journal_share
 
         # bad approximations of typical seek distances
-        self.md_seek = self.md_fraction * data_fs.disk.size
-        self.seek = data_fs.disk.size
+        self.md_seek = self.md_fraction * data_fs.size
+        self.seek = data_fs.size
 
     def md_miss_rate(self, nobj):
         """ expected meta-data lookup cache miss rate """

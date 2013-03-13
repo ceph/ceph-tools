@@ -41,10 +41,11 @@ def interp2(x1, y1, x2, y2, v):
 class DataFS:
 
     def __init__(self, dict, desc="Data Described", size=2 * TERA):
-    def __init__(self, dict):
         """ create a simulation based on the specified dict """
         self.desc = desc
         self.dict = dict
+        self.size = size
+        self.speed = 140 * MEG      # assumed transfer speed
 
     def time(self, op, seq, bsize, depth):
         """

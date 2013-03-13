@@ -110,8 +110,8 @@ def test(data, journal, cluster, tests):
     # instantiate the data device simulation
     myDDisk = makedisk(data)
     myData = makefs(myDDisk, data)
-    data_fstype = myData.__class__.__name__
-    data_dev = myDDisk.__class__.__name__
+    data_fstype = myData.desc
+    data_dev = myDDisk.desc
     data_desc = "data FS (%s on %s)" % (data_fstype, data_dev)
 
     # instantiate the journal device description
@@ -119,8 +119,8 @@ def test(data, journal, cluster, tests):
     if journal != None:
         myJDisk = makedisk(journal)
         myJrnl = makefs(myJDisk, journal)
-        jrnl_fstype = myJrnl.__class__.__name__
-        jrnl_dev = myJDisk.__class__.__name__
+        jrnl_fstype = myJrnl.desc
+        jrnl_dev = myJDisk.desc
         jrnl_desc = "journal FS (%s on %s)" % (jrnl_fstype, jrnl_dev)
         if 'shared' in journal and journal['shared']:
             j_share = cluster['osd_per_node']

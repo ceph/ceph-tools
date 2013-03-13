@@ -40,8 +40,10 @@ def interp2(x1, y1, x2, y2, v):
 
 class DataFS:
 
+    def __init__(self, dict, desc="Data Described", size=2 * TERA):
     def __init__(self, dict):
         """ create a simulation based on the specified dict """
+        self.desc = desc
         self.dict = dict
 
     def time(self, op, seq, bsize, depth):
@@ -153,5 +155,5 @@ if __name__ == '__main__':
 
     data = DataFS(testDict)
     for d in (1, 2, 4, 8, 16, 32):
-        print("\nData Described Filesystem, depth=%d" % (d))
+        print("\n%s Filesystem, depth=%d" % (data.desc, d))
         fstest.fstest(data, depth=d)

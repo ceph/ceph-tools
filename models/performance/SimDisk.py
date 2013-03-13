@@ -56,6 +56,7 @@ class Disk:
         self.size = size
         self.media_speed = bw
         self.heads = heads
+        self.desc = "Disk"
 
         # infer track/cylinder size from rpm and media speed
         self.trk_size = bw / (rpm / 60)
@@ -240,7 +241,7 @@ class DumbDisk(Disk):
         self.write_delta = 1000
         self.max_seek = 20000
         self.avg_seek = 8000
-
+        self.desc = "Dumb Disk"
 
 #
 # SSD's are much simpler than disks
@@ -272,6 +273,7 @@ class SSD(Disk):
         self.cylinders = 1
         self.cyl_size = self.size / self.cylinders
         self.trk_size = self.cyl_size / self.heads
+        self.desc = "SSD"
 
     def avgTime(self, bsize, file_size, read=True, seq=True, depth=1):
         """ average operation time (us) for a specified test. """

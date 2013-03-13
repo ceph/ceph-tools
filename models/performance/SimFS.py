@@ -124,6 +124,7 @@ class FS:
             md_span -- fraction of disk for data/metadata seeks
         """
 
+        self.desc = "BSD"
         self.disk = disk
         self.md_seek = md_span * disk.size
 
@@ -299,6 +300,9 @@ class btrfs(FS):
         # curve fitting at its ignorant worst
 
         FS.__init__(self, disk, md_span=0.5)
+        self.desc = "BTRFS"
+        if age > 0:
+            self.desc += "(%3.1f)" % age
 
         # clean BTRFS calibration values
         self.flush_time = 100000
@@ -332,6 +336,9 @@ class xfs(FS):
         """ Instantiate a XFS simulation. """
 
         FS.__init__(self, disk, md_span=0.5)
+        self.desc = "XFS"
+        if age > 0:
+            self.desc += "(%3.1f)" % age
 
         # XFS calibration values based on Jan'13 ALU results
         self.max_shard = 4096 * 1024
@@ -353,6 +360,9 @@ class ext4(FS):
         # curve fitting at its ignorant worst
 
         FS.__init__(self, disk, md_span=0.5)
+        self.desc = "EXT4"
+        if age > 0:
+            self.desc += "(%3.1f)" % age
 
         # need EXT4 calibration values !!!
         self.flush_time = 100000

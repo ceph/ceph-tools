@@ -16,10 +16,12 @@ commonly used units and functions to convert between them
 # mnemonic scale constants
 MEG = 1000 * 1000
 GIG = MEG * 1000
+TERA = GIG * 1000
 
 KB = 1024
 MB = KB * 1024
 GB = MB * 1024
+TB = GB * 1024
 
 
 # unit conversion functions

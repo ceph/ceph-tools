@@ -16,7 +16,6 @@ data (rather than lower level simulations).
 """
 
 from units import *
-import fstest
 
 
 def interpolate(x1, y1, x2, y2, v):
@@ -56,14 +55,19 @@ class DataFS:
             depth -- number of concurrent transfers
         """
 
-        # use operation parameters to form a key name
+        # choose sequential or random
         s = "seq" if seq else "rand"
-        if bsize == 4096:
+
+        # decide which throughput number to use
+        if bsize <= 32 * 1024:
             bs = "4k"
-        elif bsize == 128 * 1024:
+            delta = 4096 - bsize
+        elif bsize <= 1024 * 1024:
             bs = "128k"
-        elif bsize == 4096 * 1024:
+            delta = (128 * 1024) - bsize
+        else:
             bs = "4m"
+            delta = (4096 * 1024) - bsize
         key = "%s-%s-%s-d" % (s, op, bs)
 
         # we may have to interporate the effects of queue depth
@@ -74,8 +78,10 @@ class DataFS:
         else:
             bw = self.dict["%s%d" % (key, depth)]
 
-        # convert bandwidth into an average number of microseconds
-        return MEG * bsize / bw
+        # figure out the implied us for this operation
+        us = MEG * bsize / bw           # convert bw to us
+        us += MEG * delta / self.speed  # adjust for nonstd bsize
+        return us
 
     def read(self, bsize, file_size=-1, seq=True, depth=1, direct=False):
         """ average time for reads from a single file
@@ -154,7 +160,16 @@ if __name__ == '__main__':
         'delete': 2000
     }
 
-    data = DataFS(testDict)
+    import fstest
+    from FileStore import FileStore
+    import filestoretest
+
+    data = DataFS(testDict, desc="sampled XFS")
     for d in (1, 2, 4, 8, 16, 32):
         print("\n%s Filesystem, depth=%d" % (data.desc, d))
         fstest.fstest(data, depth=d)
+
+    fstore = FileStore(data, None, journal_share=1)
+    for d in (1, 32):
+        print("\nFilestore in %s Filesystem, depth=%d" % (data.desc, d))
+        filestoretest.fstoretest(fstore, depth=d)

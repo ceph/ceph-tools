@@ -243,6 +243,7 @@ class DumbDisk(Disk):
         self.avg_seek = 8000
         self.desc = "Dumb Disk"
 
+
 #
 # SSD's are much simpler than disks
 #

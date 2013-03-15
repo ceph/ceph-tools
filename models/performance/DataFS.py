@@ -41,9 +41,9 @@ class DataFS:
 
     def __init__(self, dict, desc="Data Described", size=2 * TERA):
         """ create a simulation based on the specified dict """
-        self.desc = desc
         self.dict = dict
         self.size = size
+        self.desc = dict["source"]
         self.speed = 140 * MEG      # assumed transfer speed
 
     def time(self, op, seq, bsize, depth):
@@ -128,48 +128,32 @@ if __name__ == '__main__':
     """
         Unit test ... instantiate a file system and run an fstest
     """
-    testDict = {
-        'seq-read-4k-d1': 52 * MEG,
-        'seq-write-4k-d1': 45 * MEG,
-        'rand-read-4k-d1': 0.6 * MEG,
-        'rand-write-4k-d1': 1.5 * MEG,
-        'seq-read-4k-d32': 109 * MEG,
-        'seq-write-4k-d32': 44 * MEG,
-        'rand-read-4k-d32': 2.0 * MEG,
-        'rand-write-4k-d32': 1.5 * MEG,
-
-        'seq-read-128k-d1': 129 * MEG,
-        'seq-write-128k-d1': 126 * MEG,
-        'rand-read-128k-d1': 17.1 * MEG,
-        'rand-write-128k-d1': 34.9 * MEG,
-        'seq-read-128k-d32': 131 * MEG,
-        'seq-write-128k-d32': 126 * MEG,
-        'rand-read-128k-d32': 43.8 * MEG,
-        'rand-write-128k-d32': 34.9 * MEG,
-
-        'seq-read-4m-d1': 117 * MEG,
-        'seq-write-4m-d1': 116 * MEG,
-        'rand-read-4m-d1': 99 * MEG,
-        'rand-write-4m-d1': 103.4 * MEG,
-        'seq-read-4m-d32': 117 * MEG,
-        'seq-write-4m-d32': 116 * MEG,
-        'rand-read-4m-d32': 99 * MEG,
-        'rand-write-4m-d32': 103.4 * MEG,
-
-        'create': 1000,
-        'delete': 2000
-    }
-
+    from simdata import DataData, JrnlData
     import fstest
     from FileStore import FileStore
     import filestoretest
 
-    data = DataFS(testDict, desc="sampled XFS")
+    data = DataFS(DataData)
     for d in (1, 2, 4, 8, 16, 32):
-        print("\n%s Filesystem, depth=%d" % (data.desc, d))
+        print("\n%s, depth=%d" % (data.desc, d))
         fstest.fstest(data, depth=d)
 
-    fstore = FileStore(data, None, journal_share=1)
+    jrnl = DataFS(JrnlData)
     for d in (1, 32):
-        print("\nFilestore in %s Filesystem, depth=%d" % (data.desc, d))
-        filestoretest.fstoretest(fstore, depth=d)
+        print("\n%s, depth=%d" % (jrnl.desc, d))
+        fstest.fstest(jrnl, depth=d)
+
+    # attempt to duplicate the results of the default filestore tests
+    no = 2500
+    osize = 1 * GIG
+    fstore = FileStore(data, jrnl, journal_share=4)
+    for d in [16]:
+        print("\nFilestore in %s, journal %s, depth=%d" %
+            (data.desc, jrnl.desc, d))
+        filestoretest.fstoretest(fstore, nobj=no, obj_size=osize, depth=d)
+
+    fstore2 = FileStore(data, None)
+    for d in [16]:
+        print("\nFilestore in %s, journal on data disk, depth=%d" %
+            (data.desc, d))
+        filestoretest.fstoretest(fstore2, nobj=no, obj_size=osize, depth=d)

@@ -101,7 +101,7 @@ class MultiSite:
 
         # compute the probability/loss for asynchronous replication failure
         if self.latency > 0:
-            self.site.compute(period=YEAR)
+            self.site.compute(period=YEAR, mult=self.sites)
             self.P_rep = self.site.P_site
             self.L_rep = self.latency * self.speed / (2 * SECOND)
 

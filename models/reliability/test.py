@@ -834,7 +834,7 @@ class Test:
         # P(rep)
         multi.latency = self.s_latency
         multi.compute(period=YEAR)
-        exp = S_fail
+        exp = S_fail * multi.sites
         v = multi.P_rep
         self.test("5T", "PL(repfail)", v, exp)
 

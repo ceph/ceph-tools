@@ -113,6 +113,8 @@ class RelyGUI:
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10
     ]
 
+    remote_copies = None
+
     remote_speed = None
     remote_speeds = [   # list of likely remote recovery speeds (MB/s)
         1,  2, 5, 10, 20, 25, 40, 50, 60, 80, 100, 150,
@@ -355,6 +357,14 @@ class RelyGUI:
         self.site_num.insert(0, "%d" % cfg.remote_sites)
         Label(f).grid(row=r + 2)
         r += 3
+        Label(f, text="Remote copies").grid(row=r)
+        self.remote_copies = Spinbox(f, values=(1, 2, 3, 4, 5, 6),
+            width=self.short_wid)
+        self.remote_copies.grid(row=r + 1)
+        self.remote_copies.delete(0, END)
+        self.remote_copies.insert(0, "%d" % cfg.remote_copies)
+        Label(f).grid(row=r + 2)
+        r += 3
         Label(f, text="Rep Latency (s)").grid(row=r)
         self.remote_latency = Spinbox(f, values=self.async_latencies,
                     width=self.long_wid)
@@ -466,6 +476,7 @@ class RelyGUI:
         self.cfg.remote_latency = float(self.remote_latency.get()) / (60 * 60)
         self.cfg.remote_sites = int(self.site_num.get())
         self.cfg.remote_recover = int(self.remote_speed.get()) * MiB
+        self.cfg.remote_copies = int(self.remote_copies.get())
         self.cfg.verbose = self.verbosity.get()
 
         # these parameters can also have the value "never"

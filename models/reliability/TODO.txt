@@ -1,9 +1,22 @@
+INVESTIGATE:
+	
+	PL(rep) = PFail(onesite)
+	it should be PFail(numsite * onesite)
+
 TEST CASES:
 
 DO:
-	add copyrights
+	asymmetric replication
+	   1. investigate multisite: Prados-fail not multipled by survivors
+	   2. assuming it is wrong, fix it and add new test case(s)
+	   3. keep separate counts for primary/secondary sites/copies
+ 	      and update descend accordingly
+	   4. demonstrate no change with symmetric replication
+	   5. add secondary sites to MultiSite and demonstrate difference
+	   6. play with it to see when it makes what difference
+	   7. add new test cases
 
-	tweak default parameters for more meaningful output
+	Figure out how to model WAN link availability
 
     
 VALIDATE RESULTS
@@ -26,14 +39,7 @@ http://www.servethehome.com/raid-calculator/raid-reliability-calculator-simple-m
 	AND ... there was another calculator
 
 
-INVESTIGATE:
-
-FIX     1 site 3cp is 200x more reliable than 3site 1cp
-	because my psc computation for the third failure still
-	assumes that I need NPG drives after 2nd drive failure
-
-CONSIDER ADD fit2 support to the DiskRely
+CONSIDER ADD RAID stripes on top of the others
 
 CONSIDER ADD scrubbing and scrub efficacy in eliminating NREs
 
-CONSIDER ADD RAID stripes on top of the others

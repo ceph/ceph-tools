@@ -59,6 +59,7 @@ class Config:
         self.stripe_length = 1
 
         self.remote_sites = 1
+        self.remote_copies = 1
         self.remote_recover = 10 * MiB
         self.remote_latency = 0.0 * SECOND
         self.majeure = FitRate(.001, YEAR)

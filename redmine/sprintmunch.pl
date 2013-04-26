@@ -116,7 +116,7 @@ sub report
 	# print out the data for each (valid) version
 	my @fix_counts;
 	my @asgn_counts;
-	foreach my $ver (keys %versions) {
+	foreach my $ver (sort keys %versions) {
 		if ($ver eq 'none') {
 			next;
 		}

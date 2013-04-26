@@ -36,6 +36,8 @@ sub usage()
 	print STDERR "        -r ......... report (vs data)\n";
 	print STDERR "        -s date .... report start date\n";
 	print STDERR "        -e date .... report end date\n";
+	print STDERR "                mm/dd/yy ... specific date\n";
+	print STDERR "                #{d,w,m,y} ... # days/weeks/months/years\n";
 	print STDERR "        -p prefix .. prefix for output file names\n";
 }
 
@@ -224,18 +226,39 @@ sub parse_date
 #
 # routine:	get_period
 #
-# parameters:	date (mm/dd/yyyy)
+# parameters:	date (mm/dd/yyyy or relative #[dwmy])
 #
 # returns:	time value for the starting date of that period
 # 		(based on the "report_period" parameter)
 #
 sub get_period
-{
-	# discect the specified time
-	(my $mon, my $day, my $year) = split( '/', $_[0] );
+{	my $date = $_[0];
+	my $mon;
+	my $day;
+	my $year;
 
-	# months: fall back to the first of that month
+	# is the time relative or absolute
+	if ($date =~ m/^(\d+)([dwmy])$/) {
+		(my $num, my $unit) = ($1, $2);
+		my $when = time();
+		if ($unit eq 'd') {
+			$when  -= $num * 24 * 60 * 60;
+		} elsif ($unit eq 'w') {
+			$when  -= $num * 7 * 24 * 60 * 60;
+		} elsif ($unit eq 'm') {
+			$when  -= $num * 30 * 24 * 60 * 60;
+		} elsif ($unit eq 'y') {
+			$when  -= $num * 365 * 24 * 60 * 60;
+		}
+		my ($s, $m, $h, $md, $mn, $yr, $wd, $yd, $dst) = gmtime( $when );
+		($mon, $day, $year) = ($mn+1, $md, $yr)
+	} else {
+		($mon, $day, $year) = split( '/', $_[0] );
+	}
+
+	# now roll it back to the start of the reporting period
 	if ($report_period eq 'm') {
+		# months: fall back to the first of that month
 		return timegm( 0, 0, 0, 1, $mon-1, $year );
 	} else {	# days: fall back to sunday of that week
 		my $when = timegm( 0, 0, 0, $day, $mon-1, $year );

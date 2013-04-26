@@ -22,10 +22,9 @@ else
 	TEMP="$2"
 fi
 
-# FIX figure out how to more cleverly automate this
-# 	(probably by supporting "relative" time arguments)
-WSTART="8/1/12"
-MSTART="4/1/11"
+# limit how far back we go to keep the X axis readable
+WSTART="40w"
+MSTART="25m"
 
 echo "Processing $bugdump for monthly statistics"
 perl bugmunch.pl -s $MSTART $bugdump > $TEMP/monthly

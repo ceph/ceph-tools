@@ -28,9 +28,6 @@
 #	output files will have names of the form $BASE-{ttf,age}.png
 # 
 
-BASE="all"
-INFILE="all"
-
 print "Processing input file: ".INFILE." to create output ".BASE."-{ttf,age}.png"
 
 # output to png files

@@ -1,0 +1,44 @@
+DO:
+	DataFS.py
+	    see if filestore atop DataFS returns same results
+		4K, 128K reads are 40% fast
+		4M writes are half speed (could this be an interpolation error)?
+
+	    can I use it to simulate a disk as well
+
+
+EVENTUALLY:
+	test main for fstest.py
+	test main for filestoretest.py
+	test main for radostest.py
+
+INVESTIGATE
+    Rados:
+	The write numbers are about 30% higher than the multiples of FileStore.
+	The read numbers are 3x the multiples of FileStore.
+	It seems clear that caching has gone insane.
+
+VALIDATE/CALIBRATE
+
+    1. get a plana
+    2. do sequential DD's to disk for timing
+    3. do sequential and random fios to disk for timing
+    4. do fio testing for
+	xfs
+	ext4
+	btrfs
+    5. create a filestore and do filestore level testing
+    6-10. repeat on a burnupi
+    11-15. repeat on a new guy
+    
+    FileStore:
+	I am not sure how much I trust the caching model for how much I/O have to do.
+	I need to run this model against many more machines.
+
+    BTRFS:
+	These SimFS simulation has changed enough to have completely broken the btrfs
+	calibration.  Use new numbers to recalibrate.
+
+IN MY DREAMS:
+    more rational performance parameters for SimDisk.py
+ 

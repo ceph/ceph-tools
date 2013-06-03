@@ -44,7 +44,7 @@ class RelyGUI:
 
     disk_nre = None
     nre_rates = [       # list of likely NRE rates ... correspond to above
-        "1.0E-17", "1.0E-16", "1.0E-15", "1.0E-14", "1.0E-13"
+        "1.0E-19", "1.0E-18", "1.0E-17", "1.0E-16", "1.0E-15", "1.0E-14", "1.0E-13"
     ]
 
     # default FIT rates for various classes of drives

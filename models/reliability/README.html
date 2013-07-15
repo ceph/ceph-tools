@@ -213,6 +213,56 @@ General Notes
 	are already highly speculative.
 </LI>
 <P>
+<LI> Asynchronous replication
+	<P>
+	The first assumption is that although asynchronous replication
+	creates primary and secondary copies, all sites serve as primary
+	for some data.  Hence the probability of loss due to site failures
+	is the probability that <strong>any</strong> of those sites will 
+	fail during the period of interest.
+	<P>
+	The second set of assumptions involve the amount of (not-yet
+	replicated) data likely to be lost due to a site failure:
+	<UL type="a">
+	<LI> The inflow of new data is continuous, but the mean data change 
+	     rate is no higher than the specified inter-site recovery rate.
+	</LI>
+	<P>
+	<LI> Correctly working systems are capable of achieving replication
+	     within the specified latency.
+	</LI>
+	<P>
+	<LI> Taken together, these imply that the amount of outstanding
+	     (not yet complete) replication at any moment is typically
+	     no greater than the product of the replication bandwidth and
+	     replication latency.  If we were able to maintain a 10 second
+	     replication latency  over a 1MB/s link, there is typically
+	     no more than 10MB of data awaiting replication at any given
+	     moment.
+	     <P>
+	     There are a few reasons to consider this estimate to be high
+	     (pessimistic):
+	    <UL>
+		<LI> A system should not be designed with just-enough replication 
+		     bandwidth to handle the expected traffic, as this would result
+		     larger (and more irratic) latency, and leave no capacity for 
+		     error recovery.
+		</LI>
+		<LI> The desire for moot operation compression and point-in-time
+		     consistency will probably trive us towards batched (rather
+		     than continuous) replication.  If so, the batch in progress
+		     will (on average) be only 1/2 full at the time of failure.
+		</LI>
+	    </UL>
+	    <P>
+	</LI>
+	</UL>
+	Note, however, that these considerations only affect the expected 
+	amount of not-yet-replicated data that is likely to be lost as a
+	result of a site failure.  They do not affect the probability that
+	such a loss will occur.
+</LI>
+<P>
 <LI> Other exclusions
 	<P>
 	These models do not attempt to account for brief outages resulting

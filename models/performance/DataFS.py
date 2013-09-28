@@ -91,11 +91,11 @@ class DataFS:
             depth -- number of queued operations
         """
         # assume the file size is large enough that we can ignore hits
-        assert direct == False    # not used for filestore simulation
+        assert direct is False    # not used for filestore simulation
         return self.time("read", seq, bsize, depth)
 
     def write(self, bsize, file_size=-1,
-                seq=True, depth=1, direct=False, sync=False):
+              seq=True, depth=1, direct=False, sync=False):
         """ average time for writes to a single file
             bsize -- read unit (bytes)
             file_size -- size of file being read from (bytes)
@@ -105,7 +105,7 @@ class DataFS:
             sync -- force flush after write
         """
         # assume the file size is large enough that we can ignore hits
-        assert direct == False  # not used for filestore simulation
+        assert direct is False  # not used for filestore simulation
 
         if sync:
             # we didn't measure this, so guess and hope
@@ -149,11 +149,11 @@ if __name__ == '__main__':
     fstore = FileStore(data, jrnl, journal_share=4)
     for d in [16]:
         print("\nFilestore in %s, journal %s, depth=%d" %
-            (data.desc, jrnl.desc, d))
+              (data.desc, jrnl.desc, d))
         filestoretest.fstoretest(fstore, nobj=no, obj_size=osize, depth=d)
 
     fstore2 = FileStore(data, None)
     for d in [16]:
         print("\nFilestore in %s, journal on data disk, depth=%d" %
-            (data.desc, d))
+              (data.desc, d))
         filestoretest.fstoretest(fstore2, nobj=no, obj_size=osize, depth=d)

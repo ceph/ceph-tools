@@ -18,14 +18,7 @@ Fortunately, small-block streaming is not (for us) a typical load.
 """
 
 import math
-
-# we measure time in microseconds
-SECOND = 1000000
-
-# disk capacity and bandwidth are in powers of TEN
-MEGABYTE = 1000 * 1000
-GIGABYTE = 1000 * 1000 * 1000
-TERABYTE = 1000 * 1000 * 1000 * 1000
+from units import MEG, TERA, SECOND
 
 
 class Disk:
@@ -49,8 +42,8 @@ class Disk:
     # FIX: it would be nice if this could be expressed in terms
     #      of max_sectors_kb and readahead_kb
 
-    def __init__(self, rpm=7200, size=2 * TERABYTE,
-                bw=150 * MEGABYTE, heads=10):
+    def __init__(self, rpm=7200, size=2 * TERA,
+                 bw=150 * MEG, heads=10):
         """ Instantiate a disk simulation. """
         self.rpm = rpm
         self.size = size
@@ -227,8 +220,8 @@ class Disk:
 #
 class DumbDisk(Disk):
 
-    def __init__(self, rpm=7200, size=2 * TERABYTE,
-                bw=150 * MEGABYTE, heads=10):
+    def __init__(self, rpm=7200, size=2 * TERA,
+                 bw=150 * MEG, heads=10):
         """ Instantiate a dumb disk simulation. """
 
         Disk.__init__(self, rpm, size, bw, heads)
@@ -255,7 +248,7 @@ class DumbDisk(Disk):
 class SSD(Disk):
     """ Performance Modeling SSD simulation. """
 
-    def __init__(self, size, bw=200 * MEGABYTE, iops=20000, streams=1):
+    def __init__(self, size, bw=200 * MEG, iops=20000, streams=1):
         self.size = size
         self.media_speed = bw
         self.max_iops = iops		# single stream

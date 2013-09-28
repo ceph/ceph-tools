@@ -23,6 +23,8 @@ MB = KB * 1024
 GB = MB * 1024
 TB = GB * 1024
 
+SECOND = 1000000        # we track time in microseconds
+
 
 # unit conversion functions
 def kb(val):
@@ -42,7 +44,7 @@ def gig(val):
 
 def iops(us):
     """ convert a us/operation into IOPS """
-    return MEG / us
+    return SECOND / us
 
 
 def bw(bs, us):

@@ -91,10 +91,10 @@ def makerados(filestore, dict):
     """
 
     return Rados.Rados(filestore,
-            front_nic=dict['front'],
-            back_nic=dict['back'],
-            nodes=dict['nodes'],
-            osd_per_node=dict['osd_per_node'])
+                       front_nic=dict['front'],
+                       back_nic=dict['back'],
+                       nodes=dict['nodes'],
+                       osd_per_node=dict['osd_per_node'])
 
 
 def sample(name, fs, sz):
@@ -142,7 +142,7 @@ def test(data, journal, cluster, tests):
 
     # instantiate the journal device description
     j_share = 1
-    if journal != None:
+    if journal is not None:
         myJDisk = makedisk(journal)
         myJrnl = makefs(myJDisk, journal)
         jrnl_fstype = myJrnl.desc
@@ -223,7 +223,7 @@ def test(data, journal, cluster, tests):
         no = tests['SioFnobj']
         for d in tests['SioFdepths']:
             print(msg % (data_desc, jrnl_desc,
-                        "" if j_share == 1 else "/%d" % (j_share), d))
+                         "" if j_share == 1 else "/%d" % (j_share), d))
             print("\tnobj=%d, objsize=%d" % (no, sz))
             filestoretest.fstoretest(myFstore, nobj=no, obj_size=sz, depth=d)
             print("")
@@ -246,12 +246,12 @@ def test(data, journal, cluster, tests):
                 for i in tests['SioRinstances']:
                     for d in tests['SioRdepths']:
                         print(msg %
-                            (myRados.num_nodes, myRados.osd_per_node,
-                            x, c, i, d))
+                              (myRados.num_nodes, myRados.osd_per_node,
+                               x, c, i, d))
                         print("\t%s, %s%s, nobj=%d, objsize=%d" %
-                                (data_desc, jrnl_desc,
-                                "" if j_share == 1 else "/%d" % (j_share),
-                                no, sz))
+                              (data_desc, jrnl_desc,
+                               "" if j_share == 1 else "/%d" % (j_share),
+                               no, sz))
                         radostest.radostest(myRados, obj_size=sz, nobj=no,
                                             clients=c, depth=i * d, copies=x)
                         print("")
@@ -266,12 +266,12 @@ def test(data, journal, cluster, tests):
 #
 if __name__ == '__main__':
 
-    data = {        # data storage devices
+    data = {
         'device': "disk",
         'fs': "xfs"
     }
 
-    journal = {     # journal devices
+    journal = {
         'device': "ssd",
         'size': 1 * GIG,
         'speed': 400 * MEG,
@@ -281,14 +281,14 @@ if __name__ == '__main__':
         'shared': True
     }
 
-    cluster = {     # cluster configuration
+    cluster = {
         'front': 1 * GIG,
         'back': 10 * GIG,
         'nodes': 4,
         'osd_per_node': 4
     }
 
-    tests = {       # what tests to run with what parameters
+    tests = {
         # raw disk parameters and simulations
         'DiskParms': True,
         'FioRdepths': [1, 32],
@@ -313,8 +313,8 @@ if __name__ == '__main__':
         'SioRinstances': [4]
     }
 
-    notests = {     # just generate simulation data
-
+    # just generate simulation data
+    notests = {
         'FioFsize': 16 * GIG,
         'perfdata': True
     }
@@ -322,7 +322,8 @@ if __name__ == '__main__':
     from optparse import OptionParser
     parser = OptionParser("usage: %prog [options]")
     parser.add_option("-d", "--data", dest="sim", action="store_true",
-                default=False, help="produce simulated FS performance data")
+                      default=False,
+                      help="produce simulated FS performance data")
     (opts, files) = parser.parse_args()
     if opts.sim:
         test(data, journal, cluster, notests)

@@ -185,8 +185,9 @@ class FS:
             time *= shards
         else:
             time += (shards - 1) * \
-                self.disk.avgRead(bsize, file_size, seq=self.seq_shard,
-                    depth=d)
+                self.disk.avgRead(bsize,
+                                  file_size, seq=self.seq_shard,
+                                  depth=d)
 
         # add in the time for the meta-data lookups
         # FIX: shards multiplier should get the seq read bonus
@@ -204,7 +205,7 @@ class FS:
     # data disks
     #
     def write(self, bsize, file_size, seq=True, depth=1,
-                direct=False, sync=False):
+              direct=False, sync=False):
         """ average time for writes to a single file
             bsize -- read unit (bytes)
             file_size -- size of file being read from (bytes)
@@ -237,8 +238,9 @@ class FS:
         if seq or shards == 1:
             time *= shards
         else:
-            time += (shards - 1) * self.disk.avgWrite(bsize, file_size, \
-                seq=self.seq_shard, depth=d)
+            time += (shards - 1) * self.disk.avgWrite(bsize, file_size,
+                                                      seq=self.seq_shard,
+                                                      depth=d)
 
         # figure out how many metadata writes we'll have to do
         mdw = shards * interpolate(self.md_write, bsize)

@@ -29,7 +29,7 @@ DataData = {
     'seq-write-4m-d32': 116675351,
     'rand-read-4m-d32': 98956041,
     'rand-write-4m-d32': 103404047,
-    }
+}
 
 JrnlData = {
     'source': 'sampled XFS on SSD',
@@ -57,4 +57,4 @@ JrnlData = {
     'seq-write-4m-d32': 378677847,
     'rand-read-4m-d32': 397069434,
     'rand-write-4m-d32': 377906079,
-    }
+}

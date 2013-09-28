@@ -29,8 +29,7 @@ NOTE:
    were even more confusing.
 """
 
-# useful unit multipliers
-GIG = 1000000000
+from units import GIG, SECOND
 
 
 class Rados:
@@ -41,8 +40,8 @@ class Rados:
     warnings = ""           # save these up for reporting later
 
     def __init__(self, filestore,
-            front_nic=10 * GIG, back_nic=10 * GIG,
-            nodes=1, osd_per_node=1):
+                 front_nic=10 * GIG, back_nic=10 * GIG,
+                 nodes=1, osd_per_node=1):
         """ create a RADOS simulation
             filestore -- simulation
             front_nic -- front side NIC speed
@@ -63,7 +62,6 @@ class Rados:
             bsize -- size of the message to be sent
             bw -- NIC bandwidth for this operation
         """
-        SECOND = 1000000
         return SECOND * bsize / bw
 
     def read(self, bsize, obj_size, nobj=2500, depth=1, clients=1):
@@ -87,7 +85,8 @@ class Rados:
         ftime /= self.num_osds
 
         # at what rate can (shared) server NIC return responses
-        stime = self.network(bsize,
+        stime = self.network(
+            bsize,
             self.frontside * self.num_nodes / self.osd_per_node)
 
         # at what rate can (a single) client NIC accept responses

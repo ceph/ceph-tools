@@ -40,9 +40,9 @@ def tptest(disk, filesize, depth):
         else:
             format = "\t%5dK\t%7.1f MB/s\t%7.1f MB/s\t%7.1f MB/s\t%7.1f MB/s"
         print(format % (kb(bs), bw(bs, float(tsr)), bw(bs, float(tsw)),
-            bw(bs, float(trr)), bw(bs, float(trw))))
+              bw(bs, float(trr)), bw(bs, float(trw))))
         print("\t    \t%7d IOPS\t%7d IOPS\t%7d IOPS\t%7d IOPS" %
-            (iops(tsr), iops(tsw), iops(trr), iops(trw)))
+              (iops(tsr), iops(tsw), iops(trr), iops(trw)))
 
 
 def disktest(disk):
@@ -55,7 +55,7 @@ def disktest(disk):
     print("\trpm       \t%d" % disk.rpm)
     print("\txfer rate \t%d MB/s" % meg(disk.media_speed))
     print("\tseek time \t%d-%dus, avg %dus" %
-        (disk.settle_read, disk.max_seek, disk.avg_seek))
+          (disk.settle_read, disk.max_seek, disk.avg_seek))
     print("\twrite back\t%s" % ("True" if disk.do_writeback else "False"))
     print("\tread ahead\t%s" % ("True" if disk.do_readahead else "False"))
     print("\tmax depth \t%d" % disk.nr_requests)
@@ -79,7 +79,7 @@ def disktest(disk):
     cyls = 1
     while cyls < disk.cylinders * 10:
         print("\t%7d  %7dus  %7dus" %
-            (cyls, disk.seekTime(cyls), disk.seekTime(cyls, read=False)))
+              (cyls, disk.seekTime(cyls), disk.seekTime(cyls, read=False)))
         cyls *= 10
 
 #

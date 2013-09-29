@@ -21,12 +21,6 @@ star-crossed, but all we need is an approximate modeling
 of the average costs of a few things:
    O_DIRECT fio tests (seq/random) with variable size and depth
    filestore data and journal reads and writes
-
-NOTE:
-   we are modeling the time to perform a single operation,
-   but these are fundamentally throughput models, so it should
-   be assumed that another operation will come immediately
-   after the one we are simulating.
 """
 
 
@@ -114,6 +108,7 @@ class FS:
     md_seek = 0                 # average cylinders from data to metadata
 
     # number of metadata writes associated with create/delete
+    md_open = 1.0               # one directory read (rest in cache)
     md_create = 3.0             # parent directory, directory inode, new inode
     md_delete = 2.0             # parent directory, deleted inode
 
@@ -257,6 +252,11 @@ class FS:
 
         return time
 
+    def open(self):
+        """ open a file whose parent directory is already in cache """
+        t = self.disk.avgRead(self.md_size, self.md_seek)
+        return self.md_open * t
+
     def create(self, sync=False):
         """ new file creation """
 
@@ -278,23 +278,7 @@ class FS:
         return self.md_delete * t
 
 
-#
-# Calibration procedure
-#   start with default values + max_shard = 4M
-#   tweak md_read/write to get d=1 random 4K
-#   tweak md_read/write to get d=1 random 4M
-#   tweak md_seq_read/write to get seq 4K
-#   tweak md_seq_read/write to get seq 4M
-#
-# if depth is too effective on direct, consider tweaking
-#   max_direct_w, max_direct_r
-#
-# if large is still too good, consider tweaking
-#   max_shard, seq_shard
-#
-# if metadata refs/updates are too cheap, consider tweaking
-#   flush_max
-#
+# BTRFS calibration values based on Dec'12 customer results
 class btrfs(FS):
     """ BTRFS simulation """
 
@@ -332,6 +316,7 @@ class btrfs(FS):
                 shifts -= 1
 
 
+# XFS calibration values based on Jan'13 customer results
 class xfs(FS):
     """ XFS simulation """
 
@@ -343,7 +328,6 @@ class xfs(FS):
         if age > 0:
             self.desc += "(%3.1f)" % age
 
-        # XFS calibration values based on Jan'13 ALU results
         self.max_shard = 4096 * 1024
         self.seq_shard = False
         self.flush_max = 16
@@ -353,24 +337,3 @@ class xfs(FS):
         self.seq_write = {4096: 0.095, 4096 * 1024: 0.60}
         self.max_dir_r = {4096: 32, 4096 * 1024: 1}
         self.max_dir_w = {4096: 1, 4096 * 1024: 1}
-
-
-class ext4(FS):
-    """ EXT4 simulation """
-
-    def __init__(self, disk, age=0):
-        """ Instantiate a EXT4 simulation. """
-        # curve fitting at its ignorant worst
-
-        FS.__init__(self, disk, md_span=0.5)
-        self.desc = "EXT4"
-        if age > 0:
-            self.desc += "(%3.1f)" % age
-
-        # need EXT4 calibration values !!!
-        self.flush_time = 100000
-        self.max_shard = 128 * 1024
-        self.md_read = {4096: .10, 4096 * 1024: 0.45}
-        self.md_write = {4096: .11, 4096 * 1024: 0.30}
-        self.seq_read = {4096: 0.0001, 4096 * 1024: 0.001}
-        self.seq_write = {4096: 0.0001, 4096 * 1024: 0.001}

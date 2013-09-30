@@ -1,19 +1,19 @@
 #!/usr/bin/python
 #
-# Ceph - scalable distributed file system
+# NO COPYRIGHT/COPYLEFT
 #
-# Copyright (C) Inktank
-#
-# This is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Lesser General Public
-# License version 2.1, as published by the Free Software
-# Foundation.  See file COPYING.
+#   This module merely invokes a simulation and displays
+#   the results using standard reporting functions.  As it
+#   merely uses those API's it is an "application" under the
+#   Gnu Lesser General Public Licence.  It can be reproduced,
+#   modified, and distributed without restriction.
 #
 
 """
 RADOS simulation exerciser
 """
 
+from Report import Report
 from units import *
 
 
@@ -24,18 +24,21 @@ def radostest(fs, obj_size=16 * MEG, nobj=2500,
     if crtdlt:
         tc = fs.create(depth=depth)
         td = fs.delete(depth=depth)
-        print("\t\t     create\t      delete")
-        print("\t\t%6d IOPS\t %6d IOPS" % (iops(tc), iops(td)))
-        print("")
+        r = Report(("create", "delete"))
+        r.printHeading()
+        r.printIOPS(1, (SECOND / tc, SECOND / td))
+        r.printLatency(1, (tc, td))
 
-    print("\t    bs\t    rnd read\t   rnd write")
-    print("\t -----\t    --------\t   ---------")
+    r = Report(("rnd read", "rnd write"))
+    r.printHeading()
     for bs in (4096, 128 * 1024, 4096 * 1024):
         trr = fs.read(bs, obj_size, nobj=nobj, clients=clients, depth=depth)
         trw = fs.write(bs, obj_size, nobj=nobj, depth=depth,
                        clients=clients, copies=copies)
+        # compute the corresponding bandwidths
+        brr = bs * SECOND / trr
+        brw = bs * SECOND / trw
 
-        format = "\t%5dK\t%7.1f MB/s\t%7.1f MB/s"
-        print(format %
-              (kb(bs), bw(bs, float(trr)), bw(bs, float(trw))))
-        print("\t    \t %6d IOPS\t %6d IOPS" % (iops(trr), iops(trw)))
+        r.printBW(bs, (brr, brw))
+        r.printIOPS(bs, (brr, brw))
+        #r.printLatency(bs, (trr, trw))

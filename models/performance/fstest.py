@@ -1,16 +1,16 @@
 #!/usr/bin/python
 #
-# Ceph - scalable distributed file system
+# NO COPYRIGHT/COPYLEFT
 #
-# Copyright (C) Inktank
-#
-# This is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Lesser General Public
-# License version 2.1, as published by the Free Software
-# Foundation.  See file COPYING.
+#   This module merely invokes a simulation and displays
+#   the results using standard reporting functions.  As it
+#   merely uses those API's it is an "application" under the
+#   Gnu Lesser General Public Licence.  It can be reproduced,
+#   modified, and distributed without restriction.
 #
 
 from units import *
+from Report import Report
 
 
 """
@@ -31,12 +31,14 @@ def fstest(fs, filesize=16 * MEG, depth=1, direct=False,
     if crtdlt:
         tc = fs.create(sync=sync)
         td = fs.delete(sync=sync)
-        print("\t\t     create\t      delete")
-        print("\t\t%6d IOPS\t %6d IOPS" % (iops(tc), iops(td)))
-        print("")
 
-    print("\t    bs\t    seq read\t   seq write\t   rnd read\t   rnd write")
-    print("\t -----\t    --------\t   ---------\t   --------\t   ---------")
+        r = Report(("create", "delete"))
+        r.printHeading()
+        r.printIOPS(1, (SECOND / tc, SECOND / td))
+        r.printLatency(1, (tc, td))
+
+    r = Report(("seq read", "seq write", "rnd read", "rnd write"))
+    r.printHeading()
     for bs in (4096, 128 * 1024, 4096 * 1024):
         tsr = fs.read(bs, filesize, seq=True, depth=depth, direct=direct)
         tsw = fs.write(bs, filesize, seq=True, depth=depth, direct=direct,
@@ -45,12 +47,12 @@ def fstest(fs, filesize=16 * MEG, depth=1, direct=False,
         trw = fs.write(bs, filesize, seq=False, depth=depth, direct=direct,
                        sync=sync)
 
-        if bw(bs, tsw) >= 10:
-            format = "\t%5dK\t%7d MB/s\t%7d MB/s\t%7.1f MB/s\t%7.1f MB/s"
-        else:
-            format = "\t%5dK\t%7.1f MB/s\t%7.1f MB/s\t%7.1f MB/s\t%7.1f MB/s"
-        print(format %
-              (kb(bs), bw(bs, tsr), bw(bs, tsw),
-               bw(bs, float(trr)), bw(bs, float(trw))))
-        print("\t    \t %6d IOPS\t %6d IOPS\t %6d IOPS\t %6d IOPS" %
-              (iops(tsr), iops(tsw), iops(trr), iops(trw)))
+        # compute the corresponding bandwidths
+        bsr = bs * SECOND / tsr
+        bsw = bs * SECOND / tsw
+        brr = bs * SECOND / trr
+        brw = bs * SECOND / trw
+
+        r.printBW(bs, (bsr, bsw, brr, brw))
+        r.printIOPS(bs, (bsr, bsw, brr, brw))
+        r.printLatency(bs, (tsr, tsw, trr, trw))

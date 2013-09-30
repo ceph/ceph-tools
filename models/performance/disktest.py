@@ -17,6 +17,7 @@ disk simulation exerciser
 """
 
 from units import *
+from Report import Report
 import SimDisk
 
 
@@ -27,22 +28,23 @@ def tptest(disk, filesize, depth):
         filesize -- size of the file used for the test
         depth -- number of queued parallel operations
     """
-    print("\t    bs\t    seq read\t   seq write\t   rnd read\t   rnd write")
-    print("\t -----\t    --------\t   ---------\t   --------\t   ---------")
+    r = Report(("seq read", "seq write", "rnd read", "rnd write"))
+    r.printHeading()
     for bs in (4096, 128 * 1024, 4096 * 1024):
         tsr = disk.avgTime(bs, filesize, read=True, seq=True, depth=depth)
         tsw = disk.avgTime(bs, filesize, read=False, seq=True, depth=depth)
         trr = disk.avgTime(bs, filesize, read=True, seq=False, depth=depth)
         trw = disk.avgTime(bs, filesize, read=False, seq=False, depth=depth)
 
-        if bw(bs, tsw) >= 10:
-            format = "\t%5dK\t%7d MB/s\t%7d MB/s\t%7.1f MB/s\t%7.1f MB/s"
-        else:
-            format = "\t%5dK\t%7.1f MB/s\t%7.1f MB/s\t%7.1f MB/s\t%7.1f MB/s"
-        print(format % (kb(bs), bw(bs, float(tsr)), bw(bs, float(tsw)),
-              bw(bs, float(trr)), bw(bs, float(trw))))
-        print("\t    \t%7d IOPS\t%7d IOPS\t%7d IOPS\t%7d IOPS" %
-              (iops(tsr), iops(tsw), iops(trr), iops(trw)))
+        # compute the corresponding bandwidths
+        bsr = bs * SECOND / tsr
+        bsw = bs * SECOND / tsw
+        brr = bs * SECOND / trr
+        brw = bs * SECOND / trw
+
+        r.printBW(bs, (bsr, bsw, brr, brw))
+        r.printIOPS(bs, (bsr, bsw, brr, brw))
+        r.printLatency(bs, (tsr, tsw, trr, trw))
 
 
 def disktest(disk):
@@ -88,13 +90,13 @@ def disktest(disk):
 if __name__ == '__main__':
     for t in ["disk", "ssd"]:
         if t == "disk":
-            disk = SimDisk.Disk(size=2000 * BILLION)
+            disk = SimDisk.Disk(size=2000 * GIG)
         else:
-            disk = SimDisk.SSD(size=20 * BILLION)
+            disk = SimDisk.SSD(size=20 * GIG)
 
         print("\nDefault %s simulation" % (t))
         disktest(disk)
         for depth in [1, 32]:
             print("")
             print("    Estimated Throughput (depth=%d)" % depth)
-            tptest(disk, filesize=16 * BILLION, depth=depth)
+            tptest(disk, filesize=16 * GIG, depth=depth)

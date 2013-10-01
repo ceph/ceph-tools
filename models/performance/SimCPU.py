@@ -34,7 +34,7 @@ class CPU:
         HYPER_T = 1.3           # hyper-threading effectivieness
         BUS_WIDTH = 64          # bus width (bits)
 
-        self.desc = "%d core %4.1fGhz %s" % (cores, speed / GIG, name)
+        self.desc = "%d-core %3.1fGhz %s" % (cores, speed / GIG, name)
         self.cores = cores              # cores per chip
         mhz = speed / MEG               # clock speed (Mhz)
         self.hyperthread = HYPER_T      # hyperthreading multiplier

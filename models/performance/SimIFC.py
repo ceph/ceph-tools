@@ -38,8 +38,8 @@ class IFC:
         else:
             self.cpu = processor
 
-        self.min_read_cpu = processor.dma_us + processor.thread_us
-        self.min_write_cpu = processor.dma_us + processor.thread_us
+        self.min_read_cpu = self.cpu.dma_us + self.cpu.thread_us
+        self.min_write_cpu = self.cpu.dma_us + self.cpu.thread_us
 
         self.cpu_per_mb_read = 0    # CPU cost to read one MiB (us)
         self.cpu_per_mb_write = 0   # CPU cost to write one MiB (us)
@@ -72,7 +72,7 @@ class NIC(IFC):
             processor -- processor we're connected to
         """
 
-        n = "%dG %s" % (bw / GIG, name)
+        n = "%dGb %s" % (bw / GIG, name)
         IFC.__init__(self, n, bw / 8, processor)
 
         # TCP is very expensive
@@ -94,5 +94,5 @@ class HBA(IFC):
             processor -- processor we're connected to
         """
 
-        n = "%dG %s" % (bw / GIG, name)
+        n = "%dGb %s" % (bw / GIG, name)
         IFC.__init__(self, n, bw / 8, processor=processor)

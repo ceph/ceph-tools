@@ -49,7 +49,7 @@ class Disk:
         self.size = size
         self.media_speed = bw
         self.heads = heads
-        self.desc = "Disk"
+        self.desc = "%dRPM Disk" % rpm
 
         # infer track/cylinder size from rpm and media speed
         self.trk_size = bw / (rpm / 60)
@@ -234,7 +234,7 @@ class DumbDisk(Disk):
         self.write_delta = 1000
         self.max_seek = 20000
         self.avg_seek = 8000
-        self.desc = "Dumb Disk"
+        self.desc = "%dRPM Dumb Disk" % rpm
 
 
 #

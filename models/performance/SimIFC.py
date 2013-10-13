@@ -73,20 +73,16 @@ class IFC:
         cpu += self.cpu_write_x * self.cpu.process(bytes)    # process the data
         return cpu
 
-    def queue_delay(self, us_per_op, nics, depth=1):
-        """ expected average waiting time (us) for NIC writes
-            us_per_op -- number of microseconds to send one operation
-            nics -- number of available NICs
-            depth -- average number of queued operations
+    def queue_length(self, rho, max_depth=1000):
+        """ average queue depth as a function of load
+            rho -- average fraction of time NIC is busy
+            max_depth -- the longest the queue can possibly be
         """
-        # FIX ... NIC queue length is being modeled as MM1
-        rho = depth * us_per_op / float(nics * SECOND)
         if (rho >= 1):
-            avg = depth
+            return max_depth
         else:
             avg = rho / (1 - rho)
-
-        return avg * us_per_op
+            return avg if avg < max_depth else max_depth
 
 
 class NIC(IFC):

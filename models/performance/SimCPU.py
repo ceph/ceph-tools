@@ -73,15 +73,13 @@ class CPU:
         """ return the elapsed time to set-up/complete a DMA operation"""
         return self.DMA
 
-    def queue_length(self, coreload, cores):
-        """ return the expected process queue length (per core)
-            coreload -- number of cores being used (e.g. 0.75)
-            cores -- number of cores available (e.g. 4)
+    def queue_length(self, rho, max_depth=1000):
+        """ expected average queue depth as a function of load
+            rho -- average fraction of time CPU is busy
+            max_depth -- the longest the queue can possibly be
         """
-        # FIX ... processor queue length is being modeled as MM1
-        rho = coreload / float(cores)
-        if (rho < 1):
-            avg = rho / (1 - rho)
+        if (rho >= 1):
+            return max_depth
         else:
-            avg = 1000000000   # infinite
-        return avg
+            avg = rho / (1 - rho)
+            return avg if avg < max_depth else max_depth

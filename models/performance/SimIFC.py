@@ -59,21 +59,34 @@ class IFC:
 
     def read_cpu(self, bytes):
         """ return the CPU cost for the specified transfer """
-        cpu = self.cpu.dma_us + self.cpu.thread_us      # DMA start/completion
-        cpu += self.cpu_per_read                        # process any read
+        cpu = self.cpu.dma_us() + self.cpu.thread_us()      # DMA start/finish
+        cpu += self.cpu_per_read                            # process any read
         cpu += self.mem_read_x * self.cpu.mem_read(bytes)   # memory hits
         cpu += self.cpu_read_x * self.cpu.process(bytes)    # process the data
         return cpu
 
     def write_cpu(self, bytes):
         """ return the CPU cost for the specified transfer """
-        cpu = self.cpu.dma_us + self.cpu.thread_us      # DMA start/completion
-        cpu += self.cpu_per_write                       # process any write
+        cpu = self.cpu.dma_us() + self.cpu.thread_us()      # DMA start/finish
+        cpu += self.cpu_per_write                           # process any write
         cpu += self.mem_write_x * self.cpu.mem_write(bytes)  # memory hits
         cpu += self.cpu_write_x * self.cpu.process(bytes)    # process the data
         return cpu
 
-    # FIX - figure out how to integrate queueing delays into this model
+    def queue_delay(self, us_per_op, nics, depth=1):
+        """ expected average waiting time (us) for NIC writes
+            us_per_op -- number of microseconds to send one operation
+            nics -- number of available NICs
+            depth -- average number of queued operations
+        """
+        # FIX ... NIC queue length is being modeled as MM1
+        rho = depth * us_per_op / float(nics * SECOND)
+        if (rho >= 1):
+            avg = depth
+        else:
+            avg = rho / (1 - rho)
+
+        return avg * us_per_op
 
 
 class NIC(IFC):

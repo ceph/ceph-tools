@@ -12,7 +12,7 @@
 """
 This is intended to be a simulation of an arbitrary network
 interface or HBA, along with the s/w costs of using it (which
-could include the costs of the protocol stack).
+could include the costs of the protocol stack) above it.
 """
 
 import SimCPU
@@ -30,37 +30,50 @@ class IFC:
         """
 
         self.desc = name
-        self.max_read_bw = bw
-        self.max_write_bw = bw
+        self.max_read_bw = bw       # maximum read bandwidth (B/s)
+        self.max_write_bw = bw      # maximum write bandwidth (B/s)
 
+        # if we don't have a processor, make one up
         if processor is None:
             self.cpu = SimCPU.CPU("generic")
         else:
             self.cpu = processor
 
-        self.min_read_cpu = self.cpu.dma_us + self.cpu.thread_us
-        self.min_write_cpu = self.cpu.dma_us + self.cpu.thread_us
-
-        self.cpu_per_mb_read = 0    # CPU cost to read one MiB (us)
-        self.cpu_per_mb_write = 0   # CPU cost to write one MiB (us)
-        self.min_read_latency = 5   # minimum latency (us) FIX - madeup
-        self.min_write_latency = 5  # minimum latency (us) FIX - madeup
+        # these will be all provided in the derived sub-classes
+        self.cpu_per_read = 0       # CPU cost (us) for the null read
+        self.cpu_per_write = 0      # CPU cost (us) for the null write
+        self.min_read_latency = 0   # minimum latency (us) for any read
+        self.min_write_latency = 0  # minimum latency (us) for any write
+        self.cpu_read_x = 0         # per byte multipler on processing time
+        self.cpu_write_x = 0        # per byte multipler on processing time
+        self.mem_read_x = 0         # per byte multiplier on memory refs
+        self.mem_write_x = 0        # per byte multiplier on memory refs
 
     def read_time(self, bytes):
         """ return the elapsed time for the specified transfer """
         return self.min_read_latency + (SECOND * bytes / self.max_read_bw)
 
-    def read_cpu(self, bytes):
-        """ return the CPU cost for the specified transfer """
-        return self.min_read_cpu + (bytes * self.cpu_per_mb_read / MEG)
-
     def write_time(self, bytes):
         """ return the elapsed time for the specified transfer """
         return self.min_write_latency + (SECOND * bytes / self.max_write_bw)
 
+    def read_cpu(self, bytes):
+        """ return the CPU cost for the specified transfer """
+        cpu = self.cpu.dma_us + self.cpu.thread_us      # DMA start/completion
+        cpu += self.cpu_per_read                        # process any read
+        cpu += self.mem_read_x * self.cpu.mem_read(bytes)   # memory hits
+        cpu += self.cpu_read_x * self.cpu.process(bytes)    # process the data
+        return cpu
+
     def write_cpu(self, bytes):
         """ return the CPU cost for the specified transfer """
-        return self.min_write_cpu + (bytes * self.cpu_per_mb_write / MEG)
+        cpu = self.cpu.dma_us + self.cpu.thread_us      # DMA start/completion
+        cpu += self.cpu_per_write                       # process any write
+        cpu += self.mem_write_x * self.cpu.mem_write(bytes)  # memory hits
+        cpu += self.cpu_write_x * self.cpu.process(bytes)    # process the data
+        return cpu
+
+    # FIX - figure out how to integrate queueing delays into this model
 
 
 class NIC(IFC):
@@ -75,15 +88,17 @@ class NIC(IFC):
         n = "%dGb %s" % (bw / GIG, name)
         IFC.__init__(self, n, bw / 8, processor)
 
-        # TCP is very expensive
-        tcpr_mem = 2    # FIX - made up multipler
-        tcpw_mem = 2    # FIX - made up multipler
-        tcpr_cpu = 5    # FIX - made up multipler
-        tcpw_cpu = 5    # FIX - made up multipler
-        self.cpu_per_mb_read = tcpr_mem * self.cpu.mem_read(MEG)
-        self.cpu_per_mb_read += tcpr_cpu * self.cpu.process(MEG)
-        self.cpu_per_mb_write = tcpw_mem * self.cpu.mem_write(MEG)
-        self.cpu_per_mb_write += tcpw_cpu * self.cpu.process(MEG)
+        # software TCP/IP is pretty expensive
+        # FIX ... all of these TCP/NIC costs are made up
+        self.cpu_read_x = 5         # per byte multipler on processing
+        self.mem_read_x = 2         # per byte multipler on memory
+        self.cpu_min_read = 3       # minimum CPU time (us) for null read
+        self.min_read_latency = 5   # minimum time (us) for the null read
+
+        self.cpu_write_x = 5        # per byte multipler on processing
+        self.mem_write_x = 2        # per byte multipler on memory
+        self.cpu_min_write = 3      # minimum CPU time (us) for null write
+        self.min_write_latency = 5  # minimum time (us) for the null write
 
 
 class HBA(IFC):
@@ -96,3 +111,8 @@ class HBA(IFC):
 
         n = "%dGb %s" % (bw / GIG, name)
         IFC.__init__(self, n, bw / 8, processor=processor)
+
+        # disk writes can be pretty efficient
+        # FIX ... all of these HBA costs are made up
+        self.min_read_latency = 1   # minimum time (us) for the null read
+        self.min_write_latency = 1  # minimum time (us) for the null write

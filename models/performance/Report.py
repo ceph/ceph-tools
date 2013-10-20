@@ -58,8 +58,8 @@ class Report:
 
     def printHeading(self):
         """ print out column headings and dividing lines """
-        print self.h_string
-        print self.h_lines
+        print(self.h_string)
+        print(self.h_lines)
 
     def printBW(self, bs, vector):
         """ print out a bandwidth report

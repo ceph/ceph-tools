@@ -21,7 +21,7 @@ from Report import Report
 import SimDisk
 
 
-def tptest(disk, filesize, depth):
+def tptest(disk, filesize, depth=1, bsizes=(4096, 128 * 1024, 4096 * 1024)):
     """
     run a standard set of throughputs against a specified device
         disk -- device to be tested
@@ -30,7 +30,7 @@ def tptest(disk, filesize, depth):
     """
     r = Report(("seq read", "seq write", "rnd read", "rnd write"))
     r.printHeading()
-    for bs in (4096, 128 * 1024, 4096 * 1024):
+    for bs in bsizes:
         tsr = disk.avgTime(bs, filesize, read=True, seq=True, depth=depth)
         tsw = disk.avgTime(bs, filesize, read=False, seq=True, depth=depth)
         trr = disk.avgTime(bs, filesize, read=True, seq=False, depth=depth)

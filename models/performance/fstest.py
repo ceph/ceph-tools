@@ -19,7 +19,8 @@ file system simulation exerciser
 
 
 def fstest(fs, filesize=16 * MEG, depth=1, direct=False,
-           sync=False, crtdlt=False):
+           sync=False, crtdlt=False,
+           bsizes=(4096, 128 * 1024, 4096 * 1024)):
     """ compute & display standard fio to filesystem on a disk
         fs -- file system to be tested
         filesize -- size of file in which I/O is being done
@@ -39,7 +40,7 @@ def fstest(fs, filesize=16 * MEG, depth=1, direct=False,
 
     r = Report(("seq read", "seq write", "rnd read", "rnd write"))
     r.printHeading()
-    for bs in (4096, 128 * 1024, 4096 * 1024):
+    for bs in bsizes:
         tsr = fs.read(bs, filesize, seq=True, depth=depth, direct=direct)
         tsw = fs.write(bs, filesize, seq=True, depth=depth, direct=direct,
                        sync=sync)

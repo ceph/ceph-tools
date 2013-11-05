@@ -30,29 +30,25 @@ def fstest(fs, filesize=16 * MEG, depth=1, direct=False,
     """
 
     if crtdlt:
-        tc = fs.create(sync=sync)
-        td = fs.delete(sync=sync)
+        (tc, bwc, loadc) = fs.create(sync=sync)
+        (td, bwd, loadd) = fs.delete(sync=sync)
 
         r = Report(("create", "delete"))
         r.printHeading()
-        r.printIOPS(1, (SECOND / tc, SECOND / td))
+        r.printIOPS(1, (bwc, bwd))
         r.printLatency(1, (tc, td))
 
     r = Report(("seq read", "seq write", "rnd read", "rnd write"))
     r.printHeading()
     for bs in bsizes:
-        tsr = fs.read(bs, filesize, seq=True, depth=depth, direct=direct)
-        tsw = fs.write(bs, filesize, seq=True, depth=depth, direct=direct,
-                       sync=sync)
-        trr = fs.read(bs, filesize, seq=False, depth=depth, direct=direct)
-        trw = fs.write(bs, filesize, seq=False, depth=depth, direct=direct,
-                       sync=sync)
-
-        # compute the corresponding bandwidths
-        bsr = bs * SECOND / tsr
-        bsw = bs * SECOND / tsw
-        brr = bs * SECOND / trr
-        brw = bs * SECOND / trw
+        (tsr, bsr, lsr) = fs.read(bs, filesize, seq=True,
+                                  depth=depth, direct=direct)
+        (tsw, bsw, lsw) = fs.write(bs, filesize, seq=True,
+                                   depth=depth, direct=direct, sync=sync)
+        (trr, brr, lrr) = fs.read(bs, filesize, seq=False, depth=depth,
+                                  direct=direct)
+        (trw, brw, lrw) = fs.write(bs, filesize, seq=False, depth=depth,
+                                   direct=direct, sync=sync)
 
         r.printBW(bs, (bsr, bsw, brr, brw))
         r.printIOPS(bs, (bsr, bsw, brr, brw))

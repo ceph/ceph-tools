@@ -21,6 +21,7 @@ dictionaries, describing the devices, cluster, and tests to be run
 # simulations
 import SimDisk
 import SimFS
+import SimCPU
 import FileStore
 import Rados
 
@@ -77,6 +78,10 @@ def makefs(disk, dict):
         return SimFS.btrfs(disk, age)
     elif 'fs' in dict and dict['fs'] == 'ext4':
         return SimFS.ext4(disk, age)
+    elif 'fs' in dict and dict['fs'] == 'zfs':
+        return zfs.zfs(disk, age)
+    elif 'fs' in dict and dict['fs'] == 'xfs':
+        return SimFS.xfs(disk, age)
     else:
         return SimFS.xfs(disk, age)
 
@@ -156,6 +161,11 @@ def test(data, journal, cluster, tests):
         jrnl_desc = "journal on data disk"
 
     # instantiate the filestore
+    myCpu = SimCPU.CPU(storage_node['cpu'],
+                       speed=storage_node['speed'],
+                       cores=storage_node['cores'])
+    numCPU = storage_node['cpus']
+    # FIX - incorporate CPU's into the filestore simulation
     journal_share = 1 if not j_share else cluster['osd_per_node']
     myFstore = FileStore.FileStore(myData, myJrnl, journal_share=j_share)
 
@@ -181,13 +191,22 @@ def test(data, journal, cluster, tests):
         if 'FioJournal' in tests and tests['FioJournal']:
             for d in tests['FioRdepths']:
                 print("Raw journal device (%s), depth=%d" % (jrnl_dev, d))
-                disktest.tptest(myJrnl.disk, filesize=sz, depth=d)
+                if 'FioRbs' in tests:
+                    bs = tests['FioRbs']
+                    disktest.tptest(myJrnl.disk, filesize=sz, depth=d,
+                                    bsizes=bs)
+                else:
+                    disktest.tptest(myJrnl.disk, filesize=sz, depth=d)
                 print("")
 
         # fio to the raw disk
         for d in tests['FioRdepths']:
             print("Raw data device (%s), depth=%d" % (data_dev, d))
-            disktest.tptest(myData.disk, filesize=sz, depth=d)
+            if 'FioRbs' in tests:
+                bs = tests['FioRbs']
+                disktest.tptest(myData.disk, filesize=sz, depth=d, bsizes=bs)
+            else:
+                disktest.tptest(myData.disk, filesize=sz, depth=d)
             print("")
 
     sz = tests['FioFsize']
@@ -196,13 +215,24 @@ def test(data, journal, cluster, tests):
         if 'FioJournal' in tests and tests['FioJournal']:
             for d in tests['FioFdepths']:
                 print("FIO (direct) to %s, depth=%d" % (jrnl_desc, d))
-                fstest.fstest(myJrnl, filesize=sz, depth=d, direct=True)
+                if 'FioFbs' in tests:
+                    bs = tests['FioFbs']
+                    fstest.fstest(myJrnl, filesize=sz, depth=d, direct=True,
+                                  bsizes=bs)
+                else:
+                    fstest.fstest(myJrnl, filesize=sz, depth=d, direct=True)
                 print("")
 
         # fio to the data file system
         for d in tests['FioFdepths']:
             print("FIO (direct) to %s, depth=%d" % (data_desc, d))
-            fstest.fstest(myFstore.data_fs, filesize=sz, depth=d, direct=True)
+            if 'FioFbs' in tests:
+                bs = tests['FioFbs']
+                fstest.fstest(myFstore.data_fs, filesize=sz, depth=d,
+                              direct=True, bsizes=bs)
+            else:
+                fstest.fstest(myFstore.data_fs, filesize=sz, depth=d,
+                              direct=True)
             print("")
 
     # and capture sampled performance just in case anyone cares
@@ -226,7 +256,13 @@ def test(data, journal, cluster, tests):
             print(msg % (data_desc, jrnl_desc,
                          "" if j_share == 1 else "/%d" % (j_share), d))
             print("\tnobj=%d, objsize=%d" % (no, sz))
-            filestoretest.fstoretest(myFstore, nobj=no, obj_size=sz, depth=d)
+            if 'SioFbs' in tests:
+                bs = tests['SioFbs']
+                filestoretest.fstoretest(myFstore, nobj=no, obj_size=sz,
+                                         depth=d, bsizes=bs)
+            else:
+                filestoretest.fstoretest(myFstore, nobj=no, obj_size=sz,
+                                         depth=d)
             print("")
 
         # and run them again with journal on disk
@@ -235,7 +271,13 @@ def test(data, journal, cluster, tests):
             for d in tests['SioFdepths']:
                 print(msg % (data_desc, "journal on data disk", "", d))
                 print("\tnobj=%d, objsize=%d" % (no, sz))
-                filestoretest.fstoretest(noj, nobj=no, obj_size=sz, depth=d)
+                if 'SioFbs' in tests:
+                    bs = tests['SioFbs']
+                    filestoretest.fstoretest(noj, nobj=no, obj_size=sz,
+                                             depth=d, bsizes=bs)
+                else:
+                    filestoretest.fstoretest(noj, nobj=no, obj_size=sz,
+                                             depth=d)
                 print("")
 
         msg = "smalliobench-rados (%dx%d), %d copy, "
@@ -253,8 +295,15 @@ def test(data, journal, cluster, tests):
                               (data_desc, jrnl_desc,
                                "" if j_share == 1 else "/%d" % (j_share),
                                no, sz))
-                        radostest.radostest(myRados, obj_size=sz, nobj=no,
-                                            clients=c, depth=i * d, copies=x)
+                        if 'SioRbs' in tests:
+                            bs = tests['SioRbs']
+                            radostest.radostest(myRados, obj_size=sz, nobj=no,
+                                                clients=c, depth=i * d,
+                                                copies=x, bsizes=bs)
+                        else:
+                            radostest.radostest(myRados, obj_size=sz, nobj=no,
+                                                clients=c, depth=i * d,
+                                                copies=x)
                         print("")
 
     # check for warnings
@@ -282,11 +331,19 @@ if __name__ == '__main__':
         'shared': True
     }
 
+    storage_node = {
+        'cpu': "xeon",
+        'speed': 2.2 * GIG,
+        'cores': 2,
+        'cpus': 1,
+        'ram': 64 * GIG
+    }
+
     cluster = {
         'front': 1 * GIG,
         'back': 10 * GIG,
         'nodes': 4,
-        'osd_per_node': 4
+        'osd_per_node': 4,
     }
 
     tests = {
@@ -294,16 +351,19 @@ if __name__ == '__main__':
         'DiskParms': True,
         'FioRdepths': [1, 32],
         'FioRsize': 16 * GIG,
+        'FioRbs': (4096, 128 * 1024, 4096 * 1024),
 
         # FIO performance tests
         'FioJournal': True,
         'FioFdepths': [1, 32],
         'FioFsize': 16 * GIG,
+        'FioFbs': (4096, 128 * 1024, 4096 * 1024),
 
         # filestore performance tests
         'SioFdepths': [16],
         'SioFsize': 1 * GIG,
         'SioFnobj': 2500,
+        'SioFbs': (4096, 128 * 1024, 4096 * 1024),
 
         # RADOS performance tests
         'SioRdepths': [16],
@@ -311,7 +371,8 @@ if __name__ == '__main__':
         'SioRnobj': 2500 * 4 * 4,   # multiply by number of OSDs
         'SioRcopies': [2],
         'SioRclients': [3],
-        'SioRinstances': [4]
+        'SioRinstances': [4],
+        'SioRbs': (4096, 128 * 1024, 4096 * 1024),
     }
 
     # just generate simulation data

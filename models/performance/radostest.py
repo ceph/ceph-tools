@@ -18,7 +18,8 @@ from units import *
 
 
 def radostest(fs, obj_size=16 * MEG, nobj=2500,
-              clients=1, depth=1, copies=1, crtdlt=False):
+              clients=1, depth=1, copies=1, crtdlt=False,
+              bsizes=(4096, 128 * 1024, 4096 * 1024)):
     """ compute & display standard filestore test results """
 
     if crtdlt:
@@ -31,7 +32,7 @@ def radostest(fs, obj_size=16 * MEG, nobj=2500,
 
     r = Report(("rnd read", "rnd write"))
     r.printHeading()
-    for bs in (4096, 128 * 1024, 4096 * 1024):
+    for bs in bsizes:
         trr = fs.read(bs, obj_size, nobj=nobj, clients=clients, depth=depth)
         trw = fs.write(bs, obj_size, nobj=nobj, depth=depth,
                        clients=clients, copies=copies)

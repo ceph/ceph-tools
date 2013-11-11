@@ -17,7 +17,8 @@ from Report import Report
 from units import *
 
 
-def fstoretest(fs, obj_size=4 * MEG, nobj=2500, depth=1, crtdlt=False):
+def fstoretest(fs, obj_size=4 * MEG, nobj=2500, depth=1, crtdlt=False,
+               bsizes=(4096, 128 * 1024, 4096 * 1024)):
     """ compute & display standard filestore test results """
 
     if crtdlt:
@@ -31,7 +32,7 @@ def fstoretest(fs, obj_size=4 * MEG, nobj=2500, depth=1, crtdlt=False):
 
     r = Report(("rnd read", "rnd write"))
     r.printHeading()
-    for bs in (4096, 128 * 1024, 4096 * 1024):
+    for bs in bsizes:
         trr = fs.read(bs, obj_size, depth=1, nobj=nobj)
         trw = fs.write(bs, obj_size, depth=depth, nobj=nobj)
 

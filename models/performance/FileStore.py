@@ -87,12 +87,16 @@ class FileStore:
         mdr = self.md_reads(bsize, obj_size) * self.md_miss_rate(nobj)
 
         # figure out how long it will take to do the I/O
-        mt = self.data_fs.read(self.md_bsize, self.seek,
-                               seq=False, depth=depth)
-        dt = self.data_fs.read(bsize, self.seek, seq=False, depth=depth)
+        (mt, bw, us) = self.data_fs.read(self.md_bsize, self.seek,
+                                         seq=False, depth=depth)
+        (dt, bw, us) = self.data_fs.read(bsize, self.seek,
+                                         seq=False, depth=depth)
         #print("FS-r: raw mdr=%f, mt=%d, dt=%d" % (mdr, mt, dt))
         dt *= self.d_miss_rate(nobj, obj_size)
         #print("FS-r: adj dt=%d" % (dt))
+        # FIX ... read - use b/w returned by the data/metadata reads
+        # FIX ... read - pass through the disk and CPU utilization info
+        # FIX ... read - compute the cpu utilization in the OSDs
         return dt + (mdr * mt)
 
     def write(self, bsize, obj_size, depth=1, nobj=2500):
@@ -100,27 +104,38 @@ class FileStore:
 
         # figure out how much metadata we will actually read
         mdr = self.md_reads(bsize, obj_size) * self.md_miss_rate(nobj)
-        lt = mdr * self.data_fs.read(self.md_bsize, self.seek,
-                                     seq=False, depth=depth)
+        (lt, bw, us) = self.data_fs.read(self.md_bsize, self.seek,
+                                         seq=False, depth=depth)
+        lt *= mdr
 
         mdw = self.md_writes(bsize, obj_size)
         if self.journal_fs is None:     # journal on the data device
-            jt = self.data_fs.write(self.j_header + bsize, self.seek,
-                                    seq=True, sync=True, depth=depth)
-            dt = self.data_fs.write(bsize, self.seek,
-                                    seq=False, sync=True, depth=depth)
+            (jt, bw, us) = self.data_fs.write(self.j_header + bsize, self.seek,
+                                              seq=True, sync=True,
+                                              depth=depth)
+            (dt, bw, us) = self.data_fs.write(bsize, self.seek,
+                                              seq=False, sync=True,
+                                              depth=depth)
             dt *= self.d_miss_rate(nobj, obj_size)
-            mt = mdw * self.data_fs.write(self.md_bsize, self.seek,
-                                          seq=False, sync=True, depth=depth)
+            (mt, bw, us) = self.data_fs.write(self.md_bsize, self.seek,
+                                              seq=False, sync=True,
+                                              depth=depth)
+            mt *= mdw
+            # FIX ... write - use b/w returned by the data/metadata writes
+            # FIX ... write - pass through the disk and CPU utilization info
+            # FIX ... write - compute the cpu utilization in the OSDs
             return lt + jt + dt + mt
         else:   # separate journal
-            jt = self.journal_fs.write(self.j_header + bsize, self.seek,
-                                       seq=False, sync=True, depth=depth)
+            (jt, bw, us) = self.journal_fs.write(self.j_header + bsize,
+                                                 self.seek, seq=False,
+                                                 sync=True, depth=depth)
             jt *= self.journal_share        # FIX this seems wrong
-            dt = self.data_fs.write(bsize, obj_size,
-                                    seq=False, depth=depth)
-            mt = mdw * self.data_fs.write(self.md_bsize, self.md_seek,
-                                          seq=False, depth=depth)
+            (dt, bw, us) = self.data_fs.write(bsize, obj_size,
+                                              seq=False, depth=depth)
+            (mt, bw, us) = self.data_fs.write(self.md_bsize,
+                                              self.md_seek,
+                                              seq=False, depth=depth)
+            mt *= mdw
             #print("FS-w: raw lt=%d, jt=%d, dt=%d, mt=%d" % (lt, jt, dt, mt))
 
             # compute expected metadata write aggregation
@@ -135,10 +150,14 @@ class FileStore:
             dt *= self.d_miss_rate(nobj, obj_size)  # sloppy math
             #print("FS-w: adj lt=%d, jt=%d, dt=%d, mt=%d" % (lt, jt, dt, mt))
 
+            # FIX ... write - use b/w returned by the data/metadata writes
+            # FIX ... write - pass through the disk and CPU utilization info
+            # FIX ... write - compute the cpu utilization in the OSDs
+
             # in principle, journal and data writes are parallel
             if jt > dt + mt:
                 if not "journal caps" in self.warnings:
-                    msg = "\n\tjournal caps throughput"
+                    msg = "\n\tjournal caps throughput "
                     msg += "for %d parallel %d byte writes"
                     self.warnings += msg % (self.journal_share, bsize)
                 return lt + jt
@@ -148,12 +167,12 @@ class FileStore:
     def create(self):
         """ new file creation """
 
-        # FIX: I just made this up
+        # FIX: really implement filestore creates
         HUGE = 1000000000000            # big enough to avoid cache hits
         return self.data_fs.create() + self.write(self.md_bsize, HUGE)
 
     def delete(self):
         """ file deletion """
 
-        # FIX: I just made this up
+        # FIX: really implement filestore deletes
         return self.data_fs.delete() + self.write(0, self.block_sz)

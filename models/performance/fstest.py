@@ -43,13 +43,17 @@ def fstest(fs, filesize=16 * MEG, depth=1, direct=False,
     for bs in bsizes:
         (tsr, bsr, lsr) = fs.read(bs, filesize, seq=True,
                                   depth=depth, direct=direct)
+        isr = SECOND / tsr
         (tsw, bsw, lsw) = fs.write(bs, filesize, seq=True,
                                    depth=depth, direct=direct, sync=sync)
+        isw = SECOND / tsw
         (trr, brr, lrr) = fs.read(bs, filesize, seq=False, depth=depth,
                                   direct=direct)
+        irr = SECOND / trr
         (trw, brw, lrw) = fs.write(bs, filesize, seq=False, depth=depth,
                                    direct=direct, sync=sync)
+        irw = SECOND / trw
 
         r.printBW(bs, (bsr, bsw, brr, brw))
-        r.printIOPS(bs, (bsr, bsw, brr, brw))
-        r.printLatency(bs, (tsr, tsw, trr, trw))
+        r.printIOPS(0, (isr, isw, irr, irw))
+        r.printLatency(0, (tsr, tsw, trr, trw))

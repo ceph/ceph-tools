@@ -55,31 +55,46 @@ class Report:
 
         self.h_string = self.h_fmt % headings
         self.h_lines = self.h_fmt % lines
+        self.data_width = data_width
 
     def printHeading(self):
         """ print out column headings and dividing lines """
         print(self.h_string)
         print(self.h_lines)
 
+    def getBS(self, bytes):
+        """ return an attractively formatted block size """
+        if (bytes >= MB):
+            return "%dM" % (bytes / MB)
+        elif (bytes >= KB):
+            return "%dK" % (bytes / KB)
+        elif (bytes > 1):
+            return "%d" % (bytes)
+
+        # bs <=1 means print nothing
+        return ""
+
     def printBW(self, bs, vector):
         """ print out a bandwidth report
             bs -- block size
             vector -- B/s bw values for each column
         """
-
         # start with the block size
-        if (bs >= MB):
-            tp = ("%dM" % (bs / MB),)
-        else:
-            tp = ("%dK" % (bs / KB),)
+        tp = (self.getBS(bs),)
 
+        # then add in all the b/w columns
         for bw in vector:
+            """ figure out the most appropriate precision """
             if bw >= 100 * MB:
-                tp += ("%7d MB/s" % ((bw + 500000) / MEG),)
+                d_fmt = "%" + "%d" % self.data_width + "d MB/s"
+                mb = (bw + 500000) / MEG
             elif bw < 10 * MB:
-                tp += ("%7.2f MB/s" % (float(bw + 5000) / MEG),)
+                d_fmt = "%" + "%d" % self.data_width + ".2f MB/s"
+                mb = (bw + 5000) / MEG
             else:
-                tp += ("%7.1f MB/s" % (float(bw + 50000) / MEG),)
+                d_fmt = "%" + "%d" % self.data_width + ".1f MB/s"
+                mb = (bw + 50000) / MEG
+            tp += (d_fmt % mb,)
         print(self.h_fmt % tp)
 
     def printIOPS(self, bs, vector):
@@ -88,9 +103,10 @@ class Report:
             vector -- B/s bw values for each column
         """
 
-        iops = ("",)
-        for bw in vector:
-            iops += ("%7d IOPS" % (bw / bs),)
+        iops = (self.getBS(bs),)
+        d_fmt = "%" + "%d" % self.data_width + "d IOPS"
+        for i in vector:
+            iops += (d_fmt % i,)
         print(self.h_fmt % iops)
 
     def printLatency(self, bs, vector):
@@ -98,8 +114,19 @@ class Report:
             bs -- block size
             vector -- us latency values for each column
         """
+        # start with the block size
+        lat = (self.getBS(bs),)
 
-        lat = ("",)
         for l in vector:
-            lat += ("%7d us  " % (l),)
+            """ figure out the most appropriate precision """
+            if (l >= 10):
+                d_fmt = "%" + "%d" % self.data_width + "d us  "
+                lat += (d_fmt % l,)
+            elif l < 2:
+                d_fmt = "%" + "%d" % self.data_width + "d ns  "
+                lat += (d_fmt % (l * 1000),)
+            else:
+                d_fmt = "%" + "%d" % self.data_width + ".1f us  "
+                lat += (d_fmt % l,)
+
         print(self.h_fmt % lat)

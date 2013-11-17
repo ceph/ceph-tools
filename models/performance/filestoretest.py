@@ -38,8 +38,10 @@ def fstoretest(fs, obj_size=4 * MEG, nobj=2500, depth=1, crtdlt=False,
 
         # compute the corresponding bandwidths
         brr = bs * SECOND / trr
+        irr = SECOND / trr
         brw = bs * SECOND / trw
+        irw = SECOND / trw
 
         r.printBW(bs, (brr, brw))
-        r.printIOPS(bs, (brr, brw))
-        #r.printLatency(bs, (trr, trw))
+        r.printIOPS(0, (irr, irw))
+        #r.printLatency(0, (trr, trw))

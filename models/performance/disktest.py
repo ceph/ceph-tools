@@ -38,13 +38,17 @@ def tptest(disk, filesize, depth=1, bsizes=(4096, 128 * 1024, 4096 * 1024)):
 
         # compute the corresponding bandwidths
         bsr = bs * SECOND / tsr
+        isr = SECOND / tsr
         bsw = bs * SECOND / tsw
+        isw = SECOND / tsw
         brr = bs * SECOND / trr
+        irr = SECOND / trr
         brw = bs * SECOND / trw
+        irw = SECOND / trw
 
         r.printBW(bs, (bsr, bsw, brr, brw))
-        r.printIOPS(bs, (bsr, bsw, brr, brw))
-        r.printLatency(bs, (tsr, tsw, trr, trw))
+        r.printIOPS(0, (isr, isw, irr, irw))
+        r.printLatency(0, (tsr, tsw, trr, trw))
 
 
 def disktest(disk):

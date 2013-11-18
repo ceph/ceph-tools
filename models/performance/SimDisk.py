@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #
 # Ceph - scalable distributed file system
 #
@@ -18,7 +19,7 @@ Fortunately, small-block streaming is not (for us) a typical load.
 """
 
 import math
-from units import MEG, TERA, SECOND
+from units import *
 
 
 class Disk:
@@ -281,3 +282,171 @@ class SSD(Disk):
         setup /= depth if depth < self.nr_requests else self.nr_requests
 
         return setup + tXfer
+
+
+#
+# helper function to instantiate a disk simulation from a dict
+#
+def makedisk(dict):
+    """ instantiate the disk described by a configuration dict
+            device -- type of device to create (default disk)
+            size -- usable space (default 2TB)
+            rpm -- rotational speed (default 7200 RPM)
+            speed -- max transfer speed (default 150MB/s)
+            iops -- max iops
+            heads -- number of heads
+            streams -- max concurrent streams
+    """
+
+    disk_parms = {          # default parameters for spinning disks
+        'device': 'disk',
+        'size': 2 * TERA,
+        'speed': 150 * MEG,
+        'rpm': 7200,
+        'heads': 10,
+    }
+
+    ssd_parms = {           # default parameters for SSDs
+        'device': 'ssd',
+        'size': 20 * GIG,
+        'speed': 200 * MEG,
+        'iops': 20000,
+        'streams': 1,
+    }
+
+    # figure out what type of device this is
+    dev = dict['device'] if 'device' in dict else 'disk'
+    if dev == 'ssd':
+        dflt = ssd_parms
+        sz = dict['size'] if 'size' in dict else dflt['size']
+        spd = dict['speed'] if 'speed' in dict else dflt['speed']
+        iops = dict['iops'] if 'iops' in dict else dflt['iops']
+        strm = dict['streams'] if 'streams' in dict else dflt['streams']
+        disk = SSD(sz, spd, iops=iops, streams=strm)
+    else:
+        dflt = disk_parms
+        sz = dict['size'] if 'size' in dict else dflt['size']
+        spd = dict['speed'] if 'speed' in dict else dflt['speed']
+        rpm = dict['rpm'] if 'rpm' in dict else dflt['rpm']
+        heads = dict['heads'] if 'heads' in dict else dflt['heads']
+        if dev == "dumb":
+            disk = DumbDisk(rpm, sz, spd, heads=heads)
+        else:
+            disk = Disk(rpm, sz, spd, heads=heads)
+
+    return disk
+
+
+#
+# test methods
+#
+from Report import Report
+
+
+#
+# dump out the parameters and selected transfer/seek times
+#
+def diskparms(disk):
+    """ compute & display basic performance data for a simulated disk
+        disk -- device to be tested
+    """
+
+    print("    basic disk parameters:")
+    print("\tdrive size\t%d GB" % gig(disk.size))
+    print("\trpm       \t%d" % disk.rpm)
+    print("\txfer rate \t%d MB/s" % meg(disk.media_speed))
+    print("\tseek time \t%d-%dus, avg %dus" %
+          (disk.settle_read, disk.max_seek, disk.avg_seek))
+    print("\twrite back\t%s" % ("True" if disk.do_writeback else "False"))
+    print("\tread ahead\t%s" % ("True" if disk.do_readahead else "False"))
+    print("\tmax depth \t%d" % disk.nr_requests)
+
+    print("\n    computed performance parameters:")
+    rot = 0 if disk.rpm == 0 else (MEG / (disk.rpm / 60))
+    print("\trotation   \t%dus" % (rot))
+    print("\ttrack size \t%d bytes" % disk.trk_size)
+    print("\theads      \t%d" % disk.heads)
+    print("\tcylinders  \t%d" % disk.cylinders)
+
+    print("\n    data transfer times:")
+    print("\t   size      time      iops")
+    for bs in (4096, 128 * 1024, 4096 * 1024):
+        t = disk.xferTime(bs)
+        r = 1000000 / t
+        print("\t%6dK  %7dus  %7d" % (kb(bs), t, r))
+
+    print("\n    seek times:")
+    print("\t  cyls      read      write")
+    cyls = 1
+    while cyls < disk.cylinders * 10:
+        print("\t%7d  %7dus  %7dus" %
+              (cyls, disk.seekTime(cyls), disk.seekTime(cyls, read=False)))
+        cyls *= 10
+    print("")
+
+
+#
+# a basic throughput serries, driven by a dict
+#
+def tptest(disk, dict, descr="Estimated Throughput"):
+    """
+    run a standard set of throughputs against a specified device
+        disk -- device to be tested
+        dict --
+            FioRsize ... size of test file
+            FioRdepths ... list of request depths
+            FioRbs ... list of block sizes
+
+        filesize -- size of the file used for the test
+        depth -- number of queued parallel operations
+    """
+
+    dflt = {        # default throughput test parameters
+        'FioRsize': 16 * GIG,
+        'FioRdepth': [1, 32],
+        'FioRbs': [4096, 128 * 1024, 4096 * 1024],
+    }
+
+    sz = dict['FioRsize'] if 'FioRsize' in dict else dflt['FioRsize']
+    depths = dict['FioRdepth'] if 'FioRdepth' in dict else dflt['FioRdepth']
+    bsizes = dict['FioRbs'] if 'FioRbs' in dict else dflt['FioRbs']
+    r = Report(("seq read", "seq write", "rnd read", "rnd write"))
+
+    for depth in depths:
+        print("%s (%s), depth=%d" % (descr, disk.desc, depth))
+        r.printHeading()
+        for bs in bsizes:
+            # run the simulations
+            tsr = disk.avgTime(bs, sz, read=True, seq=True, depth=depth)
+            tsw = disk.avgTime(bs, sz, read=False, seq=True, depth=depth)
+            trr = disk.avgTime(bs, sz, read=True, seq=False, depth=depth)
+            trw = disk.avgTime(bs, sz, read=False, seq=False, depth=depth)
+
+            # compute the corresponding bandwidths
+            bsr = bs * SECOND / tsr
+            bsw = bs * SECOND / tsw
+            brr = bs * SECOND / trr
+            brw = bs * SECOND / trw
+            r.printBW(bs, (bsr, bsw, brr, brw))
+
+            # compute the corresponding IOPS
+            isr = SECOND / tsr
+            isw = SECOND / tsw
+            irr = SECOND / trr
+            irw = SECOND / trw
+            r.printIOPS(0, (isr, isw, irr, irw))
+
+            # print out the latencies
+            r.printLatency(0, (tsr, tsw, trr, trw))
+        print("")
+
+
+#
+# run a standard test series
+#
+if __name__ == '__main__':
+        for d in ('disk', 'ssd'):
+            disk = makedisk({'device': d})
+            print("\nDefault %s simulation" % (d))
+            diskparms(disk)
+            tptest(disk, {})

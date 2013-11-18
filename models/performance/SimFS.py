@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #
 # Ceph - scalable distributed file system
 #
@@ -23,7 +24,7 @@ of the average costs of a few things:
    filestore data and journal reads and writes
 """
 
-from units import SECOND
+from units import SECOND, MEG
 
 
 def log2(v):
@@ -419,3 +420,109 @@ class xfs(FS):
         self.seq_write = {4096: 0.095, 4096 * 1024: 0.60}
         self.max_dir_r = {4096: 32, 4096 * 1024: 1}
         self.max_dir_w = {4096: 1, 4096 * 1024: 1}
+
+
+def makefs(disk, dict):
+    """ instantiate the filesystem described by a configuration dict
+        disk -- on which file system is to be created
+        dict -- of file system paramters
+             -- fs: type of file system
+             -- age: 0-1
+    """
+
+    age = dict['age'] if 'age' in dict else 0
+
+    if 'fs' in dict and dict['fs'] == 'btrfs':
+        return btrfs(disk, age)
+    elif 'fs' in dict and dict['fs'] == 'ext4':
+        return ext4(disk, age)
+    elif 'fs' in dict and dict['fs'] == 'xfs':
+        return xfs(disk, age)
+    elif 'fs' in dict and dict['fs'] == 'zfs':
+        from zfs import zfs
+        return zfs(disk, age)
+    else:
+        return xfs(disk, age)
+
+
+from Report import Report
+
+
+def fstest(fs, dict, descr=""):
+    """
+    exercise a file system with tests described in a dict
+        fs -- device to be tested
+        dict --
+            FCrtDlt ... do create/deletes as well
+            FioFsize ... size of test file
+            FioFdepth ... list of request depths
+            FioFbs ... list of block sizes
+            FioFsync ... synchronous writes
+            FioFdir ... O_DIRECT
+    """
+
+    dflt = {        # default throughput test parameters
+        'FioFsize': 16 * MEG,
+        'FioFdepth': [1, 32],
+        'FioFbs': [4096, 128 * 1024, 4096 * 1024],
+        'FioFsync': False,
+        'FioFdir': True,
+        'Fmisc': True,
+    }
+
+    sz = dict['FioFsize'] if 'FioFsize' in dict else dflt['FioFsize']
+    depths = dict['FioFdepth'] if 'FioFdepth' in dict else dflt['FioFdepth']
+    bsizes = dict['FioFbs'] if 'FioFbs' in dict else dflt['FioFbs']
+    sync = dict['FioFsync'] if 'FioFsync' in dict else dflt['FioFsync']
+    direct = dict['FioFdir'] if 'FioFdir' in dict else dflt['FioFdir']
+    misc = dict['Fmisc'] if 'Fmisc' in dict else dflt['Fmisc']
+
+    if misc:
+        print("Basic operations to %s" % (descr))
+        r = Report(("create", "open", "setattr", "delete"))
+        (tc, bwc, loadc) = fs.create(sync=sync)
+        (to, bwo, loado) = fs.open()
+        (ts, bws, loads) = fs.setattr(sync=sync)
+        (td, bwd, loadd) = fs.delete(sync=sync)
+
+        r.printHeading()
+        r.printIOPS(1, (bwc, bwo, bws, bwd))
+        r.printLatency(1, (tc, to, ts, td))
+        print("")
+
+    for d in depths:
+        print("FIO (%s) to %s, depth=%d" %
+              ("direct" if direct else "buffered", descr, d))
+        r = Report(("seq read", "seq write", "rnd read", "rnd write"))
+        r.printHeading()
+        for bs in bsizes:
+            (tsr, bsr, lsr) = fs.read(bs, sz, seq=True, depth=d,
+                                      direct=direct)
+            isr = SECOND / tsr
+            (tsw, bsw, lsw) = fs.write(bs, sz, seq=True, depth=d,
+                                       direct=direct, sync=sync)
+            isw = SECOND / tsw
+            (trr, brr, lrr) = fs.read(bs, sz, seq=False, depth=d,
+                                      direct=direct)
+            irr = SECOND / trr
+            (trw, brw, lrw) = fs.write(bs, sz, seq=False, depth=d,
+                                       direct=direct, sync=sync)
+            irw = SECOND / trw
+
+            r.printBW(bs, (bsr, bsw, brr, brw))
+            r.printIOPS(0, (isr, isw, irr, irw))
+            r.printLatency(0, (tsr, tsw, trr, trw))
+        print("")
+
+
+#
+# run a standard test series
+#
+if __name__ == '__main__':
+
+        from SimDisk import makedisk
+        disk = makedisk({'device': 'disk'})
+
+        for f in ('btrfs', 'xfs', 'zfs'):
+            fs = makefs(disk, {'fs': f})
+            fstest(fs, {}, descr="%s on %s" % (fs.desc, fs.disk.desc))

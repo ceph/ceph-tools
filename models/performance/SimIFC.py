@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #
 # Ceph - scalable distributed file system
 #
@@ -125,3 +126,75 @@ class HBA(IFC):
         # FIX ... all of these HBA costs are made up
         self.min_read_latency = 1   # minimum time (us) for the null read
         self.min_write_latency = 1  # minimum time (us) for the null write
+
+
+def makeHBA(dict, cpu):
+    defaults = {
+        'bw': 16 * GIG,
+    }
+    bw = dict['bw'] if 'bw' in dict else defaults['bw']
+    hba = HBA(bw=bw, processor=cpu)
+    return hba
+
+
+def makeNIC(dict, cpu):
+    defaults = {
+        'bw': 10 * GIG,
+    }
+    bw = dict['bw'] if 'bw' in dict else defaults['bw']
+    nic = NIC(bw=bw, processor=cpu)
+    return nic
+
+
+from Report import Report
+
+
+def testHBA(hba, dict, descr):
+    defaults = {
+        'bsizes': [512, 4096, 128 * 1024, 4096 * 1024]
+    }
+
+    print(descr)
+    r = Report(("cpu read", "tot read", "cpu write", "tot write"))
+    r.printHeading()
+
+    bsizes = dict['bsizes'] if 'bsizes' in dict else defaults['bsizes']
+    for bs in bsizes:
+        tr = hba.read_time(bs)
+        cr = hba.read_cpu(bs)
+        tw = hba.write_time(bs)
+        cw = hba.write_cpu(bs)
+        r.printLatency(bs, (cr, tr, cw, tw))
+    print("")
+
+
+def testNIC(nic, dict, descr):
+    defaults = {
+        'bsizes': [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16 * 1024]
+    }
+
+    print(descr)
+    r = Report(("cpu read", "tot read", "cpu write", "tot write"))
+    r.printHeading()
+
+    bsizes = dict['bsizes'] if 'bsizes' in dict else defaults['bsizes']
+    for bs in bsizes:
+        tr = nic.read_time(bs)
+        cr = nic.read_cpu(bs)
+        tw = nic.write_time(bs)
+        cw = nic.write_cpu(bs)
+        r.printLatency(bs, (cr, tr, cw, tw))
+    print("")
+
+#
+# basic unit test exerciser
+#
+if __name__ == '__main__':
+
+    hba = makeHBA({}, None)
+    msg = "%s on %s" % (hba.desc, hba.cpu.desc)
+    testHBA(hba, {}, msg)
+
+    nic = makeNIC({}, None)
+    msg = "%s on %s" % (nic.desc, nic.cpu.desc)
+    testNIC(nic, {}, msg)

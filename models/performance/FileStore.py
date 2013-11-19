@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #
 # Ceph - scalable distributed file system
 #
@@ -21,8 +22,7 @@ NOTE:
 """
 
 import Poisson
-
-GIG = 1000000000
+from units import *
 
 
 class FileStore:
@@ -176,3 +176,106 @@ class FileStore:
 
         # FIX: really implement filestore deletes
         return self.data_fs.delete() + self.write(0, self.block_sz)
+
+
+# helper function to create filestore simulations
+def makefilestore(datafs, journalfs, dict):
+    """ instantiate a filestore simulation from a dict
+        datafs -- fs for data
+        journalfs -- fs for journal
+        dict -- other parameters
+            osd_per_journal: number of OSD sharing each journal
+    """
+
+    if journalfs is not None and 'osd_per_journal' in dict:
+        share = dict['osd_per_journal']
+    else:
+        share = 1
+    fstore = FileStore(datafs, journalfs, share)
+    return fstore
+
+
+from Report import Report
+
+
+def filestoretest(fs, dict, descr=""):
+    """
+    exercise a file system with tests described in a dict
+        fs -- device to be tested
+        dict --
+            SioFsize ... size of test file
+            SioFdepth ... list of request depths
+            SioFbs ... list of block sizes
+            SioFnobj ... number of objects to spread requests over
+            Smisc ... include creates and deletes
+    """
+
+    dflt = {        # default throughput test parameters
+        'SioFsize': 16 * MEG,
+        'SioFdepth': [1, 32],
+        'SioFbs': [4096, 128 * 1024, 4096 * 1024],
+        'SioFnobj': 2500,
+        'Smisc': False,
+    }
+
+    sz = dict['SioFsize'] if 'SioFsize' in dict else dflt['SioFsize']
+    depths = dict['SioFdepth'] if 'SioFdepth' in dict else dflt['SioFdepth']
+    bsizes = dict['SioFbs'] if 'SioFbs' in dict else dflt['SioFbs']
+    no = dict['SioFnobj'] if 'SioFnobj' in dict else dflt['SioFnobj']
+    misc = dict['Smisc'] if 'Smisc' in dict else dflt['Smisc']
+
+    # are we doing create delete as well
+    if misc:
+        print("Basic operations to %s" % (descr))
+        r = Report(("create", "delete"))
+        (tc, bwc, loadc) = fs.create()
+        (td, bwd, loadd) = fs.delete()
+
+        r.printHeading()
+        r.printIOPS(1, (bwc, bwd))
+        r.printLatency(1, (tc, td))
+        print("")
+
+    for d in depths:
+        print("smalliobench-fs, %s, depth=%d" % (descr, d))
+        print("\tnobj=%d, objsize=%d" % (no, sz))
+        r = Report(("rnd read", "rnd write"))
+        r.printHeading()
+        for bs in bsizes:
+            # NOTE: it is no longer obvious to me why I am overriding depth
+            #       surely I had a reason for it when I wrote this code :-(
+            trr = fs.read(bs, sz, depth=1, nobj=no)
+            irr = SECOND / trr
+            brr = irr * bs
+            trw = fs.write(bs, sz, depth=d, nobj=no)
+            irw = SECOND / trw
+            brw = irw * bs
+
+            r.printBW(bs, (brr, brw))
+            r.printIOPS(0, (irr, irw))
+        #   r.printLatency(0, (trr, trw))
+        print("")
+
+
+#
+# instantiate a filestore and run a set of basic tests
+#
+if __name__ == '__main__':
+
+        from SimDisk import makedisk
+        disk = makedisk({'device': 'disk'})
+        from SimFS import makefs
+        fs = makefs(disk, {})
+
+        fs1 = makefilestore(fs, None, {})
+        fs2 = makefilestore(fs, fs, {})
+
+        for f in (fs1, fs2):
+            msg = "data FS (%s on %s), journal " % \
+                (f.data_fs.desc, f.data_fs.disk.desc)
+            if f.journal_fs is None:
+                msg += "on data disk"
+            else:
+                msg += "(%s on %s)" % \
+                    (f.journal_fs.desc, f.journal_fs.disk.desc)
+            filestoretest(f, {}, descr=msg)

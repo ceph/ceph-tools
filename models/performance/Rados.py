@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #
 # Ceph - scalable distributed file system
 #
@@ -29,7 +30,7 @@ NOTE:
    were even more confusing.
 """
 
-from units import GIG, SECOND
+from units import *
 
 
 class Rados:
@@ -39,6 +40,7 @@ class Rados:
     null_resp = 1000        # NOP response time
     warnings = ""           # save these up for reporting later
 
+    # FIX - front and back should be NIC simulations rather than speeds
     def __init__(self, filestore,
                  front_nic=10 * GIG, back_nic=10 * GIG,
                  nodes=1, osd_per_node=1):
@@ -168,3 +170,130 @@ class Rados:
         """ object deletion """
 
         return self.op_latency + self.filestore.delete()
+
+
+# helper function to create filestore simulations
+def makerados(filestore, dict):
+    """ instantiate a filestore simulation from a dict
+        datafs -- fs for data
+        journalfs -- fs for journal
+        dict -- other parameters
+            osd_per_node: number of OSD running on each storage node
+    """
+
+    dflt = {        # default cluster parameters
+        'front': 1 * GIG,
+        'back': 1 * GIG,
+        'nodes': 1,
+        'osd_per_node': 1,
+    }
+
+    front = dict['front'] if 'front' in dict else dflt['front']
+    back = dict['back'] if 'back' in dict else dflt['back']
+    nodes = dict['nodes'] if 'nodes' in dict else dflt['nodes']
+    osd_per = dict['osd_per_node'] if 'osd_per_node' in dict \
+        else dflt['osd_per_node']
+
+    rados = Rados(filestore, front_nic=front, back_nic=back,
+                  nodes=nodes, osd_per_node=osd_per)
+    return rados
+
+
+from Report import Report
+
+
+def radostest(rados, dict, descr=""):
+    """ run a set of test described by a dict
+        dict
+            SioRdepth - range of depths
+            SioRbs: range of block sizes
+            SioRsize - object size
+            SioRnobj - number of objects to read
+            SioRcopies - range of write reduncancies
+            SioRclient - range of number of test instances
+            SioInst - range of instances per client
+    """
+
+    dflt = {        # default test parameters
+        'SioRdepth': [1, 16],
+        'SioRbs': [4096, 128 * 1024, 4096 * 1024],
+        'SioRsize': 16 * MEG,
+        'SioRnobj': 2500,
+        'SioRcopies': [1],
+        'SioRclient': [1],
+        'SioRinst': [1],
+        'SioRmisc': False,
+    }
+
+    # gather up the parameters
+    depths = dict['SioRdepth'] if 'SioRdepth' in dict else dflt['SioRdepth']
+    bsizes = dict['SioRbs'] if 'SioRbs' in dict else dflt['SioRbs']
+    sz = dict['SioRsize'] if 'SioRsize' in dict else dflt['SioRsize']
+    no = dict['SioRnobj'] if 'SioRnobj' in dict else dflt['SioRnobj']
+    cp = dict['SioRcopies'] if 'SioRcopies' in dict else dflt['SioRcopies']
+    cl = dict['SioRclient'] if 'SioRclient' in dict else dflt['SioRclient']
+    inst = dict['SioRinst'] if 'SioRinst' in dict else dflt['SioRinst']
+    misc = dict['SioRmisc'] if 'SioRmisc' in dict else dflt['SioRmisc']
+
+    for x in cp:                    # number of copies
+        for c in cl:                # number of clients
+            for i in inst:          # number of instances per client
+                for d in depths:    # requests per instance
+                    msg = "smalliobench-rados (%dx%d)" % \
+                        (rados.num_nodes, rados.osd_per_node)
+                    msg += ", %d copy" % x
+                    msg += ", clients*instances*depth=(%d*%d*%d)" % (c, i, d)
+                    print(msg)
+                    print("\t%s, nobj=%d, objsize=%d" % (descr, no, sz))
+
+                    if misc:
+                        tc = rados.create(depth=1)
+                        td = rados.delete(depth=1)
+                        r = Report(("create", "delete"))
+                        r.printHeading()
+                        r.printIOPS(1, (SECOND / tc, SECOND / td))
+                        r.printLatency(1, (tc, td))
+                        print("")
+
+                    r = Report(("rnd read", "rnd write"))
+                    r.printHeading()
+                    for bs in bsizes:
+                        trr = rados.read(bs, sz, nobj=no, clients=c,
+                                         depth=i * d)
+                        trw = rados.write(bs, sz, nobj=no, clients=c,
+                                          depth=i * d, copies=x)
+
+                        # compute the corresponding bandwidths
+                        brr = bs * SECOND / trr
+                        brw = bs * SECOND / trw
+                        r.printBW(bs, (brr, brw))
+
+                        # compute the corresponding IOPS
+                        irr = SECOND / trr
+                        irw = SECOND / trw
+                        r.printIOPS(0, (irr, irw))
+                        #r.printLatency(o, (trr, trw))
+                    print("")
+
+#
+# instantiate a RADOS cluster and run a set of basic tests
+#
+if __name__ == '__main__':
+
+        from SimDisk import makedisk
+        disk = makedisk({'device': 'disk'})
+        from SimFS import makefs
+        fs = makefs(disk, {})
+        from FileStore import makefilestore
+        fst = makefilestore(fs, fs, {})
+        rados = makerados(fst, {})
+
+        msg = "data FS (%s on %s), journal " % \
+            (fst.data_fs.desc, fst.data_fs.disk.desc)
+        if fst.journal_fs is None:
+            msg += "on data disk"
+        else:
+            msg += "(%s on %s)" % \
+                (fst.journal_fs.desc, fst.journal_fs.disk.desc)
+
+        radostest(rados, {}, descr=msg)

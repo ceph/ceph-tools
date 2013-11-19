@@ -1,12 +1,6 @@
 generic:
-	test.py
-		get random/seq from dictionary
-	fstest.py
-		add main()
-	filestoretest.py
-		add main()
-	radostest.py
-		add main()
+	SimDisk.py
+		move to returning (latency, bw, usage)
 
 	DataFS.py
 	    see if filestore atop DataFS returns same results
@@ -14,12 +8,6 @@ generic:
 		4M writes are half speed (could this be an interpolation error)?
 
 	    can I use it to simulate a disk as well
-
-	simCPU ... thread/process/dma calibration
-
-	SimNIC ... send/rcv memory multiplier for TCP/IP
-		   send/rcv bus multiplier for TCP/IP
-		   tot(bytes) = minCPU + memx*mem(bytes) + prox * proc(bytes)
 
 	get validation data
 		xfs file system throughput
@@ -29,6 +17,10 @@ generic:
 		ext4 file system throughput
 		zfs file system throughput
 		SimIFC to get real multipliers
+		SimCPU thread, process, DMA
+
+	SimNIC 
+		how to incorporate RDMA into NIC model
 
 
 ceph:
@@ -69,6 +61,9 @@ INVESTIGATE
 	The write numbers are about 30% higher than the multiples of FileStore.
 	The read numbers are 3x the multiples of FileStore.
 	It seems clear that caching has gone insane.
+
+    Why did I decide to force random read depths to 1 in filestoretest?
+	?I somehow recall it was related to what the test suite did?
 
 IN MY DREAMS:
     more rational performance parameters for SimDisk.py

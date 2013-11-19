@@ -1,4 +1,4 @@
-PURPOSE, FORM, AND SCOPE OF THIS MODEL
+
 
 This is not a discrete event simulation that attempts to simulate the behavior
 of a system.  Rather it is a latency, bandwidth, and resource consumption model
@@ -34,7 +34,7 @@ Fundmental Premises:
 	only requests of a single type (at the maximum possible rate).  We
 	can estaimate the performance of mixed work-loads by taking linear
 	combinations of the individual components (each with its respective
-	throughputs, latencies, and resource consumptions).
+	troughputs, latencies, and resource consumptions).
 
 Hazzards:
 
@@ -79,21 +79,16 @@ Form of the model:
 		can reasonably be greater than one.  But it should never be greater than
 		the available resources.
 
+	Most simulations also include a few helper functions
+
+	    a make* routine that will instantiate a simulation from parameters in a dict
+
+	    one or more test methods to exercise a simulation with tests in a dict
+
+	    a __main__ that will instantiate an object and run a basic set of tests
+
+
 Low Level (primitive) Simulations
-
-    Disk
-	seekTime(cyls, read)
-	xferTime(bytes, read)
-	avgRead(bsize, filesize, seq, depth)
-	avgWrite(bsize, filesize, seq, depth)
-
-
-    NIC/HBA
-	read_time(bytes)  ... elapsed time
-	read_cpu(bytes)   ... CPU time
-	write_time(bytes) ... elapsed time
-	write_cpu(bytes)  ... CPU time
-	queue_length(rho, max_depth)
 
     CPU
 	mem_read(bytes)   ... elapsed time for memory access
@@ -104,7 +99,36 @@ Low Level (primitive) Simulations
 	dma_us()	  ... DMA start and interrupt
 	queue_length(rho, max_depth)
 
+    Disk
+	seekTime(cyls, read)
+	xferTime(bytes, read)
+	avgRead(bsize, filesize, seq, depth)
+	avgWrite(bsize, filesize, seq, depth)
+
+	Note that disks can queue numerous operations in parallel.
+	Even though this is a low level simulation, it still returns
+	separate latency and bandwidth numbers
+
+    NIC/HBA
+	read_time(bytes)  ... elapsed time
+	read_cpu(bytes)   ... CPU time
+	write_time(bytes) ... elapsed time
+	write_cpu(bytes)  ... CPU time
+	queue_length(rho, max_depth)
+
+	Note that a NIC simulation includes not only the wire-speed imposed
+	limitations, but also the costs of protocol processing ... which may
+	be significant.
+
+
 Higher Level Simulations
+
+    general note
+	Note that the number of CPUs or NICs passed into a higher level simulation
+	is not necessarily the number in the node.  Rather it is the number of
+	CPUs or NICs that are available for use by the higher simulation in question.
+	If some NICs or cores are not available for use by the FileStore, they should
+	not be passed to the FileStore.
 
     FS
 	read(bsize, file_size, seq, depth, direct)

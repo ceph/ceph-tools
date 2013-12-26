@@ -216,6 +216,7 @@ def Run(tests, period=YEAR, verbosity="all"):
                     (printSize(rados.speed),
                      printTime(rados.rebuild_time(rados.speed))))
         print("    osd fullness: %7d%%" % (rados.full * 100))
+        print("    osds: %7d OSDs" % (rados.osds))
         print("    declustering: %7d PG/OSD" % (rados.pgs))
         print("    NRE model:        %10s" % (rados.nre_model))
         print("    object size:  %7s" % printSize(rados.objsize, unit=1024))

@@ -141,6 +141,7 @@ class RelyGUI:
     period = None
     disk_size = None
     rados_pgs = None
+    raods_osds = None
     rados_cpys = None
     stripe_length = None
 
@@ -331,6 +332,13 @@ class RelyGUI:
         self.rados_pgs.grid(row=r + 1)
         Label(f).grid(row=r + 2)
         r += 3
+        Label(f, text="Number of OSDs").grid(row=r)
+        self.rados_osds = Entry(f, width=self.med_wid)
+        self.rados_osds.delete(0, END)
+        self.rados_osds.insert(0, self.med_fmt % cfg.rados_osds)
+        self.rados_osds.grid(row=r + 1)
+        Label(f).grid(row=r +2)
+        r += 3
         Label(f, text="Stripe Length").grid(row=r)
         self.stripe_length = Entry(f, width=self.med_wid)
         self.stripe_length.delete(0, END)
@@ -461,6 +469,7 @@ class RelyGUI:
         self.cfg.rados_markout = float(self.rados_down.get()) / 60
         self.cfg.rados_recover = int(self.rados_speed.get()) * MiB
         self.cfg.rados_decluster = int(self.rados_pgs.get())
+        self.cfg.rados_osds = int(self.rados_osds.get())
         self.cfg.stripe_length = int(self.stripe_length.get())
         self.cfg.rados_fullness = float(self.rados_fullness.get()) / 100
         self.cfg.remote_latency = float(self.remote_latency.get()) / (60 * 60)

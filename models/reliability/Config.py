@@ -52,6 +52,7 @@ class Config:
         self.rados_copies = 2
         self.rados_markout = 10.0 * MINUTE
         self.rados_recover = 50 * MiB
+        self.rados_osds = 2
         self.rados_decluster = 200
         self.rados_fullness = 0.75
 

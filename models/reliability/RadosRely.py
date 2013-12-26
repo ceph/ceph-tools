@@ -29,6 +29,7 @@ class RADOS:
 
     def __init__(self, disk,
                 pg=200,             # recommended
+                osds=2,
                 copies=2,           # recommended minimum
                 speed=RECOVER,      # typical large object speed
                 delay=MARKOUT,      # default mark-out
@@ -48,6 +49,7 @@ class RADOS:
         self.disk = disk
         self.speed = speed
         self.pgs = pg
+        self.osds = osds
         self.copies = copies
         self.delay = delay
         self.full = fullness
@@ -65,7 +67,7 @@ class RADOS:
 
     def rebuild_time(self, speed):
         """ expected time to recover from a drive failure """
-        seconds = float(self.disk.size * self.full) / (speed * self.pgs)
+        seconds = float(self.disk.size * self.full) / (speed * self.osds)
         return seconds * SECOND
 
     def loss_fraction(self, sites=1):

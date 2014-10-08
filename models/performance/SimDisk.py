@@ -17,7 +17,7 @@ GIGABYTE = 1000 * 1000 * 1000
 TERABYTE = 1000 * 1000 * 1000 * 1000
 
 
-class Disk:
+class Disk(object):
     """ Performance Modeling Disk Simulation. """
 
     # fundamental drive characterizing parameters

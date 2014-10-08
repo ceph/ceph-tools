@@ -38,12 +38,12 @@ def fstest(fs, filesize=16 * MILLION, depth=1, direct=False,
     if crtdlt:
         tc = fs.create(sync=sync)
         td = fs.delete(sync=sync)
-        print("\t\t     create\t      delete")
-        print("\t\t%6d IOPS\t %6d IOPS" % (iops(tc), iops(td)))
-        print("")
+        print "\t\t     create\t      delete"
+        print "\t\t%6d IOPS\t %6d IOPS" % (iops(tc), iops(td))
+        print ""
 
-    print("\t    bs\t    seq read\t   seq write\t   rnd read\t   rnd write")
-    print("\t -----\t    --------\t   ---------\t   --------\t   ---------")
+    print "\t    bs\t    seq read\t   seq write\t   rnd read\t   rnd write"
+    print "\t -----\t    --------\t   ---------\t   --------\t   ---------"
     for bs in (4096, 128 * 1024, 4096 * 1024):
         tsr = fs.read(bs, filesize, seq=True, depth=depth, direct=direct)
         tsw = fs.write(bs, filesize, seq=True, depth=depth, direct=direct,

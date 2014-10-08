@@ -28,7 +28,7 @@ GB = MB * 1024
 TB = GB * 1024
 
 
-class Config:
+class Config(object):
 
     def __init__(self):
         """ default test parameters """

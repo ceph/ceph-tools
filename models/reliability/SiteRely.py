@@ -24,7 +24,7 @@ PiB = TiB * 1000
 DISASTER = FitRate(.001, YEAR)
 
 
-class Site:
+class Site(object):
 
     def __init__(self, fits=DISASTER, rplc=0, size=1 * PiB):
         """ create a site reliability simulation

@@ -22,7 +22,7 @@ TiB = GiB * 1000
 DISKSIZE = 2 * TiB
 
 
-class Disk:
+class Disk(object):
 
     def __init__(self, size, fits, nre, desc, fits2=0):
         """ create a disk reliability simulation

@@ -24,7 +24,7 @@ MB = KB * 1024
 GB = MB * 1024
 
 
-class RADOS:
+class RADOS(object):
     """ model a single-volume RADOS OSD """
 
     def __init__(self, disk,

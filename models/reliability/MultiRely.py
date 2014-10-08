@@ -25,7 +25,7 @@ from RelyFuncts import SECOND, YEAR
 MiB = 1000000
 
 
-class MultiSite:
+class MultiSite(object):
 
     def __init__(self, rados, site, speed=10 * MiB, latency=0, sites=1):
         """ create a site reliability simulation

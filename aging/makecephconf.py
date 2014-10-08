@@ -1,10 +1,7 @@
 #!/usr/bin/python
 import argparse
 import os
-import subprocess
-import sys
 import yaml
-import time
 import copy
 
 def read_config(config_file):

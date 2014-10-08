@@ -78,7 +78,7 @@ class MultiSite(object):
                 self.P_site += p * self.site.P_site
                 self.L_site = self.site.L_site
 
-    def compute(self, period=YEAR, mult=1):
+    def compute(self, period=YEAR):
         """ compute the failure tree for multiple sites """
 
         # initialize probabilities
@@ -94,7 +94,6 @@ class MultiSite(object):
 
         # note a few important sizes
         disk_size = self.rados.size * self.rados.full
-        pg_size = disk_size / self.rados.pgs
 
         # descend the tree of probabilities and tally the damage
         self.descend(period=period, p=1.0, f=(0, 0, 0), survivors=self.sites)

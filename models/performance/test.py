@@ -82,10 +82,10 @@ def makerados(filestore, dict):
     """
 
     return Rados.Rados(filestore,
-            front_nic=dict['front'],
-            back_nic=dict['back'],
-            nodes=dict['nodes'],
-            osd_per_node=dict['osd_per_node'])
+                       front_nic=dict['front'],
+                       back_nic=dict['back'],
+                       nodes=dict['nodes'],
+                       osd_per_node=dict['osd_per_node'])
 
 
 def test(data, journal, cluster, tests):
@@ -166,7 +166,7 @@ def test(data, journal, cluster, tests):
     no = tests['SioFnobj']
     for d in tests['SioFdepths']:
         print(msg % (data_desc, jrnl_desc,
-                    "" if j_share == 1 else "/%d" % (j_share), d))
+                     "" if j_share == 1 else "/%d" % (j_share), d))
         print("\tnobj=%d, objsize=%d" % (no, sz))
         filestoretest.fstoretest(myFstore, nobj=no, obj_size=sz, depth=d)
         print("")
@@ -179,12 +179,12 @@ def test(data, journal, cluster, tests):
             for i in tests['SioRinstances']:
                 for d in tests['SioRdepths']:
                     print(msg %
-                        (myRados.num_nodes, myRados.osd_per_node,
-                        x, c, i, d))
+                          (myRados.num_nodes, myRados.osd_per_node,
+                           x, c, i, d))
                     print("\t%s, %s%s, nobj=%d, objsize=%d" %
-                            (data_desc, jrnl_desc,
-                            "" if j_share == 1 else "/%d" % (j_share),
-                            no, sz))
+                          (data_desc, jrnl_desc,
+                           "" if j_share == 1 else "/%d" % (j_share),
+                           no, sz))
                     radostest.radostest(myRados, obj_size=sz, nobj=no,
                                         clients=c, depth=i * d, copies=x)
                     print("")

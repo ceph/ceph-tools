@@ -41,5 +41,5 @@ def fstoretest(fs, obj_size=4 * MILLION, nobj=2500, depth=1, crtdlt=False):
 
         format = "\t%5dK\t%7.1f MB/s\t%7.1f MB/s"
         print(format %
-                (kb(bs), bw(bs, float(trr)), bw(bs, float(trw))))
+              (kb(bs), bw(bs, float(trr)), bw(bs, float(trw))))
         print("\t    \t %6d IOPS\t %6d IOPS" % (iops(trr), iops(trw)))

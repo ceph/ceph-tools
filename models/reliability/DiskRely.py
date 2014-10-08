@@ -74,7 +74,7 @@ class EnterpriseDisk(Disk):
 
     def __init__(self, size=DISKSIZE):
         Disk.__init__(self, size=size, fits=826, nre=1.0e-15,
-                    desc="Enterprise drive")
+                      desc="Enterprise drive")
 
 
 class ConsumerDisk(Disk):
@@ -82,7 +82,7 @@ class ConsumerDisk(Disk):
 
     def __init__(self, size=DISKSIZE):
         Disk.__init__(self, size=size, fits=1320, nre=1.0e-14,
-                    desc="Consumer drive")
+                      desc="Consumer drive")
 
 
 class RealDisk(Disk):
@@ -90,4 +90,4 @@ class RealDisk(Disk):
 
     def __init__(self, size=DISKSIZE):
         Disk.__init__(self, size=size, fits=7800, nre=1.0e-14,
-                    desc="real-world disk")
+                      desc="real-world disk")

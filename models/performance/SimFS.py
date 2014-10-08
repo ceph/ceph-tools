@@ -68,7 +68,7 @@ def interpolate2(points, v):
     return y
 
 
-class FS:
+class FS(object):
     """ Performance Modeling File System Simulation. """
     # these parameters are very interesting, but their default
     # values are boring, being over-ridden by per-FS constructors

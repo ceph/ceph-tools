@@ -44,7 +44,8 @@ class RelyGUI:
 
     disk_nre = None
     nre_rates = [       # list of likely NRE rates ... correspond to above
-        "1.0E-19", "1.0E-18", "1.0E-17", "1.0E-16", "1.0E-15", "1.0E-14", "1.0E-13"
+        "1.0E-19", "1.0E-18", "1.0E-17", "1.0E-16", "1.0E-15", "1.0E-14",
+        "1.0E-13"
     ]
 
     # default FIT rates for various classes of drives
@@ -219,7 +220,7 @@ class RelyGUI:
         self.disk_type = StringVar(f)
         self.disk_type.set(self.diskTypes[0])
         OptionMenu(f, self.disk_type, *self.diskTypes,
-                    command=self.diskchoice).grid(row=r + 1)
+                   command=self.diskchoice).grid(row=r + 1)
         Label(f).grid(row=r + 2)
         r += 3
         Label(f, text="Size (GiB)").grid(row=r)
@@ -263,7 +264,7 @@ class RelyGUI:
         r += 3
         Label(f, text="Replace (hours)").grid(row=r)
         self.raid_rplc = Spinbox(f, width=self.short_wid,
-                    values=self.replace_times)
+                                 values=self.replace_times)
         self.raid_rplc.grid(row=r + 1)
         self.raid_rplc.delete(0, END)
         self.raid_rplc.insert(0, "%d" % cfg.raid_replace)
@@ -271,7 +272,7 @@ class RelyGUI:
         r += 3
         Label(f, text="Rebuild (MiB/s)").grid(row=r)
         self.raid_speed = Spinbox(f, width=self.med_wid,
-                    values=self.rebuild_speeds)
+                                  values=self.rebuild_speeds)
         self.raid_speed.grid(row=r + 1)
         self.raid_speed.delete(0, END)
         self.raid_speed.insert(0, "%d" % (cfg.raid_recover / MiB))
@@ -294,7 +295,7 @@ class RelyGUI:
         r = 1
         Label(f, text="RADOS copies").grid(row=r)
         self.rados_cpys = Spinbox(f, values=(1, 2, 3, 4, 5, 6),
-            width=self.short_wid)
+                                  width=self.short_wid)
         self.rados_cpys.grid(row=r + 1)
         self.rados_cpys.delete(0, END)
         self.rados_cpys.insert(0, "%d" % cfg.rados_copies)
@@ -302,7 +303,7 @@ class RelyGUI:
         r += 3
         Label(f, text="Mark-out (min)").grid(row=r)
         self.rados_down = Spinbox(f, values=self.markout_times,
-                    width=self.short_wid)
+                                  width=self.short_wid)
         self.rados_down.grid(row=r + 1)
         self.rados_down.delete(0, END)
         self.rados_down.insert(0, "%d" % (cfg.rados_markout * 60))
@@ -310,7 +311,7 @@ class RelyGUI:
         r += 3
         Label(f, text="Recovery (MiB/s)").grid(row=r)
         self.rados_speed = Spinbox(f, width=self.med_wid,
-                    values=self.rebuild_speeds)
+                                   values=self.rebuild_speeds)
         self.rados_speed.grid(row=r + 1)
         self.rados_speed.delete(0, END)
         self.rados_speed.insert(0, "%d" % (cfg.rados_recover / MiB))
@@ -318,7 +319,7 @@ class RelyGUI:
         r += 3
         Label(f, text="Space Usage (%)").grid(row=r)
         self.rados_fullness = Spinbox(f, values=self.fullness,
-                    width=self.med_wid)
+                                      width=self.med_wid)
         self.rados_fullness.grid(row=r + 1)
         self.rados_fullness.delete(0, END)
         self.rados_fullness.insert(0, "%d" % (cfg.rados_fullness * 100))
@@ -349,7 +350,7 @@ class RelyGUI:
         f = Frame(t, bd=self.BORDER, relief=RIDGE)
         Label(f, text="RADOS Sites").grid(row=r)
         self.site_num = Spinbox(f, values=self.site_count,
-            width=self.short_wid)
+                                width=self.short_wid)
         self.site_num.grid(row=r + 1)
         self.site_num.delete(0, END)
         self.site_num.insert(0, "%d" % cfg.remote_sites)
@@ -357,7 +358,7 @@ class RelyGUI:
         r += 3
         Label(f, text="Rep Latency (s)").grid(row=r)
         self.remote_latency = Spinbox(f, values=self.async_latencies,
-                    width=self.long_wid)
+                                      width=self.long_wid)
         self.remote_latency.grid(row=r + 1)
         self.remote_latency.delete(0, END)
         self.remote_latency.insert(0, "%d" % (cfg.remote_latency * 60 * 60))
@@ -365,7 +366,7 @@ class RelyGUI:
         r += 3
         Label(f, text="Recovery (MiB/s)").grid(row=r)
         self.remote_speed = Spinbox(f, values=self.remote_speeds,
-            width=self.med_wid)
+                                    width=self.med_wid)
         self.remote_speed.grid(row=r + 1)
         self.remote_speed.delete(0, END)
         self.remote_speed.insert(0, "%d" % (cfg.remote_recover / MiB))
@@ -373,7 +374,7 @@ class RelyGUI:
         r += 3
         Label(f, text="Disaster (years)").grid(row=r)
         self.remote_fail = Spinbox(f, values=self.site_destroy,
-            width=self.long_wid)
+                                   width=self.long_wid)
         self.remote_fail.grid(row=r + 1)
         self.remote_fail.delete(0, END)
         self.remote_fail.insert(0, "1000")
@@ -382,7 +383,7 @@ class RelyGUI:
         r += 3
         Label(f, text="Site Recover (days)").grid(row=r)
         self.remote_avail = Spinbox(f, values=self.site_recover,
-            width=self.long_wid)
+                                    width=self.long_wid)
         self.remote_avail.grid(row=r + 1)
         self.remote_avail.delete(0, END)
         self.remote_avail.insert(0, "30")
@@ -402,8 +403,7 @@ class RelyGUI:
         Label(t, text="NRE model").grid(column=c, row=r + 1)
         self.nre_model = StringVar(t)
         self.nre_model.set(self.cfg.nre_model)
-        OptionMenu(t, self.nre_model, *self.nreTypes).grid(column=c,
-                                                        row=r + 2)
+        OptionMenu(t, self.nre_model, *self.nreTypes).grid(column=c, row=r + 2)
 
         c = 2
         Label(t).grid(column=c, row=r)
@@ -428,7 +428,7 @@ class RelyGUI:
             self.object_sizes.append(s)
             os *= self.step_obj_size
         self.obj_size = Spinbox(t, values=self.object_sizes,
-            width=self.long_wid)
+                                width=self.long_wid)
         self.obj_size.grid(column=c, row=r + 2)
         self.obj_size.delete(0, END)
         self.obj_size.insert(0, self.object_sizes[0])
@@ -439,7 +439,7 @@ class RelyGUI:
         self.verbosity = StringVar(t)
         self.verbosity.set(cfg.verbose)
         OptionMenu(t, self.verbosity, *self.verbosities).grid(column=c,
-                                                        row=r + 2)
+                                                              row=r + 2)
 
         # and then finalize everything
         t.grid()
@@ -491,7 +491,7 @@ class RelyGUI:
             self.cfg.stripe_length = 1
         if self.cfg.stripe_length > self.cfg.rados_decluster:
             print("\nIGNORING stripe width (%d) > decluster (%d)\n" %
-                (self.cfg.stripe_length, self.cfg.rados_decluster))
+                  (self.cfg.stripe_length, self.cfg.rados_decluster))
             self.cfg.stripe_length = self.cfg.rados_decluster
 
     def mainloop(self):

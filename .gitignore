@@ -1,0 +1,14 @@
+*~
+*.diff
+*.deb
+*.tar.gz
+*.tar.bz2
+*.swp
+*.swo
+*.tmp
+*.orig
+*.patch
+*.pyc
+*.pyo
+
+py-compile

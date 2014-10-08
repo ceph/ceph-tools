@@ -78,7 +78,7 @@ class RelyGUI:
 
     nre_model = None
     nreTypes = [      # ways of modeling NREs
-        "ignore",  "error", "fail", "error+fail/2"
+        "ignore", "error", "fail", "error+fail/2"
     ]
 
     raid_rplc = None
@@ -94,7 +94,7 @@ class RelyGUI:
     raid_speed = None
     rados_speed = None
     rebuild_speeds = [  # list of likely rebuild speeds (MB/s)
-        1,  2, 5, 10, 15, 20, 25, 40, 50, 60, 80, 100, 120, 140, 160
+        1, 2, 5, 10, 15, 20, 25, 40, 50, 60, 80, 100, 120, 140, 160
     ]
 
     remote_latency = None
@@ -115,7 +115,7 @@ class RelyGUI:
 
     remote_speed = None
     remote_speeds = [   # list of likely remote recovery speeds (MB/s)
-        1,  2, 5, 10, 20, 25, 40, 50, 60, 80, 100, 150,
+        1, 2, 5, 10, 20, 25, 40, 50, 60, 80, 100, 150,
         200, 300, 400, 500, 600, 800, 1000
     ]
 

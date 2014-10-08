@@ -77,13 +77,13 @@ class RAID:
             recover = float(self.delay) + self.rebuild_time()
             while survivors > required:
                 self.disk.compute(period=recover, mult=survivors,
-                                secondary=True)
+                                  secondary=True)
                 p *= self.disk.P_drive
                 survivors -= 1
 
             # probability of losing the last drive
             self.disk.compute(period=recover, mult=survivors,
-                            secondary=True)
+                              secondary=True)
             self.P_drive = p * self.disk.P_drive
             self.L_drive = self.size
 
@@ -114,10 +114,10 @@ class RAID0(RAID):
     """ model a striped RAID set """
 
     def __init__(self, disk, volumes=2,   # default 2 stripes
-            recovery=0,                   # efficient recovery
-            delay=0,                      # moderatly responsive
-            nre_model=MODEL,              # optimum durability
-            objsize=OBJSIZE):
+                 recovery=0,              # efficient recovery
+                 delay=0,                 # moderatly responsive
+                 nre_model=MODEL,         # optimum durability
+                 objsize=OBJSIZE):
 
         RAID.__init__(self, disk, volumes=volumes, recovery=recovery,
                       delay=delay, nre_model=nre_model, objsize=objsize)
@@ -130,10 +130,10 @@ class RAID1(RAID):
     """ model a mirrored RAID set """
 
     def __init__(self, disk, volumes=2,   # default 2 mirror
-            recovery=RECOVER,             # efficient recovery
-            delay=DELAY,                  # moderatly responsive
-            nre_model=MODEL,              # optimum durability
-            objsize=OBJSIZE):
+                 recovery=RECOVER,        # efficient recovery
+                 delay=DELAY,             # moderatly responsive
+                 nre_model=MODEL,         # optimum durability
+                 objsize=OBJSIZE):
 
         RAID.__init__(self, disk, volumes=volumes, recovery=recovery,
                       delay=delay, nre_model=nre_model, objsize=objsize)
@@ -146,10 +146,10 @@ class RAID5(RAID):
     """ model a RAID set with one parity volume """
 
     def __init__(self, disk, volumes=4,  # default 3+1
-            recovery=RECOVER / 3,        # recovery from three volumes
-            delay=DELAY,                 # moderatly responsive
-            nre_model=MODEL,             # optimum durability
-            objsize=OBJSIZE):
+                 recovery=RECOVER / 3,   # recovery from three volumes
+                 delay=DELAY,            # moderatly responsive
+                 nre_model=MODEL,        # optimum durability
+                 objsize=OBJSIZE):
 
         RAID.__init__(self, disk, volumes=volumes, recovery=recovery,
                       delay=delay, nre_model=nre_model, objsize=objsize)
@@ -162,10 +162,10 @@ class RAID6(RAID):
     """ model a RAID set with two parity volumes """
 
     def __init__(self, disk, volumes=8,  # default 6+2
-            recovery=RECOVER / 6,        # recovery from six volumes
-            delay=DELAY,                 # moderatly responsive
-            nre_model=MODEL,             # optimum durability
-            objsize=OBJSIZE):
+                 recovery=RECOVER / 6,   # recovery from six volumes
+                 delay=DELAY,            # moderatly responsive
+                 nre_model=MODEL,        # optimum durability
+                 objsize=OBJSIZE):
 
         RAID.__init__(self, disk, volumes=volumes, recovery=recovery,
                       delay=delay, nre_model=nre_model, objsize=objsize)

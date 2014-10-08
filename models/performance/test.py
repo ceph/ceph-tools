@@ -130,36 +130,36 @@ def test(data, journal, cluster, tests):
 
     if 'DiskParms' in tests and tests['DiskParms']:
         if myJrnl is not None:
-            print("Journal Device Characteristics")
+            print "Journal Device Characteristics"
             disktest.disktest(myJrnl.disk)
-            print("")
-        print("Data Device Characteristics")
+            print ""
+        print "Data Device Characteristics"
         disktest.disktest(myData.disk)
-        print("")
+        print ""
 
     sz = tests['FioRsize']
     if myJrnl is not None and 'FioJournal' in tests and tests['FioJournal']:
         for d in tests['FioRdepths']:
-            print("Raw journal device (%s), depth=%d" % (jrnl_dev, d))
+            print "Raw journal device (%s), depth=%d" % (jrnl_dev, d)
             disktest.tptest(myJrnl.disk, filesize=sz, depth=d)
-            print("")
+            print ""
 
     for d in tests['FioRdepths']:
-        print("Raw data device (%s), depth=%d" % (data_dev, d))
+        print "Raw data device (%s), depth=%d" % (data_dev, d)
         disktest.tptest(myData.disk, filesize=sz, depth=d)
-        print("")
+        print ""
 
     sz = tests['FioFsize']
     if myJrnl is not None and 'FioJournal' in tests and tests['FioJournal']:
         for d in tests['FioFdepths']:
-            print("FIO (direct) to %s, depth=%d" % (jrnl_desc, d))
+            print "FIO (direct) to %s, depth=%d" % (jrnl_desc, d)
             fstest.fstest(myJrnl, filesize=sz, depth=d, direct=True)
-            print("")
+            print ""
 
     for d in tests['FioFdepths']:
-        print("FIO (direct) to %s, depth=%d" % (data_desc, d))
+        print "FIO (direct) to %s, depth=%d" % (data_desc, d)
         fstest.fstest(myFstore.data_fs, filesize=sz, depth=d, direct=True)
-        print("")
+        print ""
 
     msg = "smalliobench-fs, %s, %s%s, depth=%d"
     sz = tests['SioFsize']
@@ -167,9 +167,9 @@ def test(data, journal, cluster, tests):
     for d in tests['SioFdepths']:
         print(msg % (data_desc, jrnl_desc,
                      "" if j_share == 1 else "/%d" % (j_share), d))
-        print("\tnobj=%d, objsize=%d" % (no, sz))
+        print "\tnobj=%d, objsize=%d" % (no, sz)
         filestoretest.fstoretest(myFstore, nobj=no, obj_size=sz, depth=d)
-        print("")
+        print ""
 
     msg = "smalliobench-rados (%dx%d), %d copy, clients*instances*depth=(%d*%d*%d)"
     sz = tests['SioRsize']
@@ -187,11 +187,11 @@ def test(data, journal, cluster, tests):
                            no, sz))
                     radostest.radostest(myRados, obj_size=sz, nobj=no,
                                         clients=c, depth=i * d, copies=x)
-                    print("")
+                    print ""
 
     # check for warnings
     if myFstore.warnings != "" or myRados.warnings != "":
-        print("WARNINGS: %s%s" % (myFstore.warnings, myRados.warnings))
+        print "WARNINGS: %s%s" % (myFstore.warnings, myRados.warnings)
 
 
 #

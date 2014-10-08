@@ -864,8 +864,8 @@ if __name__ == "__main__":
     test.multiTest()
 
     if test.failed == 0:
-        print("PASSED %d/%d tests" % (test.passed, test.passed))
+        print "PASSED %d/%d tests" % (test.passed, test.passed)
     else:
-        print("FAILED %d/%d tests" % (test.failed, test.passed + test.failed))
+        print "FAILED %d/%d tests" % (test.failed, test.passed + test.failed)
     if test.notyet > 0:
-        print("(%d tests still unimplemented)" % (test.notyet))
+        print "(%d tests still unimplemented)" % test.notyet

@@ -70,7 +70,7 @@ def approximates(v1, v2, slop=0.005):
     return v1 <= v2 * (1.0 + slop) and v1 >= v2 * (1.0 - slop)
 
 
-class Test:
+class Test(object):
 
     def __init__(self):
 

@@ -204,8 +204,8 @@ def Run(tests, period=YEAR, verbosity="all"):
         print("    replace:  %16s" % (printTime(raid.delay)))
         if raid.speed > 0:
             print("    recovery rate: %7s/s (%s)" %
-                        (printSize(raid.speed),
-                         printTime(raid.rebuild_time())))
+                  (printSize(raid.speed),
+                   printTime(raid.rebuild_time())))
         print("    NRE model:        %10s" % (raid.nre_model))
         print("    object size:      %10s" % (printSize(raid.objsize)))
 
@@ -213,8 +213,8 @@ def Run(tests, period=YEAR, verbosity="all"):
         print("RADOS parameters")
         print("    auto mark-out: %14s" % printTime(rados.delay))
         print("    recovery rate: %8s/s (%s/drive)" %
-                    (printSize(rados.speed),
-                     printTime(rados.rebuild_time(rados.speed))))
+              (printSize(rados.speed),
+               printTime(rados.rebuild_time(rados.speed))))
         print("    osd fullness: %7d%%" % (rados.full * 100))
         print("    declustering: %7d PG/OSD" % (rados.pgs))
         print("    NRE model:        %10s" % (rados.nre_model))
@@ -229,26 +229,26 @@ def Run(tests, period=YEAR, verbosity="all"):
         else:
             tf = mttf(site.fits)
             print("    disaster rate: %12s (%d FITS)" %
-                (printTime(tf), site.fits))
+                  (printTime(tf), site.fits))
         if site.replace == 0:
             print("    site recovery:   NEVER")
         else:
             print("    site recovery: %11s" %
-                    (printTime(site.replace)))
+                  (printTime(site.replace)))
 
         if multi is not None:
             print("    recovery rate: %8s/s (%s/PG)" %
-                (printSize(multi.speed),
-                 printTime(multi.rados.rebuild_time(multi.speed))))
+                  (printSize(multi.speed),
+                   printTime(multi.rados.rebuild_time(multi.speed))))
             if multi.latency == 0:
                 print("    replication:       synchronous")
             else:
                 print("    replication:       asynchronous (%s delay)" %
-                            (printTime(multi.latency)))
+                      (printTime(multi.latency)))
 
     # column headings
     heads = ("storage", "durability",
-            "PL(site)", "PL(copies)", "PL(NRE)", "PL(rep)", "loss/PiB")
+             "PL(site)", "PL(copies)", "PL(NRE)", "PL(rep)", "loss/PiB")
     format = getFormat(heads)
 
     # column descriptions

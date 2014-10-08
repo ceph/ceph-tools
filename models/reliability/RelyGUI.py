@@ -13,7 +13,8 @@
 GUI for playing with reliability model parameters
 """
 
-from Tkinter import *
+from Tkinter import Tk, OptionMenu, Label, Button, Frame, Spinbox
+from Tkinter import StringVar, Entry, RIDGE, END
 
 # speeds and disk sizes
 KiB = 1000

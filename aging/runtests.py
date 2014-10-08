@@ -33,7 +33,7 @@ def get_nodes(nodes):
 
 def pdsh(nodes, command):
     args = ['pdsh', '-R', 'ssh', '-w', nodes, command]
-    print('pdsh: %s' % args)
+    print "pdsh: %s" % args
     return subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 def pdcp(nodes, flags, localfile, remotefile):
@@ -428,13 +428,13 @@ if __name__ == '__main__':
     s3func_config = config.get('s3func', {})
     s3rw_config = config.get('s3rw', {})
 
-    if not (cluster_config):
+    if not cluster_config:
         shutdown('No cluster section found in config file, bailing.')
     if not (rb_config or restbench_config or s3func_config or s3rw_config):
         shutdown('No task sections found in config file, bailing.')
 
     # Setup the Cluster
-    if not (cluster_config):
+    if not cluster_config:
         shutdown('No cluster section found in config file, bailing.')
     setup_cluster(cluster_config, tmp_dir_base)
 

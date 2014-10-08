@@ -30,8 +30,8 @@ class Rados:
     warnings = ""           # save these up for reporting later
 
     def __init__(self, filestore,
-            front_nic=10 * GIG, back_nic=10 * GIG,
-            nodes=1, osd_per_node=1):
+                 front_nic=10 * GIG, back_nic=10 * GIG,
+                 nodes=1, osd_per_node=1):
         """ create a RADOS simulation
             filestore -- simulation
             front_nic -- front side NIC speed
@@ -77,7 +77,7 @@ class Rados:
 
         # at what rate can (shared) server NIC return responses
         stime = self.network(bsize,
-            self.frontside * self.num_nodes / self.osd_per_node)
+                             self.frontside * self.num_nodes / self.osd_per_node)
 
         # at what rate can (a single) client NIC accept responses
         ctime = self.network(bsize, self.frontside * clients)

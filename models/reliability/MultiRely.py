@@ -59,13 +59,13 @@ class MultiSite:
         if survivors > 1:
             # we haven't yet reached the bottom of the tree
             self.descend(self.site.replace, p * self.site.P_site,
-                        (f[0] + 1, f[1], f[2]), survivors - 1)
+                         (f[0] + 1, f[1], f[2]), survivors - 1)
             self.descend(self.rados.rebuild_time(self.speed),
-                        p * self.rados.P_drive,
-                        (f[0], f[1] + 1, f[2]), survivors - 1)
+                         p * self.rados.P_drive,
+                         (f[0], f[1] + 1, f[2]), survivors - 1)
             obj_fetch = SECOND * self.rados.objsize / self.speed
             self.descend(obj_fetch, p * self.rados.P_nre,
-                        (f[0], f[1], f[2] + 1), survivors - 1)
+                         (f[0], f[1], f[2] + 1), survivors - 1)
             return
 
         # we are down to the last site

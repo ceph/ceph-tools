@@ -32,7 +32,7 @@ TB = GB * 1024
 # Let me apologize in advance for this brute-force GUI.
 # Not being a python programmer, I've never seen how it
 # is supposed to be done.
-class RelyGUI:
+class RelyGUI(object):
     """ GUI for driving storage reliability simulations """
 
     #

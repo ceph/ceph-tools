@@ -6,9 +6,6 @@
 MILLION = 1000000   # capacities and speeds
 SECOND = 1000000    # times are in micro-seconds
 
-import FileStore
-
-
 def kb(val):
     """ number of kilobytes (1024) in a block """
     return val / 1024

@@ -33,9 +33,9 @@ def oneTest(cfg, which):
 
     # everybody needs a disk simulation
     disk = Disk(size=cfg.disk_size,
-                        fits=cfg.disk_fit, fits2=cfg.disk_fit2,
-                        nre=cfg.disk_nre,
-                        desc="Disk: %s" % (cfg.disk_type))
+                fits=cfg.disk_fit, fits2=cfg.disk_fit2,
+                nre=cfg.disk_nre,
+                desc="Disk: %s" % (cfg.disk_type))
 
     if which == "disk":
         Run([disk], period=cfg.period, verbosity=cfg.verbose)
@@ -44,39 +44,39 @@ def oneTest(cfg, which):
     if which == "raid":
         if cfg.raid_type == "RAID-0":
             raid = RAID0(disk, volumes=cfg.raid_vols,
-                                  nre_model=cfg.nre_model,
-                                  recovery=cfg.raid_recover,
-                                  delay=cfg.raid_replace,
-                                  objsize=cfg.obj_size)
+                         nre_model=cfg.nre_model,
+                         recovery=cfg.raid_recover,
+                         delay=cfg.raid_replace,
+                         objsize=cfg.obj_size)
         elif cfg.raid_type == "RAID-1":
             raid = RAID1(disk, volumes=cfg.raid_vols,
-                                  nre_model=cfg.nre_model,
-                                  recovery=cfg.raid_recover,
-                                  delay=cfg.raid_replace,
-                                  objsize=cfg.obj_size)
+                         nre_model=cfg.nre_model,
+                         recovery=cfg.raid_recover,
+                         delay=cfg.raid_replace,
+                         objsize=cfg.obj_size)
         elif cfg.raid_type == "RAID-5":
             raid = RAID5(disk, volumes=cfg.raid_vols,
-                                  nre_model=cfg.nre_model,
-                                  recovery=cfg.raid_recover,
-                                  delay=cfg.raid_replace,
-                                  objsize=cfg.obj_size)
+                         nre_model=cfg.nre_model,
+                         recovery=cfg.raid_recover,
+                         delay=cfg.raid_replace,
+                         objsize=cfg.obj_size)
         elif cfg.raid_type == "RAID-6":
             raid = RAID6(disk, volumes=cfg.raid_vols,
-                                  nre_model=cfg.nre_model,
-                                  recovery=cfg.raid_recover,
-                                  delay=cfg.raid_replace,
-                                  objsize=cfg.obj_size)
+                         nre_model=cfg.nre_model,
+                         recovery=cfg.raid_recover,
+                         delay=cfg.raid_replace,
+                         objsize=cfg.obj_size)
         Run([raid], period=cfg.period, verbosity=cfg.verbose)
         return
 
     rados = RADOS(disk, pg=cfg.rados_decluster,
-                    copies=cfg.rados_copies,
-                    speed=cfg.rados_recover,
-                    fullness=cfg.rados_fullness,
-                    objsize=cfg.obj_size,
-                    stripe=cfg.stripe_length,
-                    nre_model=cfg.nre_model,
-                    delay=cfg.rados_markout)
+                  copies=cfg.rados_copies,
+                  speed=cfg.rados_recover,
+                  fullness=cfg.rados_fullness,
+                  objsize=cfg.obj_size,
+                  stripe=cfg.stripe_length,
+                  nre_model=cfg.nre_model,
+                  delay=cfg.rados_markout)
     if which == "rados":
         Run([rados], period=cfg.period, verbosity=cfg.verbose)
         return
@@ -84,9 +84,9 @@ def oneTest(cfg, which):
     if which == "multi":
         site = Site(fits=cfg.majeure, rplc=cfg.site_recover)
         multi = MultiSite(rados, site,
-                speed=cfg.remote_recover,
-                latency=cfg.remote_latency,
-                sites=cfg.remote_sites)
+                          speed=cfg.remote_recover,
+                          latency=cfg.remote_latency,
+                          sites=cfg.remote_sites)
         Run([multi], period=cfg.period, verbosity=cfg.verbose)
         return
 
@@ -97,42 +97,42 @@ def defaultTests(cfg):
         cfg -- default configuration values
     """
     disk = Disk(size=cfg.disk_size, fits=cfg.disk_fit,
-                        nre=cfg.disk_nre,
-                        desc="Disk: %s" % (cfg.disk_type))
+                nre=cfg.disk_nre,
+                desc="Disk: %s" % (cfg.disk_type))
 
     raid0 = RAID0(disk, volumes=2,
-                          nre_model=cfg.nre_model,
-                          recovery=cfg.raid_recover,
-                          delay=cfg.raid_replace,
-                          objsize=cfg.obj_size)
+                  nre_model=cfg.nre_model,
+                  recovery=cfg.raid_recover,
+                  delay=cfg.raid_replace,
+                  objsize=cfg.obj_size)
     raid1 = RAID1(disk, volumes=2,
-                          nre_model=cfg.nre_model,
-                          recovery=cfg.raid_recover,
-                          delay=cfg.raid_replace,
-                          objsize=cfg.obj_size)
+                  nre_model=cfg.nre_model,
+                  recovery=cfg.raid_recover,
+                  delay=cfg.raid_replace,
+                  objsize=cfg.obj_size)
     raid5 = RAID5(disk, volumes=4,
-                          nre_model=cfg.nre_model,
-                          recovery=cfg.raid_recover,
-                          delay=cfg.raid_replace,
-                          objsize=cfg.obj_size)
+                  nre_model=cfg.nre_model,
+                  recovery=cfg.raid_recover,
+                  delay=cfg.raid_replace,
+                  objsize=cfg.obj_size)
     raid6 = RAID6(disk, volumes=8,
-                          nre_model=cfg.nre_model,
-                          recovery=cfg.raid_recover,
-                          delay=cfg.raid_replace,
-                          objsize=cfg.obj_size)
+                  nre_model=cfg.nre_model,
+                  recovery=cfg.raid_recover,
+                  delay=cfg.raid_replace,
+                  objsize=cfg.obj_size)
 
     tests = [disk, raid0, raid5, raid1, raid6]
 
     # single site RADOS
     for cp in (1, 2, 3):
         rados = RADOS(disk, pg=cfg.rados_decluster,
-                        copies=cp,
-                        speed=cfg.rados_recover,
-                        fullness=cfg.rados_fullness,
-                        objsize=cfg.obj_size,
-                        stripe=cfg.stripe_length,
-                        nre_model=cfg.nre_model,
-                        delay=cfg.rados_markout)
+                      copies=cp,
+                      speed=cfg.rados_recover,
+                      fullness=cfg.rados_fullness,
+                      objsize=cfg.obj_size,
+                      stripe=cfg.stripe_length,
+                      nre_model=cfg.nre_model,
+                      delay=cfg.rados_markout)
         tests.append(rados)
 
     # multi-site RADOS
@@ -142,18 +142,18 @@ def defaultTests(cfg):
     for sites in (1, 2, 3, 4):
         for cp in (1, 2, 3):
             rados = RADOS(disk, pg=cfg.rados_decluster,
-                        copies=cp,
-                        speed=cfg.rados_recover,
-                        fullness=cfg.rados_fullness,
-                        objsize=cfg.obj_size,
-                        stripe=cfg.stripe_length,
-                        nre_model=cfg.nre_model,
-                        delay=cfg.rados_markout)
+                          copies=cp,
+                          speed=cfg.rados_recover,
+                          fullness=cfg.rados_fullness,
+                          objsize=cfg.obj_size,
+                          stripe=cfg.stripe_length,
+                          nre_model=cfg.nre_model,
+                          delay=cfg.rados_markout)
 
             multi = MultiSite(rados, site,
-                    speed=cfg.remote_recover,
-                    latency=cfg.remote_latency,
-                    sites=sites)
+                              speed=cfg.remote_recover,
+                              latency=cfg.remote_latency,
+                              sites=sites)
             tests.append(multi)
 
     # and run them all
@@ -169,7 +169,7 @@ def main():
     from optparse import OptionParser
     parser = OptionParser(usage="usage: %prog [options]")
     parser.add_option("-g", "--gui", dest="gui", action="store_true",
-                default=False, help="GUI control panel")
+                      default=False, help="GUI control panel")
     (opts, files) = parser.parse_args()
 
     for f in files:

@@ -363,15 +363,20 @@ def run_restbench(config, tmp_dir, archive_dir):
     time = str(config.get('time', '360'))
     time = '--seconds=%s' % time
     concurrent_ops = str(config.get('concurrent_ops', ''))
-    if concurrent_ops: concurrent_ops = '-t %s' % concurrent_ops
+    if concurrent_ops:
+        concurrent_ops = '-t %s' % concurrent_ops
     bucket = str(config.get('bucket', ''))
-    if bucket: bucket = '--bucket=%s' % bucket
+    if bucket:
+        bucket = '--bucket=%s' % bucket
     access_key = str(config.get('access_key', ''))
-    if access_key: access_key = '--access-key=%s' % access_key
+    if access_key:
+        access_key = '--access-key=%s' % access_key
     secret = str(config.get('secret', ''))
-    if secret: secret = '--secret=%s' % secret
+    if secret:
+        secret = '--secret=%s' % secret
     api_host = str(config.get('api_host', ''))
-    if api_host: api_host = '--api-host=%s' % api_host
+    if api_host:
+        api_host = '--api-host=%s' % api_host
 
     op_sizes = config.get('op_sizes', [])
 

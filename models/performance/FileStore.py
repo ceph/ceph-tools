@@ -77,7 +77,7 @@ class FileStore:
 
         # figure out how long it will take to do the I/O
         mt = self.data_fs.read(self.md_bsize, self.seek,
-                    seq=False, depth=depth)
+                               seq=False, depth=depth)
         dt = self.data_fs.read(bsize, self.seek, seq=False, depth=depth)
         #print("FS-r: raw mdr=%f, mt=%d, dt=%d" % (mdr, mt, dt))
         dt *= self.d_miss_rate(nobj, obj_size)
@@ -90,26 +90,26 @@ class FileStore:
         # figure out how much metadata we will actually read
         mdr = self.md_reads(bsize, obj_size) * self.md_miss_rate(nobj)
         lt = mdr * self.data_fs.read(self.md_bsize, self.seek,
-                                seq=False, depth=depth)
+                                     seq=False, depth=depth)
 
         mdw = self.md_writes(bsize, obj_size)
         if self.journal_fs == None:     # journal on the data device
             jt = self.data_fs.write(self.j_header + bsize, self.seek,
-                                seq=True, sync=True, depth=depth)
+                                    seq=True, sync=True, depth=depth)
             dt = self.data_fs.write(bsize, self.seek,
-                                seq=False, sync=True, depth=depth)
+                                    seq=False, sync=True, depth=depth)
             dt *= self.d_miss_rate(nobj, obj_size)
             mt = mdw * self.data_fs.write(self.md_bsize, self.seek,
-                                seq=False, sync=True, depth=depth)
+                                          seq=False, sync=True, depth=depth)
             return lt + jt + dt + mt
         else:   # separate journal
             jt = self.journal_fs.write(self.j_header + bsize, self.seek,
-                                seq=False, sync=True, depth=depth)
+                                       seq=False, sync=True, depth=depth)
             jt *= self.journal_share        # FIX this seems wrong
             dt = self.data_fs.write(bsize, obj_size,
-                                seq=False, depth=depth)
+                                    seq=False, depth=depth)
             mt = mdw * self.data_fs.write(self.md_bsize, self.md_seek,
-                                seq=False, depth=depth)
+                                          seq=False, depth=depth)
             #print("FS-w: raw lt=%d, jt=%d, dt=%d, mt=%d" % (lt, jt, dt, mt))
 
             # compute expected metadata write aggregation

@@ -14,7 +14,7 @@ mons = ''
 rgws = ''
 iterations = sys.maxint
 rebuild_every_test = False
-osds_per_node = 0 
+osds_per_node = 0
 user = 'nhm'
 
 def get_nodes(nodes):
@@ -80,12 +80,12 @@ def check_health():
 
 def make_remote_dir(remote_dir):
     print 'Making remote directory: %s' % remote_dir
-    pdsh(get_nodes([clients,servers,mons,rgws]), 'mkdir -p -m0755 -- %s' % remote_dir).communicate()
+    pdsh(get_nodes([clients, servers, mons, rgws]), 'mkdir -p -m0755 -- %s' % remote_dir).communicate()
 
 def sync_files(tmp_dir, out_dir):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-    rpdcp(get_nodes([clients,servers,mons,rgws]), '-r', tmp_dir, out_dir).communicate()
+    rpdcp(get_nodes([clients, servers, mons, rgws]), '-r', tmp_dir, out_dir).communicate()
 
 def setup_cluster(config, tmp_dir):
     global head, clients, servers, mons, rgws, fs, iterations, rebuild_every_test, osds_per_node
@@ -105,7 +105,7 @@ def setup_cluster(config, tmp_dir):
     print "Stopping ceph."
     stop_ceph()
     print 'Deleting %s' % tmp_dir
-    pdsh(get_nodes([clients,servers,mons,rgws]), 'rm -rf %s' % tmp_dir_base).communicate()
+    pdsh(get_nodes([clients, servers, mons, rgws]), 'rm -rf %s' % tmp_dir_base).communicate()
 
     print "Distributing %s." % config_file
     setup_ceph_conf(config_file)
@@ -134,7 +134,7 @@ def setup_ceph(config):
         setup_rgw()
         print 'Downloading s3-tests.'
         setup_s3tests(tmp_dir)
-     
+
 
 def shutdown(message):
     print "Stopping monitoring."
@@ -150,8 +150,8 @@ def make_movies(tmp_dir):
     seekwatcher = '/home/%s/bin/seekwatcher' % user
     blktrace_dir = '%s/blktrace' % tmp_dir
 
-    for device in xrange (0,osds_per_node):    
-        pdsh(servers, 'cd %s;%s -t device%s -o device%s.mpg --movie' % (blktrace_dir,seekwatcher,device,device)).communicate()
+    for device in xrange(0, osds_per_node):
+        pdsh(servers, 'cd %s;%s -t device%s -o device%s.mpg --movie' % (blktrace_dir, seekwatcher, device, device)).communicate()
 
 def perf_post(tmp_dir):
     perf_dir = '%s/perf' % tmp_dir
@@ -164,7 +164,7 @@ def start_monitoring(tmp_dir):
     blktrace_dir = '%s/blktrace' % tmp_dir
 
     # collectl
-    pdsh(get_nodes([clients, servers, mons, rgws]), 'mkdir -p -m0755 -- %s;collectl -s+mYZ -i 1:10 -F0 -f %s' % (collectl_dir,collectl_dir))
+    pdsh(get_nodes([clients, servers, mons, rgws]), 'mkdir -p -m0755 -- %s;collectl -s+mYZ -i 1:10 -F0 -f %s' % (collectl_dir, collectl_dir))
 
     # perf
 #    pdsh(get_nodes([clients, servers, mons, rgws]), 'mkdir -p -m0755 -- %s' % perf_dir).communicate()
@@ -177,23 +177,23 @@ def start_monitoring(tmp_dir):
 
 
 def stop_monitoring():
-    pdsh(get_nodes([clients,servers,mons,rgws]), 'pkill -SIGINT -f collectl').communicate()
-    pdsh(get_nodes([clients,servers,mons,rgws]), 'sudo pkill -SIGINT -f perf_3.6').communicate()
+    pdsh(get_nodes([clients, servers, mons, rgws]), 'pkill -SIGINT -f collectl').communicate()
+    pdsh(get_nodes([clients, servers, mons, rgws]), 'sudo pkill -SIGINT -f perf_3.6').communicate()
     pdsh(servers, 'sudo pkill -SIGINT -f blktrace').communicate()
 
 def start_ceph():
-    pdsh(get_nodes([clients,servers,mons,rgws]), 'sudo /etc/init.d/ceph start').communicate()
+    pdsh(get_nodes([clients, servers, mons, rgws]), 'sudo /etc/init.d/ceph start').communicate()
     if rgws:
         pdsh(rgws, 'sudo /etc/init.d/radosgw start;sudo /etc/init.d/apache2 start').communicate()
 
 def stop_ceph():
-    pdsh(get_nodes([clients,servers,mons,rgws]), 'sudo /etc/init.d/ceph stop').communicate()
+    pdsh(get_nodes([clients, servers, mons, rgws]), 'sudo /etc/init.d/ceph stop').communicate()
     if rgws:
         pdsh(rgws, 'sudo /etc/init.d/radosgw stop;sudo /etc/init.d/apache2 stop').communicate()
 
 def setup_ceph_conf(conf_file):
-    pdcp(get_nodes([head,clients,servers,mons,rgws]), '', conf_file, '/tmp/ceph.conf').communicate()
-    pdsh(get_nodes([head,clients,servers,mons,rgws]), 'sudo cp /tmp/ceph.conf /etc/ceph/ceph.conf').communicate()
+    pdcp(get_nodes([head, clients, servers, mons, rgws]), '', conf_file, '/tmp/ceph.conf').communicate()
+    pdsh(get_nodes([head, clients, servers, mons, rgws]), 'sudo cp /tmp/ceph.conf /etc/ceph/ceph.conf').communicate()
 
 def mkcephfs():
     pdsh(head, 'sudo mkcephfs -a -c /etc/ceph/ceph.conf').communicate()
@@ -206,7 +206,7 @@ def setup_fs(config):
     if fs == '':
         shutdown("No OSD filesystem specified.  Exiting.")
 
-    for device in xrange (0,osds_per_node):
+    for device in xrange(0, osds_per_node):
         pdsh(servers, 'sudo umount /srv/osd-device-%s-data;sudo rm -rf /srv/osd-device-%s' % (device, device)).communicate()
         pdsh(servers, 'sudo mkdir /srv/osd-device-%s-data' % device).communicate()
         pdsh(servers, 'sudo mkfs.%s %s /dev/disk/by-partlabel/osd-device-%s-data' % (fs, mkfs_opts, device)).communicate()
@@ -259,9 +259,9 @@ def run_radosbench(config, tmp_dir, archive_dir):
     # Get the number of concurrent rados bench processes to run
     concurrent_procs = config.get('concurrent_procs', 1)
 
-    # Get the concurrent ops 
+    # Get the concurrent ops
     concurrent_ops_array = config.get('concurrent_ops', [16])
-    
+
     modes = config.get('modes', ['write'])
     op_sizes = config.get('op_sizes', [4194304])
     for op_size in op_sizes:
@@ -353,7 +353,7 @@ def run_s3rw(config, tmp_dir, archive_dir):
         out_dir = '%s/s3rw/%s' % (archive_dir, short_name)
 
         make_remote_dir(run_dir)
-        out_file = '%s/output' % run_dir 
+        out_file = '%s/output' % run_dir
         start_monitoring(run_dir)
         pdsh(clients, '%s/s3-tests/virtualenv/bin/s3tests-test-readwrite < %s > %s' % (tmp_dir, config_file, out_file)).communicate()
         stop_monitoring()
@@ -363,7 +363,7 @@ def run_s3rw(config, tmp_dir, archive_dir):
 
 def run_s3func(config, tmp_dir, archive_dir):
     print 'Running s3func tests...'
-    
+
     config_files = config.get('config_files', [])
     for config_file in config_files:
         short_name = config_file.rpartition('/')[2]
@@ -371,7 +371,7 @@ def run_s3func(config, tmp_dir, archive_dir):
         out_dir = '%s/s3func/%s' % (archive_dir, short_name)
 
         make_remote_dir(run_dir)
-        out_file = '%s/output' % run_dir 
+        out_file = '%s/output' % run_dir
         start_monitoring(run_dir)
         pdsh(clients, 'export S3TEST_CONF=%s;cd /tmp/cephtest/s3-tests;virtualenv/bin/nosetests -a \'!fails_on_rgw\' &> %s' % (config_file, out_file)).communicate()
         stop_monitoring()
@@ -384,18 +384,18 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Continuously run ceph tests.')
     parser.add_argument(
         '--archive',
-        required = True, 
-        help = 'Directory where the results should be archived.',
+        required=True,
+        help='Directory where the results should be archived.',
         )
 
     parser.add_argument(
         '--conf',
-        required = False,
-        help = 'The ceph.conf file to use.',
+        required=False,
+        help='The ceph.conf file to use.',
         )
     parser.add_argument(
         'config_file',
-        help = 'YAML config file.',
+        help='YAML config file.',
         )
     args = parser.parse_args()
     return args
@@ -462,5 +462,5 @@ if __name__ == '__main__':
         if s3func_config:
             run_s3func(s3func_config, tmp_dir, archive_dir)
         if s3rw_config:
-            run_s3rw(s3rw_config, tmp_dir, archive_dir)       
+            run_s3rw(s3rw_config, tmp_dir, archive_dir)
         iteration += 1

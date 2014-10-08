@@ -67,14 +67,14 @@ def parametric(lists, yaml):
     writescript(f, "default", "", filename)
 
     for param, value in sorted(yaml.iteritems()):
-        if (isinstance(value, dict)):
+        if isinstance(value, dict):
             lc = copy.deepcopy(lists)
             for k, v in sorted(value.iteritems()):
                 populate(lc.get("global"), k, v)
             filename = "%s/%s.ceph.conf" % (target, param)
             writefile(lc, filename)
             writescript(f, param, "", filename)
-        elif (isinstance(value, list)):
+        elif isinstance(value, list):
             for vi in value:
                 lc = copy.deepcopy(lists)
                 populate(lc.get("global"), param, vi)

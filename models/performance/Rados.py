@@ -22,7 +22,7 @@
 GIG = 1000000000
 
 
-class Rados:
+class Rados(object):
     """ Performance Modeling RADOS Simulation. """
 
     nic_overhead = 0.00		# fraction of NIC we can't use

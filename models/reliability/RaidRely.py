@@ -23,7 +23,7 @@ MODEL = "fail+error"            # fail on detected NRE
 OBJSIZE = 1000000000            # default object size
 
 
-class RAID:
+class RAID(object):
     """ model a mirrored raid set """
 
     def __init__(self, disk, volumes, recovery, delay, nre_model, objsize):

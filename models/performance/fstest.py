@@ -7,9 +7,6 @@
 # mnemonic scale constants
 MILLION = 1000000    # capacities and speeds
 
-import SimFS
-
-
 def kb(val):
     """ number of kilobytes (1024) in a block """
     return val / 1024

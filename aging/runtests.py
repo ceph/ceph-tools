@@ -265,44 +265,44 @@ def run_radosbench(config, tmp_dir, archive_dir):
     modes = config.get('modes', ['write'])
     op_sizes = config.get('op_sizes', [4194304])
     for op_size in op_sizes:
-      for concurrent_ops in concurrent_ops_array:
-          # Rebuild the cluster if set
-          if rebuild_every_test:
-              setup_ceph(cluster_config)
-              setup_radosbench(config)
+        for concurrent_ops in concurrent_ops_array:
+            # Rebuild the cluster if set
+            if rebuild_every_test:
+                setup_ceph(cluster_config)
+                setup_radosbench(config)
 
-          # Do whatever tests are called for...
-          for mode in modes:
-            run_dir = '%s/radosbench/op_size-%08d/concurrent_ops-%08d/%s' % (tmp_dir, int(op_size), int(concurrent_ops), mode)
-            out_dir = '%s/radosbench/op_size-%08d/concurrent_ops-%08d/%s' % (archive_dir, int(op_size), int(concurrent_ops), mode)
+            # Do whatever tests are called for...
+            for mode in modes:
+                run_dir = '%s/radosbench/op_size-%08d/concurrent_ops-%08d/%s' % (tmp_dir, int(op_size), int(concurrent_ops), mode)
+                out_dir = '%s/radosbench/op_size-%08d/concurrent_ops-%08d/%s' % (archive_dir, int(op_size), int(concurrent_ops), mode)
 
-            # set the concurrent_ops if specified in yaml
-            if concurrent_ops:
-                concurrent_ops_str = '--concurrent-ios %s' % concurrent_ops
+                # set the concurrent_ops if specified in yaml
+                if concurrent_ops:
+                    concurrent_ops_str = '--concurrent-ios %s' % concurrent_ops
 
-            make_remote_dir(run_dir)
-            out_file = '%s/output' % run_dir
-            objecter_log = '%s/objecter.log' % run_dir
-            op_size_str = '-b %s' % op_size
-            start_monitoring(run_dir)
+                make_remote_dir(run_dir)
+                out_file = '%s/output' % run_dir
+                objecter_log = '%s/objecter.log' % run_dir
+                op_size_str = '-b %s' % op_size
+                start_monitoring(run_dir)
 
-            # Drop Caches so reads don't come from pagecache
-            pdsh(get_nodes([clients, servers]), 'sync').communicate()
-            pdsh(get_nodes([clients, servers]), 'echo 3 | sudo tee /proc/sys/vm/drop_caches').communicate()
+                # Drop Caches so reads don't come from pagecache
+                pdsh(get_nodes([clients, servers]), 'sync').communicate()
+                pdsh(get_nodes([clients, servers]), 'echo 3 | sudo tee /proc/sys/vm/drop_caches').communicate()
 
-            # Run rados bench
-            ps = []
-            for i in xrange(concurrent_procs):
-                out_file = '%s/output.%s' % (run_dir, i)
-                objecter_log = '%s/objecter.%s.log' % (run_dir, i)
-                p = pdsh(clients, '/usr/bin/rados -p rados-bench-%s %s bench %s %s %s --no-cleanup 2> %s > %s' % (i, op_size_str, time, mode, concurrent_ops_str, objecter_log, out_file))
-                ps.append(p)
-            for p in ps:
-                p.wait()
-            stop_monitoring()
-            perf_post(run_dir)
-            make_movies(run_dir)
-            sync_files('%s/*' % run_dir, out_dir)
+                # Run rados bench
+                ps = []
+                for i in xrange(concurrent_procs):
+                    out_file = '%s/output.%s' % (run_dir, i)
+                    objecter_log = '%s/objecter.%s.log' % (run_dir, i)
+                    p = pdsh(clients, '/usr/bin/rados -p rados-bench-%s %s bench %s %s %s --no-cleanup 2> %s > %s' % (i, op_size_str, time, mode, concurrent_ops_str, objecter_log, out_file))
+                    ps.append(p)
+                for p in ps:
+                    p.wait()
+                stop_monitoring()
+                perf_post(run_dir)
+                make_movies(run_dir)
+                sync_files('%s/*' % run_dir, out_dir)
     print 'Done.'
 
 def run_restbench(config, tmp_dir, archive_dir):
@@ -335,7 +335,7 @@ def run_restbench(config, tmp_dir, archive_dir):
         op_size = '-b %s' % op_size
 
         start_monitoring(run_dir)
-	pdsh(clients, '/usr/bin/rest-bench %s %s %s %s %s %s %s write > %s' % (api_host, access_key, secret, concurrent_ops, op_size, time, bucket, out_file)).communicate()
+        pdsh(clients, '/usr/bin/rest-bench %s %s %s %s %s %s %s write > %s' % (api_host, access_key, secret, concurrent_ops, op_size, time, bucket, out_file)).communicate()
         stop_monitoring()
         perf_post(run_dir)
         make_movies(run_dir)

@@ -6,8 +6,6 @@
 # Fortunately, small-block streaming is not (for us) a typical load.
 #
 
-import math
-
 # we measure time in microseconds
 SECOND = 1000000
 

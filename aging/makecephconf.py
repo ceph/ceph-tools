@@ -92,7 +92,8 @@ def writefile(lists, out):
 #    print out
     for k, v in sorted(lists.iteritems()):
         f.write("[%s]\n" % k)
-        for line in v: f.write("%s\n" % line)
+        for line in v:
+            f.write("%s\n" % line)
         f.write("\n")
     f.close()
 

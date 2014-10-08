@@ -14,7 +14,7 @@ import Poisson
 GIG = 1000000000
 
 
-class FileStore:
+class FileStore(object):
     """ Performance Modeling FileStore  Simulation. """
 
     # vaguely reasonable parameters

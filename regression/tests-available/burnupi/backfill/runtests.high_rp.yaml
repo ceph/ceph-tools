@@ -1,0 +1,37 @@
+cluster:
+  user: 'regression'
+  head: "plana15"
+  clients: ["plana15"]
+  osds: ["burnupi37", "burnupi38", "burnupi39"]
+  mons:
+    plana15:
+      a: "10.214.144.25:6789"
+  osds_per_node: 6 
+  fs: 'xfs'
+  mkfs_opts: '-f -i size=2048 -n size=64k'
+  mount_opts: '-o inode64,noatime,logbsize=256k'
+  conf_file: '/home/regression/regression/tests-available/backfill/ceph.conf.high_rp'
+  iterations: 1
+  use_existing: False
+  clusterid: "ceph"
+  tmp_dir: "/tmp/cbt"
+  pool_profiles:
+    rbd:
+      pg_size: 4096
+      pgp_size: 4096
+      replication: 3
+  recovery_test:
+    osds: [17]
+benchmarks:
+  librbdfio:
+    time: 7200 
+    vol_size: 10240
+    mode: ['write']
+    op_size: [4194304] 
+    concurrent_procs: [1]
+    iodepth: [128]
+    osd_ra: [4096]
+    cmd_path: '/home/regression/src/fio/fio'
+    pool_profile: 'rbd'
+    log_avg_msec: 100
+

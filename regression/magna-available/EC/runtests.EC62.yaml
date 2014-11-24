@@ -1,0 +1,36 @@
+cluster:
+  user: 'perf'
+  head: "magna003"
+  clients: ["magna003"]
+  osds: ["magna004", "magna007", "magna012", "magna031"]
+  mons:
+    magna003:
+      a: "10.8.128.3:6789"
+  osds_per_node: 3
+  fs: 'xfs'
+  mkfs_opts: '-f -i size=2048 -n size=64k'
+  mount_opts: '-o inode64,noatime,logbsize=256k'
+  conf_file: '/home/perf/src/ceph-tools/regression/tests-available/EC/ceph.conf'
+  iterations: 1
+  use_existing: False
+  clusterid: "ceph"
+  tmp_dir: "/tmp/cbt"
+  pool_profiles:
+    radosbench:
+      pg_size: 1024
+      pgp_size: 1024
+      replication: 'erasure'
+      erasure_profile: 'ec62'
+  erasure_profiles:
+    ec62:
+      erasure_k: 6
+      erasure_m: 2
+benchmarks:
+  radosbench:
+    op_size: [4194304, 131072, 4096]
+    write_only: False 
+    time: 300 
+    concurrent_ops: [32]
+    concurrent_procs: 4 
+    osd_ra: [4096]
+    pool_profile: 'radosbench' 

@@ -1,6 +1,7 @@
 #!/bin/bash
 #HOME="/home/regression"
-VERSIONS=( "firefly" "giant" "master" )
+#VERSIONS=( "firefly" "giant" "master")
+VERSIONS=( "firefly" "master" )
 UPGRADE_CMD="$HOME/bin/upgrade-ceph.sh"
 CONFDIR=$1
 CBT="$HOME/src/ceph-tools/cbt/cbt.py"
@@ -18,7 +19,8 @@ do
     do
       CBTCONF="$CONFDIR/$SUITE/runtests.$TEST.yaml"
       ARCHIVE="/$HOME/data/$DATE/$VERSION/$SUITE/$TEST"
-      $CBT --archive $ARCHIVE $CBTCONF
+      mkdir -p $ARCHIVE
+      $CBT --archive $ARCHIVE $CBTCONF 2>&1 | tee $ARCHIVE/cbt.out
     done
   done
 done

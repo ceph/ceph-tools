@@ -10,7 +10,7 @@ cluster:
   fs: 'xfs'
   mkfs_opts: '-f -i size=2048 -n size=64k'
   mount_opts: '-o inode64,noatime,logbsize=256k'
-  conf_file: '/home/perf/src/ceph-tools/regression/tests-available/3xRep/ceph.conf'
+  conf_file: '/home/perf/src/ceph-tools/regression/magna-available/3xRep/ceph.conf'
   iterations: 1
   use_existing: False
   clusterid: "ceph"
@@ -43,7 +43,7 @@ benchmarks:
     concurrent_procs: [1]
     iodepth: [128]
     osd_ra: [4096]
-    cmd_path: '/home/regression/src/fio/fio'
+    cmd_path: '/home/perf/src/fio/fio'
     pool_profile: 'rbd'
     log_avg_msec: 100
   rbdfio:
@@ -55,7 +55,7 @@ benchmarks:
     concurrent_procs: [1]
     iodepth: [128]
     osd_ra: [4096]
-    cmd_path: '/home/regression/src/fio/fio'
+    cmd_path: '/home/perf/src/fio/fio'
     pool_profile: 'rbd'
     log_avg_msec: 100
 

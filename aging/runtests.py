@@ -21,7 +21,7 @@ def get_nodes(nodes):
     seen = {}
     ret = ''
     for node in nodes:
-        if node and not node in seen:
+        if node and node not in seen:
             if ret:
                 ret += ','
             ret += '%s' % node

@@ -10,7 +10,7 @@ cluster:
   fs: btrfs
   mkfs_opts: -l 16k -n 16k -f
   mount_opts: -o noatime
-  conf_file: '/home/perf/src/ceph-tools/regression/tests-available/3xRep/ceph.conf'
+  conf_file: '/home/perf/src/ceph-tools/regression/magna-available/3xRep/ceph.conf'
   iterations: 1
   use_existing: False
   clusterid: "ceph"

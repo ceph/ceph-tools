@@ -10,7 +10,7 @@ cluster:
   fs: 'xfs'
   mkfs_opts: '-f -i size=2048 -n size=64k'
   mount_opts: '-o inode64,noatime,logbsize=256k'
-  conf_file: '/home/perf/src/ceph-tools/regression/tests-available/3xRep/ceph.conf'
+  conf_file: '/home/perf/src/ceph-tools/regression/magna-available/3xRep/ceph.conf'
   iterations: 1
   use_existing: False
   clusterid: "ceph"

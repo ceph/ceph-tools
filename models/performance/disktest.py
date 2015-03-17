@@ -7,9 +7,6 @@
 # mnemonic scale constants
 MILLION = 1000000    # capacities and speeds
 
-import SimDisk
-
-
 def kb(val):
     """ number of kilobytes (1024) in a block """
     return val / 1024
@@ -36,8 +33,8 @@ def bw(bs, us):
 
 
 def tptest(disk, filesize, depth):
-    print("\t    bs\t    seq read\t   seq write\t   rnd read\t   rnd write")
-    print("\t -----\t    --------\t   ---------\t   --------\t   ---------")
+    print "\t    bs\t    seq read\t   seq write\t   rnd read\t   rnd write"
+    print "\t -----\t    --------\t   ---------\t   --------\t   ---------"
     for bs in (4096, 128 * 1024, 4096 * 1024):
         tsr = disk.avgTime(bs, filesize, read=True, seq=True, depth=depth)
         tsw = disk.avgTime(bs, filesize, read=False, seq=True, depth=depth)
@@ -49,42 +46,42 @@ def tptest(disk, filesize, depth):
         else:
             format = "\t%5dK\t%7.1f MB/s\t%7.1f MB/s\t%7.1f MB/s\t%7.1f MB/s"
         print(format % (kb(bs), bw(bs, float(tsr)), bw(bs, float(tsw)),
-            bw(bs, float(trr)), bw(bs, float(trw))))
+                        bw(bs, float(trr)), bw(bs, float(trw))))
         print("\t    \t%7d IOPS\t%7d IOPS\t%7d IOPS\t%7d IOPS" %
-            (iops(tsr), iops(tsw), iops(trr), iops(trw)))
+              (iops(tsr), iops(tsw), iops(trr), iops(trw)))
 
 
 def disktest(disk):
     """ compute & display basic performance data for a simulated disk """
 
-    print("    basic disk parameters:")
-    print("\tdrive size\t%d GB" % gig(disk.size))
-    print("\trpm       \t%d" % disk.rpm)
-    print("\txfer rate \t%d MB/s" % meg(disk.media_speed))
+    print "    basic disk parameters:"
+    print "\tdrive size\t%d GB" % gig(disk.size)
+    print "\trpm       \t%d" % disk.rpm
+    print "\txfer rate \t%d MB/s" % meg(disk.media_speed)
     print("\tseek time \t%d-%dus, avg %dus" %
-        (disk.settle_read, disk.max_seek, disk.avg_seek))
-    print("\twrite back\t%s" % ("True" if disk.do_writeback else "False"))
-    print("\tread ahead\t%s" % ("True" if disk.do_readahead else "False"))
-    print("\tmax depth \t%d" % disk.max_depth)
+          (disk.settle_read, disk.max_seek, disk.avg_seek))
+    print "\twrite back\t%s" % ("True" if disk.do_writeback else "False")
+    print "\tread ahead\t%s" % ("True" if disk.do_readahead else "False")
+    print "\tmax depth \t%d" % disk.max_depth
 
-    print("\n    computed performance parameters:")
+    print "\n    computed performance parameters:"
     rot = 0 if disk.rpm == 0 else (MILLION / (disk.rpm / 60))
-    print("\trotation   \t%dus" % (rot))
-    print("\ttrack size \t%d bytes" % disk.trk_size)
-    print("\theads      \t%d" % disk.heads)
-    print("\tcylinders  \t%d" % disk.cylinders)
+    print "\trotation   \t%dus" % rot
+    print "\ttrack size \t%d bytes" % disk.trk_size
+    print "\theads      \t%d" % disk.heads
+    print "\tcylinders  \t%d" % disk.cylinders
 
-    print("\n    data transfer times:")
-    print("\t   size      time      iops")
+    print "\n    data transfer times:"
+    print "\t   size      time      iops"
     for bs in (4096, 128 * 1024, 4096 * 1024):
         t = disk.xferTime(bs)
         r = 1000000 / t
-        print("\t%6dK  %7dus  %7d" % (kb(bs), t, r))
+        print "\t%6dK  %7dus  %7d" % (kb(bs), t, r)
 
-    print("\n    seek times:")
-    print("\t  cyls      read      write")
+    print "\n    seek times:"
+    print "\t  cyls      read      write"
     cyls = 1
     while cyls < disk.cylinders * 10:
         print("\t%7d  %7dus  %7dus" %
-            (cyls, disk.seekTime(cyls), disk.seekTime(cyls, read=False)))
+              (cyls, disk.seekTime(cyls), disk.seekTime(cyls, read=False)))
         cyls *= 10

@@ -70,7 +70,7 @@ def approximates(v1, v2, slop=0.005):
     return v1 <= v2 * (1.0 + slop) and v1 >= v2 * (1.0 - slop)
 
 
-class Test:
+class Test(object):
 
     def __init__(self):
 
@@ -118,7 +118,7 @@ class Test:
             return True
         else:
             print("FAIL %s (%s): val=%e, exp=%e, slop=%f" %
-                    (testid, desc, val, expected, slop))
+                  (testid, desc, val, expected, slop))
             self.failed += 1
             return False
 
@@ -134,7 +134,7 @@ class Test:
 
         # a basic reliability calculation with a known outcome
         e_disk = Disk(size=self.size, fits=self.fits, nre=self.nre,
-                    desc="test")
+                      desc="test")
         e_disk.compute(period=YEAR, mult=1)
         v = e_disk.P_drive
         exp = Pfail
@@ -190,7 +190,7 @@ class Test:
         """ sanity check the RaidRely simulation """
 
         e_disk = Disk(size=self.size, fits=self.fits, nre=self.nre,
-                    desc="test")
+                      desc="test")
 
         # ballpark expected results for single disk error rates
         Pfail = float(self.fits) * YEAR / 1000000000
@@ -198,7 +198,7 @@ class Test:
 
         # Sanity check one-disk RAID vs one disk, and get better estimates
         raidnone = RAID0(e_disk, volumes=1, delay=0, recovery=0,
-                                nre_model="fail", objsize=self.objsize)
+                         nre_model="fail", objsize=self.objsize)
         raidnone.compute(period=YEAR)
         exp = Pfail
         v = raidnone.P_drive
@@ -223,7 +223,7 @@ class Test:
 
         # RAID-0 two-volume P_fail vs that of disk
         raid0 = RAID0(e_disk, volumes=2, delay=0, recovery=0,
-                                nre_model="fail", objsize=self.objsize)
+                      nre_model="fail", objsize=self.objsize)
         raid0.compute(period=YEAR)
         exp = 2 * Pfail     # 2 volumes, twice the p_fail
         v = raid0.P_drive
@@ -252,8 +252,8 @@ class Test:
 
         # RAID-1 two volume P_fail vs that of disk
         raid1 = RAID1(e_disk, volumes=2, delay=0,
-                                recovery=self.recovery, nre_model="fail",
-                                objsize=self.objsize)
+                      recovery=self.recovery, nre_model="fail",
+                      objsize=self.objsize)
         raid1.compute(period=YEAR)
         exp = 2 * Pfail * Pfail2            # 1of2, 1of1
         v = raid1.P_drive
@@ -277,9 +277,9 @@ class Test:
 
         # RAID-5 three volume P_fail vs that of disk
         raid5 = RAID5(e_disk, volumes=3, delay=0,
-                                recovery=self.recovery,
-                                nre_model="fail",
-                                objsize=self.objsize)
+                      recovery=self.recovery,
+                      nre_model="fail",
+                      objsize=self.objsize)
         raid5.compute(period=YEAR)
         exp = (3 * Pfail) * (2 * Pfail2)    # 1of3, 1of2
         v = raid5.P_drive
@@ -298,8 +298,8 @@ class Test:
 
         # RAID-5 four volume P_fail vs that of disk
         raid5a = RAID5(e_disk, volumes=4, delay=0,
-                                recovery=self.recovery,
-                                nre_model="fail", objsize=self.objsize)
+                       recovery=self.recovery,
+                       nre_model="fail", objsize=self.objsize)
         raid5a.compute(period=YEAR)
         exp = (4 * Pfail) * (3 * Pfail2)    # 1of4, 1of3
         v = raid5a.P_drive
@@ -328,8 +328,8 @@ class Test:
 
         # RAID-6 four volume P_fail vs that of disk
         raid6 = RAID6(e_disk, volumes=4, delay=0,
-                                recovery=self.recovery,
-                                nre_model="fail", objsize=self.objsize)
+                      recovery=self.recovery,
+                      nre_model="fail", objsize=self.objsize)
         raid6.compute(period=YEAR)
         exp = 4 * Pfail3                # 1of4 (1of3, 1of2)
         v = raid6.P_drive
@@ -338,13 +338,13 @@ class Test:
 
         # RAID-6 six volume P_fail vs that of disk
         raid6a = RAID6(e_disk, volumes=6, delay=0,
-                                recovery=self.recovery,
-                                nre_model="fail", objsize=self.objsize)
+                       recovery=self.recovery,
+                       nre_model="fail", objsize=self.objsize)
         raid6a.compute(period=YEAR)
         exp = 5 * 4 * Pfail3            # 1of6, 1of5, 1of4
         v = raid6a.P_drive
         self.test("2U", "PFdrive(raid6,6) vs PFdrive(3/6 disks)", v, exp,
-                    slop=0.01)
+                  slop=0.01)
 
         # RAID-6 NRE
         PnreX5 = 5 * Pnrex4 / 4
@@ -419,12 +419,12 @@ class Test:
         Pnre = self.nre * self.full * self.size * 8
 
         e_disk = Disk(size=self.size, fits=self.fits, nre=self.nre,
-                    desc="test")
+                      desc="test")
 
         # sanity check and calibration RADOS 1cp P_drive vs bare disk
         rados1 = RADOS(e_disk, pg=self.pgs, speed=self.recovery,
-                        nre_model="fail", fullness=self.full,
-                        objsize=self.objsize, delay=0, stripe=1, copies=1)
+                       nre_model="fail", fullness=self.full,
+                       objsize=self.objsize, delay=0, stripe=1, copies=1)
         rados1.compute(period=YEAR)
         v = rados1.P_drive
         exp = Pfail
@@ -458,8 +458,8 @@ class Test:
 
         # RADOS 2cp P_drive vs bare disk
         rados2 = RADOS(e_disk, pg=self.pgs, speed=self.recovery,
-                        nre_model="fail", fullness=self.full,
-                        objsize=self.objsize, delay=0, stripe=1, copies=2)
+                       nre_model="fail", fullness=self.full,
+                       objsize=self.objsize, delay=0, stripe=1, copies=2)
         rados2.compute(period=YEAR)
         v = rados2.P_drive
         exp = 2 * Pfail * Pfail2
@@ -484,8 +484,8 @@ class Test:
 
         # RADOS 3cp P_drive vs bare disk
         rados3 = RADOS(e_disk, pg=self.pgs, speed=self.recovery,
-                        nre_model="fail", fullness=self.full,
-                        objsize=self.objsize, delay=0, stripe=1, copies=3)
+                       nre_model="fail", fullness=self.full,
+                       objsize=self.objsize, delay=0, stripe=1, copies=3)
         rados3.compute(period=YEAR)
         v = rados3.P_drive
         exp = 3 * Pfail * 2 * Pfail2 * Pfail2
@@ -673,13 +673,13 @@ class Test:
 
         # instantiate the simulations
         e_disk = Disk(size=self.size, fits=self.fits, nre=self.nre,
-                    desc="test")
+                      desc="test")
         rados = RADOS(e_disk, pg=self.pgs, speed=self.recovery,
-                        nre_model="fail", fullness=self.full,
-                        objsize=self.objsize, delay=0, stripe=1, copies=2)
+                      nre_model="fail", fullness=self.full,
+                      objsize=self.objsize, delay=0, stripe=1, copies=2)
         site = Site(fits=self.s_fits, rplc=self.s_replace)
         multi = MultiSite(rados, site, speed=self.s_recovery,
-                        latency=0, sites=1)
+                          latency=0, sites=1)
 
         # sanity check and calibration single site P(sitefail)
         multi.sites = 1
@@ -864,8 +864,8 @@ if __name__ == "__main__":
     test.multiTest()
 
     if test.failed == 0:
-        print("PASSED %d/%d tests" % (test.passed, test.passed))
+        print "PASSED %d/%d tests" % (test.passed, test.passed)
     else:
-        print("FAILED %d/%d tests" % (test.failed, test.passed + test.failed))
+        print "FAILED %d/%d tests" % (test.failed, test.passed + test.failed)
     if test.notyet > 0:
-        print("(%d tests still unimplemented)" % (test.notyet))
+        print "(%d tests still unimplemented)" % test.notyet

@@ -5,9 +5,6 @@
 # mnemonic scale constants
 MILLION = 1000000    # capacities and speeds
 
-import FileStore
-
-
 def kb(val):
     """ number of kilobytes (1024) in a block """
     return val / 1024
@@ -29,17 +26,17 @@ def fstoretest(fs, obj_size=4 * MILLION, nobj=2500, depth=1, crtdlt=False):
     if crtdlt:
         tc = fs.create()
         td = fs.delete()
-        print("\t\t     create\t      delete")
-        print("\t\t%6d IOPS\t %6d IOPS" % (iops(tc), iops(td)))
-        print("")
+        print "\t\t     create\t      delete"
+        print "\t\t%6d IOPS\t %6d IOPS" % (iops(tc), iops(td))
+        print ""
 
-    print("\t    bs\t    rnd read\t   rnd write")
-    print("\t -----\t    --------\t   ---------")
+    print "\t    bs\t    rnd read\t   rnd write"
+    print "\t -----\t    --------\t   ---------"
     for bs in (4096, 128 * 1024, 4096 * 1024):
         trr = fs.read(bs, obj_size, depth=1, nobj=nobj)
         trw = fs.write(bs, obj_size, depth=depth, nobj=nobj)
 
         format = "\t%5dK\t%7.1f MB/s\t%7.1f MB/s"
         print(format %
-                (kb(bs), bw(bs, float(trr)), bw(bs, float(trw))))
-        print("\t    \t %6d IOPS\t %6d IOPS" % (iops(trr), iops(trw)))
+              (kb(bs), bw(bs, float(trr)), bw(bs, float(trw))))
+        print "\t    \t %6d IOPS\t %6d IOPS" % (iops(trr), iops(trw))

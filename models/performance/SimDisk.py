@@ -6,8 +6,6 @@
 # Fortunately, small-block streaming is not (for us) a typical load.
 #
 
-import math
-
 # we measure time in microseconds
 SECOND = 1000000
 
@@ -17,7 +15,7 @@ GIGABYTE = 1000 * 1000 * 1000
 TERABYTE = 1000 * 1000 * 1000 * 1000
 
 
-class Disk:
+class Disk(object):
     """ Performance Modeling Disk Simulation. """
 
     # fundamental drive characterizing parameters
@@ -37,7 +35,7 @@ class Disk:
     cache_max_depth = 5              # max depth multiplier
 
     def __init__(self, rpm=7200, size=2 * TERABYTE,
-                bw=150 * MEGABYTE, heads=10):
+                 bw=150 * MEGABYTE, heads=10):
         """ Instantiate a disk simulation. """
         self.rpm = rpm
         self.size = size
@@ -50,8 +48,8 @@ class Disk:
         self.cylinders = size / self.cyl_size
 
     def cylinders_in(self, bytes):
-            """ determine how many cylinders a byte range spans """
-            return 1 + (bytes / self.cyl_size)
+        """ determine how many cylinders a byte range spans """
+        return 1 + (bytes / self.cyl_size)
 
     # Real seek time is quite complex, involving acceleration,
     # deceleration, and settle-down.  I approximate this by
@@ -214,7 +212,7 @@ class Disk:
 class DumbDisk(Disk):
 
     def __init__(self, rpm=7200, size=2 * TERABYTE,
-                bw=150 * MEGABYTE, heads=10):
+                 bw=150 * MEGABYTE, heads=10):
         """ Instantiate a dumb disk simulation. """
 
         Disk.__init__(self, rpm, size, bw, heads)

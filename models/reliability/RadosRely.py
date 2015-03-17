@@ -24,18 +24,18 @@ MB = KB * 1024
 GB = MB * 1024
 
 
-class RADOS:
+class RADOS(object):
     """ model a single-volume RADOS OSD """
 
     def __init__(self, disk,
-                pg=200,             # recommended
-                copies=2,           # recommended minimum
-                speed=RECOVER,      # typical large object speed
-                delay=MARKOUT,      # default mark-out
-                fullness=FULL,      # how full are the volumes
-                objsize=1 * GB,     # average object size
-                stripe=1,           # typical stripe length
-                nre_model="ignore"):  # scrub largely eliminates these
+                 pg=200,             # recommended
+                 copies=2,           # recommended minimum
+                 speed=RECOVER,      # typical large object speed
+                 delay=MARKOUT,      # default mark-out
+                 fullness=FULL,      # how full are the volumes
+                 objsize=1 * GB,     # average object size
+                 stripe=1,           # typical stripe length
+                 nre_model="ignore"):  # scrub largely eliminates these
         """ create a RADOS reliability simulation
             pg -- number of placement groups per OSD
             copies -- number of copies for these objects
@@ -94,7 +94,7 @@ class RADOS:
         copies = self.copies - 1
         while copies > 0:
             self.disk.compute(period=recover, mult=copies * n,
-                            secondary=True)
+                              secondary=True)
             self.P_drive *= self.disk.P_drive
             if copies > 1:
                 self.P_nre *= self.disk.P_drive

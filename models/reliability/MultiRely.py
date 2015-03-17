@@ -25,7 +25,7 @@ from RelyFuncts import SECOND, YEAR
 MiB = 1000000
 
 
-class MultiSite:
+class MultiSite(object):
 
     def __init__(self, rados, site, speed=10 * MiB, latency=0, sites=1):
         """ create a site reliability simulation
@@ -59,13 +59,13 @@ class MultiSite:
         if survivors > 1:
             # we haven't yet reached the bottom of the tree
             self.descend(self.site.replace, p * self.site.P_site,
-                        (f[0] + 1, f[1], f[2]), survivors - 1)
+                         (f[0] + 1, f[1], f[2]), survivors - 1)
             self.descend(self.rados.rebuild_time(self.speed),
-                        p * self.rados.P_drive,
-                        (f[0], f[1] + 1, f[2]), survivors - 1)
+                         p * self.rados.P_drive,
+                         (f[0], f[1] + 1, f[2]), survivors - 1)
             obj_fetch = SECOND * self.rados.objsize / self.speed
             self.descend(obj_fetch, p * self.rados.P_nre,
-                        (f[0], f[1], f[2] + 1), survivors - 1)
+                         (f[0], f[1], f[2] + 1), survivors - 1)
             return
 
         # we are down to the last site
@@ -78,7 +78,7 @@ class MultiSite:
                 self.P_site += p * self.site.P_site
                 self.L_site = self.site.L_site
 
-    def compute(self, period=YEAR, mult=1):
+    def compute(self, period=YEAR):
         """ compute the failure tree for multiple sites """
 
         # initialize probabilities
@@ -94,7 +94,6 @@ class MultiSite:
 
         # note a few important sizes
         disk_size = self.rados.size * self.rados.full
-        pg_size = disk_size / self.rados.pgs
 
         # descend the tree of probabilities and tally the damage
         self.descend(period=period, p=1.0, f=(0, 0, 0), survivors=self.sites)

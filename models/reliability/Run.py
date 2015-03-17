@@ -60,8 +60,8 @@ def getFormat(headings):
 
 def printHeadings(headings, format):
     """ print out a set of column headings """
-    print("")
-    print(format % headings)
+    print ""
+    print format % headings
 
     # how wide should a dash be
     dashes = 0
@@ -82,7 +82,7 @@ def printHeadings(headings, format):
         l.append(s)
         i += 1
 
-    print(format % tuple(l))
+    print format % tuple(l)
 
 
 def printSize(sz, unit=1000):
@@ -114,7 +114,6 @@ def printTime(t):
         return "%d years" % (t / YEAR)
     else:
         return "%5.1f years" % (t / YEAR)
-
 
 def printDurability(d):
     """ print out a durability in a reasonable format """
@@ -193,62 +192,61 @@ def Run(tests, period=YEAR, verbosity="all"):
         disk = raid.disk
 
     if parms and disk is not None:
-        print("Disk Modeling Parameters")
-        print("    size:     %10s" % printSize(disk.size))
+        print "Disk Modeling Parameters"
+        print "    size:     %10s" % printSize(disk.size)
         print("    FIT rate: %10d (MTBF = %s)" %
               (disk.fits, printTime(mttf(disk.fits))))
-        print("    NRE rate: %10.1E" % (disk.nre))
+        print "    NRE rate: %10.1E" % disk.nre
 
     if parms and raid is not None:
-        print("RAID parameters")
-        print("    replace:  %16s" % (printTime(raid.delay)))
+        print "RAID parameters"
+        print "    replace:  %16s" % printTime(raid.delay)
         if raid.speed > 0:
             print("    recovery rate: %7s/s (%s)" %
-                        (printSize(raid.speed),
-                         printTime(raid.rebuild_time())))
-        print("    NRE model:        %10s" % (raid.nre_model))
-        print("    object size:      %10s" % (printSize(raid.objsize)))
+                  (printSize(raid.speed),
+                   printTime(raid.rebuild_time())))
+        print "    NRE model:        %10s" % raid.nre_model
+        print "    object size:      %10s" % printSize(raid.objsize)
 
     if parms and rados is not None:
-        print("RADOS parameters")
-        print("    auto mark-out: %14s" % printTime(rados.delay))
+        print "RADOS parameters"
+        print "    auto mark-out: %14s" % printTime(rados.delay)
         print("    recovery rate: %8s/s (%s/drive)" %
-                    (printSize(rados.speed),
-                     printTime(rados.rebuild_time(rados.speed))))
-        print("    osd fullness: %7d%%" % (rados.full * 100))
-        print("    declustering: %7d PG/OSD" % (rados.pgs))
-        print("    NRE model:        %10s" % (rados.nre_model))
-        print("    object size:  %7s" % printSize(rados.objsize, unit=1024))
-        print("    stripe length:%7d" % (rados.stripe))
+              (printSize(rados.speed),
+               printTime(rados.rebuild_time(rados.speed))))
+        print "    osd fullness: %7d%%" % (rados.full * 100)
+        print "    declustering: %7d PG/OSD" % rados.pgs
+        print "    NRE model:        %10s" % rados.nre_model
+        print "    object size:  %7s" % printSize(rados.objsize, unit=1024)
+        print "    stripe length:%7d" % rados.stripe
 
     if parms and site is not None:
-        print("Site parameters")
+        print "Site parameters"
         s = 0 if multi is None else multi.sites
         if site.fits == 0:
-            print("    disasters:    IGNORED")
+            print "    disasters:    IGNORED"
         else:
             tf = mttf(site.fits)
             print("    disaster rate: %12s (%d FITS)" %
-                (printTime(tf), site.fits))
+                  (printTime(tf), site.fits))
         if site.replace == 0:
-            print("    site recovery:   NEVER")
+            print "    site recovery:   NEVER"
         else:
-            print("    site recovery: %11s" %
-                    (printTime(site.replace)))
+            print "    site recovery: %11s" % printTime(site.replace)
 
         if multi is not None:
             print("    recovery rate: %8s/s (%s/PG)" %
-                (printSize(multi.speed),
-                 printTime(multi.rados.rebuild_time(multi.speed))))
+                  (printSize(multi.speed),
+                   printTime(multi.rados.rebuild_time(multi.speed))))
             if multi.latency == 0:
-                print("    replication:       synchronous")
+                print "    replication:       synchronous"
             else:
                 print("    replication:       asynchronous (%s delay)" %
-                            (printTime(multi.latency)))
+                      (printTime(multi.latency)))
 
     # column headings
     heads = ("storage", "durability",
-            "PL(site)", "PL(copies)", "PL(NRE)", "PL(rep)", "loss/PiB")
+             "PL(site)", "PL(copies)", "PL(NRE)", "PL(rep)", "loss/PiB")
     format = getFormat(heads)
 
     # column descriptions
@@ -263,16 +261,16 @@ def Run(tests, period=YEAR, verbosity="all"):
     ]
 
     if descr:
-        print("")
-        print("Column legends")
+        print ""
+        print "Column legends"
         s = printTime(period)
         i = 1
         while i <= len(legends):
             l = legends[i - 1]
             if i == 1:
-                print("\t%d %s" % (i, l))
+                print "\t%d %s" % (i, l)
             else:
-                print("\t%d %s (per %s)" % (i, l, s))
+                print "\t%d %s (per %s)" % (i, l, s)
             i += 1
 
     if headings:
@@ -296,4 +294,4 @@ def Run(tests, period=YEAR, verbosity="all"):
         l = (t.P_site * t.L_site) + (t.P_drive * t.L_drive) +\
             (t.P_nre * t.L_nre) + (t.P_rep * t.L_rep)
         s.append(printFloat(l * PiB / t.rawsize))   # expected data loss/PiB
-        print(format % tuple(s))
+        print format % tuple(s)

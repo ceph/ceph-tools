@@ -15,9 +15,7 @@ basic disk reliability model
 """
 
 from RelyFuncts import YEAR, Pfail, Pn
-
-GiB = 1000000000
-TiB = GiB * 1000
+from sizes import GiB, TiB
 
 DISKSIZE = 2 * TiB
 

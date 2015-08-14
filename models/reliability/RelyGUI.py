@@ -16,17 +16,7 @@ GUI for playing with reliability model parameters
 from Tkinter import Tk, OptionMenu, Label, Button, Frame, Spinbox
 from Tkinter import StringVar, Entry, RIDGE, END
 
-# speeds and disk sizes
-KiB = 1000
-MiB = KiB * 1000
-GiB = MiB * 1000
-TiB = GiB * 1000
-
-# file sizes
-KB = 1024
-MB = KB * 1024
-GB = MB * 1024
-TB = GB * 1024
+from sizes import KiB, MiB, GiB, TiB, KB, MB, GB, TB
 
 
 # Let me apologize in advance for this brute-force GUI.

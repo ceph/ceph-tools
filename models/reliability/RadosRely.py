@@ -14,14 +14,11 @@ RADOS reliability model
 """
 
 from RelyFuncts import SECOND, MINUTE, YEAR
+from sizes import KB, MB, GB
 
 MARKOUT = 10 * MINUTE
 RECOVER = 50 * 1000000
 FULL = 0.75
-
-KB = 1024
-MB = KB * 1024
-GB = MB * 1024
 
 
 class RADOS(object):

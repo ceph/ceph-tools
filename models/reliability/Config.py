@@ -15,17 +15,7 @@ Default values and the object that contains them
 (e.g. passed into and back from the GUI)
 """
 from RelyFuncts import SECOND, MINUTE, HOUR, DAY, YEAR, FitRate
-
-# speeds and disk sizes
-MiB = 1000000
-GiB = MiB * 1000
-TiB = GiB * 1000
-
-# file sizes
-KB = 1024
-MB = KB * 1024
-GB = MB * 1024
-TB = GB * 1024
+from sizes import GB, MiB, TiB
 
 
 class Config(object):

@@ -16,13 +16,7 @@ run a series of tests
 """
 
 from RelyFuncts import SECOND, MINUTE, HOUR, DAY, YEAR, mttf
-
-# handy storage units
-KiB = 1000
-MiB = KiB * 1000
-GiB = MiB * 1000
-TiB = GiB * 1000
-PiB = TiB * 1000
+from sizes import KiB, MiB, GiB, TiB, PiB
 
 
 def getFormat(headings):
@@ -114,6 +108,7 @@ def printTime(t):
         return "%d years" % (t / YEAR)
     else:
         return "%5.1f years" % (t / YEAR)
+
 
 def printDurability(d):
     """ print out a durability in a reasonable format """

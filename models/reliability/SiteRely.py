@@ -16,10 +16,7 @@ basic site reliability model
 """
 
 from RelyFuncts import YEAR, Pfail, FitRate, mttf
-
-GiB = 1000000000
-TiB = GiB * 1000
-PiB = TiB * 1000
+from sizes import GiB, TiB, PiB
 
 DISASTER = FitRate(.001, YEAR)
 

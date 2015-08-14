@@ -21,8 +21,7 @@ Multi-site recovery model
 """
 
 from RelyFuncts import SECOND, YEAR
-
-MiB = 1000000
+from sizes import MiB
 
 
 class MultiSite(object):

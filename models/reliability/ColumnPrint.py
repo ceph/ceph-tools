@@ -1,4 +1,14 @@
 #
+# Ceph - scalable distributed file system
+#
+# Copyright (C) Inktank
+#
+# This is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License version 2.1, as published by the Free Software
+# Foundation.  See file COPYING.
+#
+#
 # This is a class to output model results (times, capacities, durabilities,
 # and probabilities) in attractive, standard width columns.
 #
@@ -6,10 +16,6 @@
 #   It includes methods to turn many data types into strings.
 #   Create each output line as a vector of string (values),
 #   and then print it with the chosen format.
-#
-
-#
-# FIX push this factored-out pretty-printer back to ceph-tools
 #
 
 from RelyFuncts import YEAR, DAY, HOUR, MINUTE, SECOND

@@ -71,6 +71,18 @@ def Pn(expected=1, n=0):
     return p
 
 
+def Punion(*probs):
+    """ probability of the Union of multiple events
+        probs -- a list of probabilities
+    """
+
+    # DeMorgan: negation of disjunction equals union of the negations
+    Pu = 1.0
+    for p in probs:
+        Pu *= (1 - p)
+    return(1 - Pu)
+
+
 def multiFit(fitRate, total, required, repair, oneRepair=True):
     """ effective FIT rate required/total redundant components
             fitRate -- FIT rate of a single component

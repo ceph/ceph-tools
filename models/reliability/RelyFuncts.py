@@ -50,13 +50,40 @@ def Pfail(fitRate, hours, n=1):
             hours -- number of hours to await event
             n -- number of events for which we want estimate
     """
-
     expected = float(fitRate) * hours / 1000000000
-    p = math.exp(-expected)
-    if n > 0:
-        p *= (expected ** n)
-        p /= math.factorial(n)
-    return p
+    return Pn(expected, n)
+
+
+def Pfail_lt(fitRate, hours, n=1):
+    """ probability of less than n failures during an interval
+            fitRate -- nominal FIT rate
+            hours -- number of hours to await event
+            n -- number of events for which we want estimate
+    """
+    expected = float(fitRate) * hours / 1000000000
+    tot = float(0)
+    i = n - 1
+    while i >= 0:
+        p = Pn(expected, i)
+        tot += p
+        i -= 1
+    return tot
+
+
+def Pfail_gt(fitRate, hours, n=1):
+    """ probability of more than n failures during an interval
+            fitRate -- nominal FIT rate
+            hours -- number of hours to await event
+            n -- number of events for which we want estimate
+    """
+    expected = float(fitRate) * hours / 1000000000
+    tot = float(0)
+    i = n
+    while i >= 0:
+        p = Pn(expected, i)
+        tot += p
+        i -= 1
+    return 1.0E0 - tot
 
 
 def Pn(expected=1, n=0):

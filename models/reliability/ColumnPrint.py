@@ -65,7 +65,7 @@ class ColumnPrint:
     def printHeadings(self):
         """ print out a set of column headings and separator line """
         print ""
-        print self.format % self.headings
+        print self.format % tuple(self.headings)
 
         # how wide should a dash be
         dashes = 0
@@ -88,53 +88,62 @@ class ColumnPrint:
 
         print self.format % tuple(l)
 
-    def printSize(self, sz, unit=1000):
-        """ print out a size with the appropriate unit suffix """
 
-        fmt10 = ["%dB", "%dKiB", "%dMiB", "%dGiB", "%dTiB", "%dPiB"]
-        fmt2 = ["%dB", "%dKB", "%dMB", "%dGB", "%dTB", "%dPB"]
-        fmt = fmt10 if unit == 1000 else fmt2
-        i = 0
-        while i < len(fmt):
-            if sz < unit:
-                break
-            sz /= unit
-            i += 1
-        return fmt[i] % (sz)
+def printSize(sz, unit=1000):
+    """ print out a size with the appropriate unit suffix """
 
-    def printTime(self, t):
-        """ print out a time in an appropriate unit """
-        if t < 2 * MINUTE:
-            return "%d seconds" % (t / SECOND)
-        if t < 5 * HOUR:
-            return "%d minutes" % (t / MINUTE)
-        if t < 3 * DAY:
-            return "%d hours" % (t / HOUR)
-        if t < YEAR:
-            return "%d days" % (t / DAY)
-        if (t % YEAR) == 0:
-            return "%d years" % (t / YEAR)
-        else:
-            return "%5.1f years" % (t / YEAR)
+    fmt10 = ["%dB", "%dKiB", "%dMiB", "%dGiB", "%dTiB", "%dPiB"]
+    fmt2 = ["%dB", "%dKB", "%dMB", "%dGB", "%dTB", "%dPB"]
+    fmt = fmt10 if unit == 1000 else fmt2
+    i = 0
+    while i < len(fmt):
+        if sz < unit:
+            break
+        sz /= unit
+        i += 1
+    return fmt[i] % (sz)
 
-    def printDurability(self, d):
-        """ print out a durability in a reasonable format """
-        if d < .99999:
-            return "%6.3f%%" % (d * 100)
-        else:
-            nines = 0
-            while d > .9:
-                nines += 1
-                d -= .9
-                d *= 10
-            return "%d-nines" % (nines)
 
-    def printProbability(self, p):
-        """ print out a probability in a reasonable format """
-        if p > .0000001:
-            return "%9.6f%%" % (p * 100)
-        else:
-            return "%9.3e" % (p)
+def printTime(t):
+    """ print out a time in an appropriate unit """
+    if t < 2 * MINUTE:
+        return "%d seconds" % (t / SECOND)
+    if t < 5 * HOUR:
+        return "%d minutes" % (t / MINUTE)
+    if t < 3 * DAY:
+        return "%d hours" % (t / HOUR)
+    if t < YEAR:
+        return "%d days" % (t / DAY)
+    if (t % YEAR) == 0:
+        return "%d years" % (t / YEAR)
+    else:
+        return "%5.1f years" % (t / YEAR)
 
-    def printFloat(self, f):
-        return "%9.3e" % (f)
+
+def printDurability(d):
+    """ print out a durability in a reasonable format """
+    if d < .99999:
+        return "%6.3f%%" % (d * 100)
+    else:
+        nines = 0
+        while d > .9:
+            nines += 1
+            d -= .9
+            d *= 10
+        return "%d-nines" % (nines)
+
+
+def printProbability(p):
+    """ print out a probability in a reasonable format """
+    if p > .0000001:
+        return "%9.6f%%" % (p * 100)
+    else:
+        return "%9.3e" % (p)
+
+
+def printExp(f):
+    return "%9.3e" % (f)
+
+
+def printFloat(f):
+    return "%9.3f" % (f)

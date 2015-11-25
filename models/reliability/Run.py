@@ -9,7 +9,8 @@
 # Foundation.  See file COPYING.
 #
 
-from ColumnPrint import ColumnPrint
+from ColumnPrint import ColumnPrint, printTime, printSize, printFloat
+from ColumnPrint import printExp, printDurability, printProbability
 from RelyFuncts import mttf, YEAR
 from sizes import PiB
 
@@ -26,33 +27,33 @@ def printParms(fmt, disk, raid, rados, site, multi):
     """
     if disk is not None:
         print "Disk Modeling Parameters"
-        print "    size:     %10s" % fmt.printSize(disk.size)
+        print "    size:     %10s" % printSize(disk.size)
         print("    FIT rate: %10d (MTBF = %s)" %
-              (disk.fits, fmt.printTime(mttf(disk.fits))))
+              (disk.fits, printTime(mttf(disk.fits))))
         print "    NRE rate: %10.1E" % disk.nre
 
     if raid is not None:
         print "RAID parameters"
-        print "    replace:  %16s" % fmt.printTime(raid.delay)
+        print "    replace:  %16s" % printTime(raid.delay)
         if raid.speed > 0:
             print("    recovery rate: %7s/s (%s)" %
-                  (fmt.printSize(raid.speed),
-                   fmt.printTime(raid.rebuild_time())))
+                  (printSize(raid.speed),
+                   printTime(raid.rebuild_time())))
         print "    NRE model:        %10s" % raid.nre_model
-        print "    object size:      %10s" % fmt.printSize(raid.objsize)
+        print "    object size:      %10s" % printSize(raid.objsize)
 
     if rados is not None:
         print "RADOS parameters"
-        print "    auto mark-out: %14s" % fmt.printTime(rados.delay)
+        print "    auto mark-out: %14s" % printTime(rados.delay)
         print("    recovery rate: %8s/s (%s/drive)" %
-              (fmt.printSize(rados.speed),
+              (printSize(rados.speed),
 
-               fmt.printTime(rados.rebuild_time(rados.speed))))
+               printTime(rados.rebuild_time(rados.speed))))
         print "    osd fullness: %7d%%" % (rados.full * 100)
         print "    declustering: %7d PG/OSD" % rados.pgs
         print "    NRE model:        %10s" % rados.nre_model
         print "    object size:  %7s" % \
-              fmt.printSize(rados.objsize, unit=1024)
+              printSize(rados.objsize, unit=1024)
         print "    stripe length:%7d" % rados.stripe
 
     if site is not None:
@@ -63,16 +64,16 @@ def printParms(fmt, disk, raid, rados, site, multi):
         else:
             tf = mttf(site.fits)
             print("    disaster rate: %12s (%d FITS)" %
-                  (fmt.printTime(tf), site.fits))
+                  (printTime(tf), site.fits))
         if site.replace == 0:
             print "    site recovery:   NEVER"
         else:
-            print "    site recovery: %11s" % fmt.printTime(site.replace)
+            print "    site recovery: %11s" % printTime(site.replace)
 
         if multi is not None:
             print("    recovery rate: %8s/s (%s/PG)" %
-                  (fmt.printSize(multi.speed),
-                   fmt.printTime(multi.rados.rebuild_time(multi.speed))))
+                  (printSize(multi.speed),
+                   printTime(multi.rados.rebuild_time(multi.speed))))
             if multi.latency == 0:
                 print "    replication:       synchronous"
             else:
@@ -155,7 +156,7 @@ def Run(tests, period=YEAR, verbosity="all"):
     if descr:
         print ""
         print "Column legends"
-        s = format.printTime(period)
+        s = printTime(period)
         i = 1
         while i <= len(legends):
             l = legends[i - 1]
@@ -178,12 +179,12 @@ def Run(tests, period=YEAR, verbosity="all"):
         s = list()
         t.compute(period=period)
         s.append(t.description)                 # description
-        s.append(format.printDurability(t.dur))        # durability
-        s.append(format.printProbability(t.P_site))    # P(site failure)
-        s.append(format.printProbability(t.P_drive))   # P(drive failure)
-        s.append(format.printProbability(t.P_nre))     # P(NRE on recovery)
-        s.append(format.printProbability(t.P_rep))     # P(replication failure)
+        s.append(printDurability(t.dur))        # durability
+        s.append(printProbability(t.P_site))    # P(site failure)
+        s.append(printProbability(t.P_drive))   # P(drive failure)
+        s.append(printProbability(t.P_nre))     # P(NRE on recovery)
+        s.append(printProbability(t.P_rep))     # P(replication failure)
         l = (t.P_site * t.L_site) + (t.P_drive * t.L_drive) +\
             (t.P_nre * t.L_nre) + (t.P_rep * t.L_rep)
-        s.append(format.printFloat(l * PiB / t.rawsize))   # expected loss/PiB
+        s.append(printExp(l * PiB / t.rawsize)) # expected loss/PiB
         format.printLine(s)
